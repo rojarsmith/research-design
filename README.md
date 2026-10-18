@@ -8,6 +8,7 @@ Engineering research, feasibility studies, architecture proposals for software p
 
 | Topic | Scope | English | Traditional Chinese |
 | --- | --- | --- | --- |
+| AI assisted team development | Cross-functional delivery, Git branch lifecycle, AI task boundaries, PR review, CI and releases | [English overview](ai-team-development-research/README.md) | [完整研究](ai-team-development-research/README.zh-TW.md) |
 | Save and load compatibility | Large application and game save architecture, schema evolution, content migration, safe commits and verification | [English overview](save-load-compatibility-research/README.md) | [完整研究](save-load-compatibility-research/README.zh-TW.md) |
 | MCU embedded HMI ecosystem | Eight offerings across UI tools, graphics frameworks, display controllers, MCU platforms and smart displays; licensing, architecture and evaluation | [English overview](mcu-embedded-hmi-research/README.md) | [完整研究](mcu-embedded-hmi-research/README.zh-TW.md) |
 | IAM comparison and Keycloak operations | Eleven IAM product families, application integration, the requested iThome series, deployment inventory, recovery and operations | [English overview](iam-research/README.md) | [完整研究](iam-research/README.zh-TW.md) |

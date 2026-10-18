@@ -8,6 +8,7 @@
 
 | 主題 | 範圍 | 英文 | 繁體中文 |
 | --- | --- | --- | --- |
+| AI 與 Git 團隊協作研發 | 跨部門交付、分支保留與刪除、AI 分工、PR 審查、CI 及發布流程 | [English overview](ai-team-development-research/README.md) | [完整研究](ai-team-development-research/README.zh-TW.md) |
 | 存讀檔與版本相容性 | 大型軟體與遊戲的存檔架構、資料與內容遷移、安全提交及驗證 | [English overview](save-load-compatibility-research/README.md) | [完整研究](save-load-compatibility-research/README.zh-TW.md) |
 | MCU 嵌入式 HMI 生態 | 八項 UI 工具、圖形框架、控制晶片、MCU 與智慧顯示方案；授權、架構與評測方法 | [English overview](mcu-embedded-hmi-research/README.md) | [完整研究](mcu-embedded-hmi-research/README.zh-TW.md) |
 | IAM 比較與 Keycloak 營運 | 11 組 IAM 方案、應用整合、指定 iThome 系列、部署盤點、備份還原與營運 | [English overview](iam-research/README.md) | [完整研究](iam-research/README.zh-TW.md) |
