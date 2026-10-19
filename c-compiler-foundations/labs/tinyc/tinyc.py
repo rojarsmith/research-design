@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""tinyc: a teaching compiler for a small C subset, emitting RV32IM assembly.
+"""tinyc: a teaching compiler for a small C subset with two backends.
 
 Subset: `int` and `int *` values, fixed-size `int` arrays (local and global),
 functions with up to 8 parameters, if/else, while, for, return, the usual
@@ -11,9 +11,17 @@ read on its own:
 
     source text --lex--> tokens --parse--> AST --check--> typed AST --gen--> asm
 
-The output follows the RISC-V ILP32 calling convention closely enough to be
-assembled by a real `riscv64-unknown-elf-as -march=rv32im -mabi=ilp32` and
-run under `rv32sim.py` or a RARS-compatible simulator (ecall numbers 1, 11, 93).
+The front end (lexer, parser, type rules, frame layout) is shared. Code
+generation talks to a small `Machine` interface with two implementations:
+
+    --target rv32     RV32IM assembly, ILP32 psABI subset; run on rv32sim.py or
+                      assemble with `clang --target=riscv32 -march=rv32im`
+    --target x86_64   x86-64 System V assembly (AT&T syntax); assemble and run
+                      natively with the host `cc` plus runtime.c
+
+Reading the two `Machine` classes side by side is the point of the lab: the
+same AST becomes different instructions, register names, pointer sizes and
+startup conventions, while everything above `Machine` stays untouched.
 """
 from __future__ import annotations
 
@@ -376,15 +384,319 @@ class Parser:
 
 
 # --------------------------------------------------------------------------
-# 4. Semantic analysis + 5. Code generation (merged: one pass over the AST)
+# 4. Target descriptions: everything the code generator must know about a CPU
+# --------------------------------------------------------------------------
+#
+# Each Machine exposes the same tiny vocabulary. The accumulator ("acc") holds
+# the value of the expression being evaluated; "tmp" holds a second operand.
+# Values are 'int' (32-bit) or 'ptr' (the target's pointer size).
+
+class Machine:
+    name = ""
+    int_size = 4
+    ptr_size = 4
+    push_size = 4          # bytes one temporary push consumes
+    max_args = 0           # register-passed arguments supported
+    frame_reserved = 0     # bytes below the frame pointer already used by the prologue
+
+    def size_of(self, ty: str) -> int:
+        return self.ptr_size if ty == "ptr" else self.int_size
+
+    def slot_size(self, ty: str) -> int:       # every scalar gets a whole slot
+        return max(self.int_size, self.ptr_size) if ty != "arr" else 0
+
+    # emit-level hooks, each returns a list of assembly lines
+    def header(self) -> List[str]: ...
+    def footer(self, globals_: List["Symbol"]) -> List[str]: ...
+    def prologue(self, name: str, frame: int) -> List[str]: ...
+    def epilogue(self) -> List[str]: ...
+    def spill_param(self, i: int, offset: int, ty: str) -> List[str]: ...
+    def load_imm(self, v: int) -> List[str]: ...
+    def local_addr(self, offset: int) -> List[str]: ...
+    def global_addr(self, name: str) -> List[str]: ...
+    def load(self, ty: str) -> List[str]: ...                # acc = *(acc)
+    def store(self, ty: str) -> List[str]: ...               # *(acc) = tmp; acc = tmp
+    def push(self) -> List[str]: ...
+    def pop_tmp(self) -> List[str]: ...                      # tmp = pop()
+    def pop_arg(self, i: int) -> List[str]: ...              # arg register i = pop()
+    def acc_to_tmp(self) -> List[str]: ...
+    def swap_pop(self) -> List[str]: ...                     # tmp = acc; acc = pop()  (lhs, rhs)
+    def neg(self) -> List[str]: ...
+    def lognot(self) -> List[str]: ...
+    def normalize_bool(self) -> List[str]: ...               # acc = acc != 0
+    def binop(self, op: str, ty: str) -> List[str]: ...      # acc = acc OP tmp
+    def scale_tmp(self, shift: int) -> List[str]: ...        # tmp <<= shift
+    def scale_acc(self, shift: int) -> List[str]: ...        # acc <<= shift
+    def unscale_acc(self, shift: int) -> List[str]: ...      # acc >>= shift (arithmetic)
+    def branch_zero(self, label: str) -> List[str]: ...
+    def branch_nonzero(self, label: str) -> List[str]: ...
+    def jump(self, label: str) -> List[str]: ...
+    def adjust_sp(self, delta: int) -> List[str]: ...        # sp += delta
+    def call(self, name: str) -> List[str]: ...
+    def builtin(self, name: str) -> List[str]: ...           # argument already in acc
+    def return_value_zero(self) -> List[str]: ...
+
+
+class RV32(Machine):
+    """RISC-V RV32IM, ILP32. acc = a0, tmp = t1, scratch = t0."""
+    name = "rv32"
+    ptr_size = 4
+    push_size = 4
+    max_args = 8
+    frame_reserved = 16          # saved ra at fp-4, saved fp at fp-8, padding to 16
+
+    def header(self):
+        # Program entry: C says execution starts at main; somebody must call it
+        # and turn its return value into an exit status. That somebody is crt0.
+        return [".text", ".globl _start", "_start:", "call main", "li a7, 93", "ecall"]
+
+    def footer(self, globals_):
+        out = []
+        if globals_:
+            out.append(".data")
+            for g in globals_:
+                out += [".align 2", f"{g.name}:", f".zero {4 * (g.size if g.ty == 'arr' else 1)}"]
+        return out
+
+    def prologue(self, name, frame):
+        out = [f".globl {name}", f"{name}:", "addi sp, sp, -16", "sw ra, 12(sp)",
+               "sw fp, 8(sp)", "addi fp, sp, 16"]
+        if frame > 16:
+            out.append(f"addi sp, sp, -{frame - 16}")
+        return out
+
+    def epilogue(self):
+        return ["addi sp, fp, -16", "lw ra, 12(sp)", "lw fp, 8(sp)", "addi sp, sp, 16", "ret"]
+
+    def spill_param(self, i, offset, ty):
+        return [f"sw a{i}, -{offset}(fp)"]
+
+    def load_imm(self, v):
+        return [f"li a0, {v}"]
+
+    def local_addr(self, offset):
+        return [f"addi a0, fp, -{offset}"]
+
+    def global_addr(self, name):
+        return [f"la a0, {name}"]
+
+    def load(self, ty):
+        return ["lw a0, 0(a0)"]
+
+    def store(self, ty):
+        return ["sw t1, 0(a0)", "mv a0, t1"]
+
+    def push(self):
+        return ["addi sp, sp, -4", "sw a0, 0(sp)"]
+
+    def pop_tmp(self):
+        return ["lw t1, 0(sp)", "addi sp, sp, 4"]
+
+    def pop_arg(self, i):
+        return [f"lw a{i}, 0(sp)", "addi sp, sp, 4"]
+
+    def acc_to_tmp(self):
+        return ["mv t1, a0"]
+
+    def swap_pop(self):
+        return ["mv t1, a0", "lw a0, 0(sp)", "addi sp, sp, 4"]
+
+    def neg(self):
+        return ["neg a0, a0"]
+
+    def lognot(self):
+        return ["seqz a0, a0"]
+
+    def normalize_bool(self):
+        return ["snez a0, a0"]
+
+    def binop(self, op, ty):
+        return {
+            "+": ["add a0, a0, t1"], "-": ["sub a0, a0, t1"],
+            "*": ["mul a0, a0, t1"], "/": ["div a0, a0, t1"], "%": ["rem a0, a0, t1"],
+            "==": ["sub a0, a0, t1", "seqz a0, a0"],
+            "!=": ["sub a0, a0, t1", "snez a0, a0"],
+            "<": ["slt a0, a0, t1"], ">": ["slt a0, t1, a0"],
+            "<=": ["slt a0, t1, a0", "xori a0, a0, 1"],
+            ">=": ["slt a0, a0, t1", "xori a0, a0, 1"],
+        }[op]
+
+    def scale_tmp(self, shift):
+        return [f"slli t1, t1, {shift}"]
+
+    def scale_acc(self, shift):
+        return [f"slli a0, a0, {shift}"]
+
+    def unscale_acc(self, shift):
+        return [f"srai a0, a0, {shift}"]
+
+    def branch_zero(self, label):
+        return [f"beqz a0, {label}"]
+
+    def branch_nonzero(self, label):
+        return [f"bnez a0, {label}"]
+
+    def jump(self, label):
+        return [f"j {label}"]
+
+    def adjust_sp(self, delta):
+        return [f"addi sp, sp, {delta}"]
+
+    def call(self, name):
+        return [f"call {name}"]
+
+    def builtin(self, name):
+        return [f"li a7, {BUILTINS[name]}", "ecall"]
+
+    def return_value_zero(self):
+        return ["li a0, 0"]
+
+
+class X86_64(Machine):
+    """x86-64 System V, LP64, AT&T syntax. acc = rax, tmp = rcx.
+
+    Ints are kept sign-extended in the full 64-bit register so pointer
+    arithmetic and comparisons can use the same registers. Pointers are 8 bytes,
+    so a local `int *p` needs a bigger slot than on RV32: the shared frame
+    layout code asks `slot_size()` instead of assuming 4.
+    """
+    name = "x86_64"
+    ptr_size = 8
+    push_size = 8
+    max_args = 6
+    frame_reserved = 0           # return address and saved rbp sit above rbp
+    ARGS = ["rdi", "rsi", "rdx", "rcx", "r8", "r9"]
+    ARGS32 = ["edi", "esi", "edx", "ecx", "r8d", "r9d"]
+
+    def header(self):
+        # No _start here: the host's crt0 calls main and passes its result to exit.
+        return [".text"]
+
+    def footer(self, globals_):
+        out = []
+        if globals_:
+            out.append(".data")
+            for g in globals_:
+                out += [".align 4", f"{g.name}:", f".zero {4 * (g.size if g.ty == 'arr' else 1)}"]
+        out.append('.section .note.GNU-stack,"",@progbits')
+        return out
+
+    def prologue(self, name, frame):
+        out = [f".globl {name}", f"{name}:", "pushq %rbp", "movq %rsp, %rbp"]
+        if frame:
+            out.append(f"subq ${frame}, %rsp")
+        return out
+
+    def epilogue(self):
+        return ["movq %rbp, %rsp", "popq %rbp", "ret"]
+
+    def spill_param(self, i, offset, ty):
+        if ty == "ptr":
+            return [f"movq %{self.ARGS[i]}, -{offset}(%rbp)"]
+        return [f"movslq %{self.ARGS32[i]}, %{self.ARGS[i]}", f"movq %{self.ARGS[i]}, -{offset}(%rbp)"]
+
+    def load_imm(self, v):
+        return [f"movq ${v}, %rax"]
+
+    def local_addr(self, offset):
+        return [f"leaq -{offset}(%rbp), %rax"]
+
+    def global_addr(self, name):
+        return [f"leaq {name}(%rip), %rax"]
+
+    def load(self, ty):
+        return ["movq (%rax), %rax"] if ty == "ptr" else ["movslq (%rax), %rax"]
+
+    def store(self, ty):
+        if ty == "ptr":
+            return ["movq %rcx, (%rax)", "movq %rcx, %rax"]
+        return ["movl %ecx, (%rax)", "movq %rcx, %rax"]
+
+    def push(self):
+        return ["pushq %rax"]
+
+    def pop_tmp(self):
+        return ["popq %rcx"]
+
+    def pop_arg(self, i):
+        return [f"popq %{self.ARGS[i]}"]
+
+    def acc_to_tmp(self):
+        return ["movq %rax, %rcx"]
+
+    def swap_pop(self):
+        return ["movq %rax, %rcx", "popq %rax"]
+
+    def neg(self):
+        return ["negq %rax"]
+
+    def lognot(self):
+        return ["testq %rax, %rax", "sete %al", "movzbq %al, %rax"]
+
+    def normalize_bool(self):
+        return ["testq %rax, %rax", "setne %al", "movzbq %al, %rax"]
+
+    def binop(self, op, ty):
+        setcc = {"==": "sete", "!=": "setne", "<": "setl", ">": "setg", "<=": "setle", ">=": "setge"}
+        if op in setcc:
+            return ["cmpq %rcx, %rax", f"{setcc[op]} %al", "movzbq %al, %rax"]
+        if op == "+":
+            return ["addq %rcx, %rax"] + (["movslq %eax, %rax"] if ty == "int" else [])
+        if op == "-":
+            return ["subq %rcx, %rax"] + (["movslq %eax, %rax"] if ty == "int" else [])
+        if op == "*":
+            return ["imull %ecx, %eax", "movslq %eax, %rax"]
+        # idivl divides edx:eax by the operand; cltd sign-extends eax into edx.
+        if op == "/":
+            return ["cltd", "idivl %ecx", "movslq %eax, %rax"]
+        if op == "%":
+            return ["cltd", "idivl %ecx", "movslq %edx, %rax"]
+        raise CompileError(f"x86_64: unsupported operator {op}")
+
+    def scale_tmp(self, shift):
+        return [f"shlq ${shift}, %rcx"]
+
+    def scale_acc(self, shift):
+        return [f"shlq ${shift}, %rax"]
+
+    def unscale_acc(self, shift):
+        return [f"sarq ${shift}, %rax"]
+
+    def branch_zero(self, label):
+        return ["testq %rax, %rax", f"je {label}"]
+
+    def branch_nonzero(self, label):
+        return ["testq %rax, %rax", f"jne {label}"]
+
+    def jump(self, label):
+        return [f"jmp {label}"]
+
+    def adjust_sp(self, delta):
+        return [f"addq ${delta}, %rsp"]
+
+    def call(self, name):
+        return [f"call {name}"]
+
+    def builtin(self, name):
+        # On a hosted system the "builtins" are ordinary functions in runtime.c.
+        return ["movl %eax, %edi", f"call {name}"]
+
+    def return_value_zero(self):
+        return ["movq $0, %rax"]
+
+
+MACHINES = {"rv32": RV32, "x86_64": X86_64}
+BUILTINS = {"print_int": 1, "print_char": 11}   # name -> ecall number (RARS convention)
+INT_SHIFT = 2                                   # log2(sizeof(int)): pointer arithmetic scale
+
+
+# --------------------------------------------------------------------------
+# 5. Semantic analysis + code generation (one pass over the AST, target-neutral)
 # --------------------------------------------------------------------------
 
-BUILTINS = {"print_int": 1, "print_char": 11}   # name -> ecall number (RARS convention)
-WORD = 4
-
-
 class CodeGen:
-    def __init__(self) -> None:
+    def __init__(self, machine: Machine) -> None:
+        self.m = machine
         self.out: List[str] = []
         self.globals: Dict[str, Symbol] = {}
         self.funcs: Dict[str, Node] = {}
@@ -392,11 +704,12 @@ class CodeGen:
         self.frame_size = 0
         self.label_id = 0
         self.ret_label = ""
-        self.stack_depth = 0        # words pushed for temporaries, for diagnostics
+        self.depth = 0              # temporaries currently pushed (for call alignment)
 
     # -- helpers ----------------------------------------------------------
-    def emit(self, s: str) -> None:
-        self.out.append("    " + s if not s.endswith(":") else s)
+    def emit(self, lines: List[str]) -> None:
+        for s in lines:
+            self.out.append(s if (s.endswith(":") or s.startswith(".")) else "    " + s)
 
     def label(self) -> str:
         self.label_id += 1
@@ -413,21 +726,20 @@ class CodeGen:
     def declare_local(self, name: str, ty: str, size: int, line: int) -> Symbol:
         if name in self.scopes[-1]:
             raise CompileError(f"line {line}: {name!r} already declared in this scope")
-        nbytes = WORD * (size if ty == "arr" else 1)
-        self.frame_size += nbytes
+        nbytes = 4 * size if ty == "arr" else self.m.slot_size(ty)
+        align = 4 if ty == "arr" else nbytes
+        self.frame_size = (self.frame_size + nbytes + align - 1) // align * align
         sym = Symbol(name, ty, size, offset=self.frame_size)
         self.scopes[-1][name] = sym
         return sym
 
-    def push(self, reg: str = "a0") -> None:
-        self.emit("addi sp, sp, -4")
-        self.emit(f"sw {reg}, 0(sp)")
-        self.stack_depth += 1
+    def push(self) -> None:
+        self.emit(self.m.push())
+        self.depth += 1
 
-    def pop(self, reg: str) -> None:
-        self.emit(f"lw {reg}, 0(sp)")
-        self.emit("addi sp, sp, 4")
-        self.stack_depth -= 1
+    def pop_tmp(self) -> None:
+        self.emit(self.m.pop_tmp())
+        self.depth -= 1
 
     # -- program ----------------------------------------------------------
     def program(self, items: List[Node]) -> str:
@@ -439,26 +751,16 @@ class CodeGen:
             else:
                 if it.name in self.funcs or it.name in BUILTINS:
                     raise CompileError(f"line {it.line}: duplicate function {it.name!r}")
+                if len(it.params) > self.m.max_args:
+                    raise CompileError(f"line {it.line}: {self.m.name} backend passes at most "
+                                       f"{self.m.max_args} arguments in registers")
                 self.funcs[it.name] = it
         if "main" not in self.funcs:
             raise CompileError("no 'main' function")
-
-        self.emit(".text")
-        self.emit(".globl _start")
-        # Program entry: C says execution starts at main; somebody must call it
-        # and turn its return value into an exit status. That somebody is crt0.
-        self.emit("_start:")
-        self.emit("call main")
-        self.emit("li a7, 93")          # exit(a0)
-        self.emit("ecall")
+        self.emit(self.m.header())
         for f in self.funcs.values():
             self.function(f)
-        if self.globals:
-            self.emit(".data")
-            for g in self.globals.values():
-                self.emit(".align 2")
-                self.emit(f"{g.name}:")
-                self.emit(f".zero {WORD * (g.size if g.ty == 'arr' else 1)}")
+        self.emit(self.m.footer(list(self.globals.values())))
         return "\n".join(self.out) + "\n"
 
     # -- functions --------------------------------------------------------
@@ -466,34 +768,24 @@ class CodeGen:
         # Body is generated first into a side buffer so the frame size is known
         # when the prologue is written.
         saved_out, self.out = self.out, []
-        self.frame_size = 16        # bytes fp-1..fp-16 hold the saved ra and fp
+        self.frame_size = self.m.frame_reserved
         self.scopes = [{}]
+        self.depth = 0
         self.ret_label = self.label()
-        param_syms = [self.declare_local(name, ty, 0, f.line) for name, ty in f.params]
-        for i, sym in enumerate(param_syms):
-            self.emit(f"sw a{i}, -{sym.offset}(fp)")       # spill incoming args
+        for i, (name, ty) in enumerate(f.params):
+            sym = self.declare_local(name, ty, 0, f.line)
+            self.emit(self.m.spill_param(i, sym.offset, ty))       # spill incoming args
         for s in f.body:
             self.statement(s)
-        self.emit("li a0, 0")                              # fall off the end -> 0
-        self.emit(f"{self.ret_label}:")
+        self.emit(self.m.return_value_zero())                      # fall off the end -> 0
+        self.emit([f"{self.ret_label}:"])
         body, self.out = self.out, saved_out
         self.scopes = []
 
-        frame = (self.frame_size + 15) // 16 * 16     # keep sp 16-byte aligned (psABI)
-        self.emit(f".globl {f.name}")
-        self.emit(f"{f.name}:")
-        self.emit("addi sp, sp, -16")
-        self.emit("sw ra, 12(sp)")
-        self.emit("sw fp, 8(sp)")
-        self.emit("addi fp, sp, 16")
-        if frame > 16:
-            self.emit(f"addi sp, sp, -{frame - 16}")
+        frame = (self.frame_size + 15) // 16 * 16     # keep sp 16-byte aligned (both ABIs)
+        self.emit(self.m.prologue(f.name, frame))
         self.out.extend(body)
-        self.emit("addi sp, fp, -16")
-        self.emit("lw ra, 12(sp)")
-        self.emit("lw fp, 8(sp)")
-        self.emit("addi sp, sp, 16")
-        self.emit("ret")
+        self.emit(self.m.epilogue())
 
     # -- statements -------------------------------------------------------
     def statement(self, s: Node) -> None:
@@ -502,7 +794,9 @@ class CodeGen:
             sym = self.declare_local(s.name, s.ty, s.size, s.line)
             if s.init is not None:
                 self.expression(s.init)
-                self.emit(f"sw a0, -{sym.offset}(fp)")
+                self.emit(self.m.acc_to_tmp())
+                self.emit(self.m.local_addr(sym.offset))
+                self.emit(self.m.store(sym.ty))
         elif k == "block":
             self.scopes.append({})
             for st in s.body:
@@ -514,53 +808,50 @@ class CodeGen:
             if s.lhs is not None:
                 self.expression(s.lhs)
             else:
-                self.emit("li a0, 0")
-            self.emit(f"j {self.ret_label}")
+                self.emit(self.m.return_value_zero())
+            self.emit(self.m.jump(self.ret_label))
         elif k == "if":
             l_else, l_end = self.label(), self.label()
             self.expression(s.cond)
-            self.emit(f"beqz a0, {l_else}")
+            self.emit(self.m.branch_zero(l_else))
             self.statement(s.then)
-            self.emit(f"j {l_end}")
-            self.emit(f"{l_else}:")
+            self.emit(self.m.jump(l_end))
+            self.emit([f"{l_else}:"])
             if s.els is not None:
                 self.statement(s.els)
-            self.emit(f"{l_end}:")
+            self.emit([f"{l_end}:"])
         elif k == "while":
             l_top, l_end = self.label(), self.label()
-            self.emit(f"{l_top}:")
+            self.emit([f"{l_top}:"])
             self.expression(s.cond)
-            self.emit(f"beqz a0, {l_end}")
+            self.emit(self.m.branch_zero(l_end))
             self.statement(s.then)
-            self.emit(f"j {l_top}")
-            self.emit(f"{l_end}:")
+            self.emit(self.m.jump(l_top))
+            self.emit([f"{l_end}:"])
         elif k == "for":
             self.scopes.append({})
             l_top, l_end = self.label(), self.label()
             if s.init is not None:
                 self.statement(s.init)
-            self.emit(f"{l_top}:")
+            self.emit([f"{l_top}:"])
             if s.cond is not None:
                 self.expression(s.cond)
-                self.emit(f"beqz a0, {l_end}")
+                self.emit(self.m.branch_zero(l_end))
             self.statement(s.then)
             if s.step is not None:
                 self.expression(s.step)
-            self.emit(f"j {l_top}")
-            self.emit(f"{l_end}:")
+            self.emit(self.m.jump(l_top))
+            self.emit([f"{l_end}:"])
             self.scopes.pop()
         else:
             raise CompileError(f"line {s.line}: unknown statement {k}")
 
-    # -- expressions: result always ends up in a0 ---------------------------
+    # -- expressions: result always ends up in the accumulator ---------------
     def address_of(self, e: Node) -> str:
-        """Emit code that leaves the address of lvalue `e` in a0; return its type."""
+        """Emit code that leaves the address of lvalue `e` in acc; return its type."""
         if e.kind == "var":
             sym = self.lookup(e.name, e.line)
-            if sym.is_global:
-                self.emit(f"la a0, {sym.name}")
-            else:
-                self.emit(f"addi a0, fp, -{sym.offset}")
+            self.emit(self.m.global_addr(sym.name) if sym.is_global else self.m.local_addr(sym.offset))
             return sym.ty
         if e.kind == "deref":
             t = self.expression(e.lhs)
@@ -570,24 +861,23 @@ class CodeGen:
         raise CompileError(f"line {e.line}: expression is not an lvalue")
 
     def expression(self, e: Node) -> str:
-        """Emit code for `e`, leaving its value in a0; return 'int' or 'ptr'."""
+        """Emit code for `e`, leaving its value in acc; return 'int' or 'ptr'."""
         k = e.kind
         if k == "num":
-            self.emit(f"li a0, {e.value}")
+            self.emit(self.m.load_imm(e.value))
             return "int"
         if k == "var":
-            sym = self.lookup(e.name, e.line)
             t = self.address_of(e)
             if t == "arr":                     # arrays decay to a pointer to element 0
                 return "ptr"
-            self.emit("lw a0, 0(a0)")
+            self.emit(self.m.load(t))
             return t
         if k == "deref":
             self.address_of(e)
-            self.emit("lw a0, 0(a0)")
+            self.emit(self.m.load("int"))
             return "int"
         if k == "addr":
-            t = self.address_of(e.lhs)
+            self.address_of(e.lhs)
             return "ptr"
         if k == "assign":
             self.expression(e.rhs)
@@ -595,13 +885,12 @@ class CodeGen:
             t = self.address_of(e.lhs)
             if t == "arr":
                 raise CompileError(f"line {e.line}: cannot assign to an array")
-            self.pop("t0")
-            self.emit("sw t0, 0(a0)")
-            self.emit("mv a0, t0")
+            self.pop_tmp()
+            self.emit(self.m.store(t))
             return t
         if k == "unary":
             self.expression(e.lhs)
-            self.emit("neg a0, a0" if e.op == "-" else "seqz a0, a0")
+            self.emit(self.m.neg() if e.op == "-" else self.m.lognot())
             return "int"
         if k == "call":
             return self.call(e)
@@ -614,8 +903,7 @@ class CodeGen:
             if len(e.args) != 1:
                 raise CompileError(f"line {e.line}: {e.name} takes one argument")
             self.expression(e.args[0])
-            self.emit(f"li a7, {BUILTINS[e.name]}")
-            self.emit("ecall")
+            self.aligned_call(lambda: self.m.builtin(e.name))
             return "int"
         f = self.funcs.get(e.name)
         if f is None:
@@ -623,69 +911,66 @@ class CodeGen:
         if len(e.args) != len(f.params):
             raise CompileError(f"line {e.line}: {e.name} expects {len(f.params)} arguments")
         # Evaluate every argument first (each may itself call), park them on the
-        # stack, then move them into the argument registers a0..a7.
+        # stack, then move them into the argument registers.
         for a in e.args:
             self.expression(a)
             self.push()
         for i in reversed(range(len(e.args))):
-            self.pop(f"a{i}")
-        self.emit(f"call {e.name}")
+            self.emit(self.m.pop_arg(i))
+            self.depth -= 1
+        self.aligned_call(lambda: self.m.call(e.name))
         return f.ty
+
+    def aligned_call(self, emit_call) -> None:
+        """Both ABIs require sp to be 16-byte aligned at a call. Temporaries pushed
+        by enclosing expressions may have broken that, so pad around the call."""
+        pad = (-self.depth * self.m.push_size) % 16
+        if pad:
+            self.emit(self.m.adjust_sp(-pad))
+        self.emit(emit_call())
+        if pad:
+            self.emit(self.m.adjust_sp(pad))
 
     def binary(self, e: Node) -> str:
         op = e.op
         if op in ("&&", "||"):
             l_end = self.label()
             self.expression(e.lhs)
-            self.emit("snez a0, a0")
-            self.emit(f"{'beqz' if op == '&&' else 'bnez'} a0, {l_end}")
+            self.emit(self.m.normalize_bool())
+            self.emit(self.m.branch_zero(l_end) if op == "&&" else self.m.branch_nonzero(l_end))
             self.expression(e.rhs)
-            self.emit("snez a0, a0")
-            self.emit(f"{l_end}:")
+            self.emit(self.m.normalize_bool())
+            self.emit([f"{l_end}:"])
             return "int"
 
         lt = self.expression(e.lhs)
         self.push()
         rt = self.expression(e.rhs)
-        self.emit("mv t1, a0")          # t1 = rhs
-        self.pop("t0")                  # t0 = lhs
+        self.emit(self.m.swap_pop())      # acc = lhs, tmp = rhs
+        self.depth -= 1
 
         if op in ("+", "-"):
             # Pointer arithmetic scales by the element size, like real C.
             if lt == "ptr" and rt == "int":
-                self.emit(f"slli t1, t1, 2")
-                rtype = "ptr"
-            elif lt == "int" and rt == "ptr" and op == "+":
-                self.emit(f"slli t0, t0, 2")
-                rtype = "ptr"
-            elif lt == "ptr" and rt == "ptr" and op == "-":
-                self.emit("sub a0, t0, t1")
-                self.emit("srai a0, a0, 2")
+                self.emit(self.m.scale_tmp(INT_SHIFT))
+                self.emit(self.m.binop(op, "ptr"))
+                return "ptr"
+            if lt == "int" and rt == "ptr" and op == "+":
+                self.emit(self.m.scale_acc(INT_SHIFT))
+                self.emit(self.m.binop(op, "ptr"))
+                return "ptr"
+            if lt == "ptr" and rt == "ptr" and op == "-":
+                self.emit(self.m.binop("-", "ptr"))
+                self.emit(self.m.unscale_acc(INT_SHIFT))
                 return "int"
-            elif lt == "int" and rt == "int":
-                rtype = "int"
-            else:
-                raise CompileError(f"line {e.line}: invalid operands for {op}")
-            self.emit(f"{'add' if op == '+' else 'sub'} a0, t0, t1")
-            return rtype
+            if lt == "int" and rt == "int":
+                self.emit(self.m.binop(op, "int"))
+                return "int"
+            raise CompileError(f"line {e.line}: invalid operands for {op}")
 
-        if lt == "ptr" or rt == "ptr":
-            if op not in ("==", "!=", "<", "<=", ">", ">="):
-                raise CompileError(f"line {e.line}: invalid pointer operands for {op}")
-
-        table = {
-            "*": ["mul a0, t0, t1"],
-            "/": ["div a0, t0, t1"],
-            "%": ["rem a0, t0, t1"],
-            "==": ["sub a0, t0, t1", "seqz a0, a0"],
-            "!=": ["sub a0, t0, t1", "snez a0, a0"],
-            "<": ["slt a0, t0, t1"],
-            ">": ["slt a0, t1, t0"],
-            "<=": ["slt a0, t1, t0", "xori a0, a0, 1"],
-            ">=": ["slt a0, t0, t1", "xori a0, a0, 1"],
-        }
-        for ins in table[op]:
-            self.emit(ins)
+        if (lt == "ptr" or rt == "ptr") and op not in ("==", "!=", "<", "<=", ">", ">="):
+            raise CompileError(f"line {e.line}: invalid pointer operands for {op}")
+        self.emit(self.m.binop(op, "ptr" if (lt == "ptr" or rt == "ptr") else "int"))
         return "int"
 
 
@@ -693,20 +978,23 @@ class CodeGen:
 # Driver
 # --------------------------------------------------------------------------
 
-def compile_source(src: str) -> str:
+def compile_source(src: str, target: str = "rv32") -> str:
     tokens = lex(src)
     ast = Parser(tokens).program()
-    return CodeGen().program(ast)
+    return CodeGen(MACHINES[target]()).program(ast)
 
 
 def main(argv: List[str]) -> int:
     if len(argv) < 2 or argv[1] in ("-h", "--help"):
-        print("usage: tinyc.py input.c [-o output.s] [--tokens] [--ast]", file=sys.stderr)
+        print("usage: tinyc.py input.c [-o output.s] [--target rv32|x86_64] [--tokens] [--ast]",
+              file=sys.stderr)
         return 2
     path = argv[1]
-    out_path = None
-    if "-o" in argv:
-        out_path = argv[argv.index("-o") + 1]
+    out_path = argv[argv.index("-o") + 1] if "-o" in argv else None
+    target = argv[argv.index("--target") + 1] if "--target" in argv else "rv32"
+    if target not in MACHINES:
+        print(f"unknown target {target!r}; choose from {', '.join(MACHINES)}", file=sys.stderr)
+        return 2
     with open(path, encoding="utf-8") as fh:
         src = fh.read()
     try:
@@ -717,7 +1005,7 @@ def main(argv: List[str]) -> int:
         if "--ast" in argv:
             dump_ast(Parser(lex(src)).program())
             return 0
-        asm = compile_source(src)
+        asm = compile_source(src, target)
     except CompileError as err:
         print(f"{path}: error: {err}", file=sys.stderr)
         return 1

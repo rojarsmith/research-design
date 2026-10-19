@@ -48,7 +48,7 @@
 | RISC-V Assembly Programmer's Manual，https://github.com/riscv-non-isa/riscv-asm-manual | 偽指令（`li`、`la`、`call`、`ret`、`seqz` 等）的定義 | |
 | RARS（RISC-V Assembler and Runtime Simulator），https://github.com/TheThirdOne/rars | `ecall` 編號慣例（1 印整數、11 印字元、10／93 結束） | rv32sim 採相同慣例以便互相驗證 |
 | Arm AAPCS32，https://github.com/ARM-software/abi-aa | 另一份公開 ABI，用於比較 | |
-| System V AMD64 ABI | x86-64 的參數暫存器與紅區；對照 `gcc -S` 的輸出 | |
+| System V AMD64 ABI，https://gitlab.com/x86-psABIs/x86-64-ABI | 參數暫存器 `rdi rsi rdx rcx r8 r9`、呼叫時 16 位元組對齊、LP64 | tinyc 的 `X86_64` 後端遵守其子集 |
 | QEMU RISC-V 系統模擬文件，https://www.qemu.org/docs/master/system/target-riscv.html | 真實工具鏈輸出的執行環境 | 本環境未安裝 QEMU 與 RISC-V GCC，因此改以 clang 整合組譯器驗證 |
 
 ## 教材
@@ -64,7 +64,7 @@
 ## 本環境實測紀錄
 
 - 主機：Ubuntu 24.04，gcc 13.3.0，clang 18.1.3（含 riscv32 後端與整合組譯器），python3。
-- `labs/tinyc/run_tests.py`：五個範例在三條路徑（tinyc → rv32sim、clang -O2 riscv32 → rv32sim、主機 gcc 原生）輸出與結束碼一致。
+- `labs/tinyc/run_tests.py`：五個範例在四條路徑（tinyc RV32 → rv32sim 並啟用 `--check-align`、主機 gcc 原生、tinyc x86-64 → 主機 `cc` 原生、clang -O2 riscv32 → rv32sim）輸出與結束碼一致。
 - `labs/probe/probe.c` 於主機的輸出：`CHAR_BIT 8`、LP64、小端序、`-1 >> 1` 為算術位移、`-7 / 2 == -3`。
 - 未能實測：真實 RISC-V 硬體或 QEMU 執行、`gcc -m32`（缺 32 位元標頭）、8051／AVR 工具鏈。相關敘述來自文件，標示於各篇。
 

@@ -16,7 +16,10 @@ Memory is byte-addressable and little-endian, as a real RV32 core would be.
 Misaligned or unmapped accesses stop the machine with an error instead of
 silently returning garbage: finding these early is part of the exercise.
 
-Usage: rv32sim.py program.s [--trace] [--stats] [--max-steps N]
+Usage: rv32sim.py program.s [--trace] [--stats] [--check-align] [--max-steps N]
+
+`--check-align` enforces the psABI rule that sp is 16-byte aligned at every
+call, which hardware never checks but library code may silently depend on.
 """
 from __future__ import annotations
 
@@ -194,7 +197,8 @@ def parse_program(src: str) -> Tuple[List[Instr], Dict[str, int], Memory]:
 
 class CPU:
     def __init__(self, instrs: List[Instr], labels: Dict[str, int], mem: Memory,
-                 out=sys.stdout, trace: bool = False, max_steps: int = 50_000_000) -> None:
+                 out=sys.stdout, trace: bool = False, max_steps: int = 50_000_000,
+                 check_align: bool = False) -> None:
         self.instrs, self.labels, self.mem = instrs, labels, mem
         self.regs = [0] * 32
         self.regs[2] = STACK_TOP
@@ -202,6 +206,7 @@ class CPU:
         self.out = out
         self.trace = trace
         self.max_steps = max_steps
+        self.check_align = check_align
         self.steps = 0
         self.min_sp = STACK_TOP
         self.exit_code: Optional[int] = None
@@ -372,6 +377,8 @@ class CPU:
             return target & ~1
         elif op == "jr":   return gu(a[0])
         elif op == "call":
+            if self.check_align and self.regs[2] % 16:
+                raise SimError(f"sp=0x{self.regs[2]:08x} is not 16-byte aligned at call (psABI)")
             st("ra", self.pc + 4)
             return im(a[0])
         elif op == "tail": return im(a[0])
@@ -405,7 +412,8 @@ def main(argv: List[str]) -> int:
     max_steps = int(argv[argv.index("--max-steps") + 1]) if "--max-steps" in argv else 50_000_000
     try:
         instrs, labels, mem = parse_program(src)
-        cpu = CPU(instrs, labels, mem, trace="--trace" in argv, max_steps=max_steps)
+        cpu = CPU(instrs, labels, mem, trace="--trace" in argv, max_steps=max_steps,
+                  check_align="--check-align" in argv)
         code = cpu.run()
     except SimError as e:
         sys.stdout.flush()

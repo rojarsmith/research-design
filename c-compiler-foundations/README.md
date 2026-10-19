@@ -20,7 +20,7 @@ Research date: 2026-10-19. The complete research is in Traditional Chinese; this
 
 ## Lab
 
-`labs/tinyc/` contains a C-subset compiler emitting RV32IM assembly (about 750 lines of Python), an assembly-level RV32IM simulator, a minimal runtime, five example programs and a differential test. `python3 run_tests.py` compiles each example three ways (tinyc to the simulator, `clang --target=riscv32 -O2` to the simulator, host `cc` natively) and requires identical output and exit status. All five agree in this environment, and tinyc's output assembles to real RV32 machine code with clang's integrated assembler. `labs/probe/` holds an implementation probe and a processor evaluation checklist.
+`labs/tinyc/` contains a C-subset compiler (about 1000 lines of Python) with a shared front end and two backends behind a small `Machine` interface, RV32IM and x86-64 System V, plus an assembly-level RV32IM simulator, minimal runtimes, five example programs and a differential test. `python3 run_tests.py` compiles each example four ways (tinyc to the simulator, host `cc` natively, tinyc's x86-64 output natively on the host, `clang --target=riscv32 -O2` to the simulator) and requires identical output and exit status. All five agree in this environment; tinyc's RV32 output assembles to real machine code with clang's integrated assembler and its x86-64 output runs next to the host libc. `labs/probe/` holds an implementation probe and a processor evaluation checklist.
 
 ## Documents (Traditional Chinese)
 
@@ -32,5 +32,5 @@ Research date: 2026-10-19. The complete research is in Traditional Chinese; this
 | [03 Processor C-readiness](research/03-processor-c-readiness.zh-TW.md) | Minimum hardware requirements, toolchain checks, a one-day evaluation protocol, difficult processor classes |
 | [04 Integration path](research/04-integration-path.zh-TW.md) | The contract stack and a six-stage hands-on learning path |
 | [05 Sources](research/05-sources.zh-TW.md) | Primary literature, standards, toolchain docs, ISA and ABI specs, test log |
-| [tinyc README](labs/tinyc/README.md) | Language subset, calling convention, known deviations, exercises (English) |
+| [tinyc README](labs/tinyc/README.md) | Four verification paths, backend difference table, calling conventions, language subset, exercises (English) |
 | [Evaluation checklist](labs/probe/checklist.zh-TW.md) | Fill-in table for a candidate processor |
