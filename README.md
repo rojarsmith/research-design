@@ -26,6 +26,7 @@ Engineering research, feasibility studies, architecture proposals for software p
 | Claude Startups applications | Current eligibility and benefits, HMI Studio applicant assessment, Max API credits and English inquiry drafts | [English overview](claude-startups-research/README.md) | [完整研究](claude-startups-research/README.zh-TW.md) |
 | Online dating and family planning | Kaohsiung and international dating channels, platform limits, profiles, a 30-day plan, sources and research log | [English overview](marriage-and-dating/README.md) | [完整研究](marriage-and-dating/README.zh-TW.md) |
 | Motorcycle accident evidence and claims | Evidence preservation, police records, medical documentation, motorcycle repair and insurance for a two-motorcycle avoidance-crash case | [Case guide](motorcycle-accident-research/README.zh-TW.md) | [繁體中文行動指南](motorcycle-accident-research/README.zh-TW.md) |
+| C, compilers and processors | Origins of C, how compilers are built and bootstrapped, a one-day processor C-readiness protocol, a contract-stack learning path, and a runnable C-subset compiler with an RV32IM simulator | [English overview](c-compiler-foundations/README.md) | [完整研究](c-compiler-foundations/README.zh-TW.md) |
 
 ## Key Documents
 
@@ -60,6 +61,7 @@ New topic: [LOXJIE A40 USB audio fault research](loxjie-a40-usb-research/README.
 | `display-wake-research/` | RTX 5070 Ti desktop HDMI/DP dual-monitor wake issue and supporting sources |
 | `computer-graphics-practice/` | Bilingual, hands-on computer graphics course and runnable browser labs |
 | `motorcycle-accident-research/` | Motorcycle accident case guide, source checks, official procedures and evidence checklist |
+| `c-compiler-foundations/` | C language and compiler origins, processor C-readiness evaluation, and the tinyc compiler, RV32IM simulator and probe labs |
 
 ## Reading and Language Conventions
 
