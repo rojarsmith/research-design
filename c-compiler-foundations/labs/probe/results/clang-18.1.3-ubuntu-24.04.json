@@ -1,0 +1,1485 @@
+{
+ "clang": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+ "results": [
+  {
+   "name": "avr",
+   "triple": "avr",
+   "flags": [
+    "-mmcu=atmega328p"
+   ],
+   "desc": "8-bit AVR, Harvard, 32 registers",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "2",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "2",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "4",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 124,
+     "text": 314,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 195,
+     "text": 418,
+     "libcalls": [
+      "__divmodhi4",
+      "__udivmodhi4"
+     ]
+    },
+    "03_pointers.c": {
+     "instructions": 229,
+     "text": 508,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 166,
+     "text": 490,
+     "libcalls": [
+      "__do_clear_bss"
+     ]
+    },
+    "05_logic.c": {
+     "instructions": 85,
+     "text": 222,
+     "libcalls": [
+      "__do_clear_bss"
+     ]
+    },
+    "10_mul_div.c": {
+     "instructions": 30,
+     "text": 58,
+     "libcalls": [
+      "__divmodhi4",
+      "__udivmodhi4"
+     ]
+    },
+    "11_long_long.c": {
+     "instructions": 80,
+     "text": 156,
+     "libcalls": [
+      "__divdi3",
+      "__muldi3"
+     ]
+    },
+    "12_float.c": {
+     "instructions": 20,
+     "text": 40,
+     "libcalls": [
+      "__addsf3",
+      "__divsf3",
+      "__fixsfsi",
+      "__floatsisf",
+      "__mulsf3"
+     ]
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 35,
+     "text": 58,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 33,
+     "text": 76,
+     "libcalls": [
+      "__atomic_fetch_add_2",
+      "__atomic_load_2",
+      "__do_clear_bss",
+      "__do_copy_data"
+     ]
+    }
+   }
+  },
+  {
+   "name": "msp430",
+   "triple": "msp430",
+   "flags": [],
+   "desc": "16-bit MSP430",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "2",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "2",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 85,
+     "text": 274,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 114,
+     "text": 288,
+     "libcalls": [
+      "__mspabi_mpyi",
+      "__mspabi_remi",
+      "__mspabi_remu"
+     ]
+    },
+    "03_pointers.c": {
+     "instructions": 117,
+     "text": 342,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 59,
+     "text": 266,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 47,
+     "text": 162,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 15,
+     "text": 30,
+     "libcalls": [
+      "__mspabi_divi",
+      "__mspabi_divu",
+      "__mspabi_mpyi",
+      "__mspabi_remi"
+     ]
+    },
+    "11_long_long.c": {
+     "instructions": 191,
+     "text": 492,
+     "libcalls": [
+      "__mspabi_divlli",
+      "__mspabi_mpyll"
+     ]
+    },
+    "12_float.c": {
+     "instructions": 39,
+     "text": 86,
+     "libcalls": [
+      "__mspabi_addf",
+      "__mspabi_divd",
+      "__mspabi_fixfli",
+      "__mspabi_fltlid",
+      "__mspabi_mpyf"
+     ]
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 28,
+     "text": 52,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 22,
+     "text": 54,
+     "libcalls": [
+      "__atomic_fetch_add_2",
+      "__atomic_load_2"
+     ]
+    }
+   }
+  },
+  {
+   "name": "cortex-m0",
+   "triple": "thumbv6m-none-eabi",
+   "flags": [],
+   "desc": "Armv6-M Thumb, no divide, no FPU",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "4",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 81,
+     "text": 248,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 205,
+     "text": 496,
+     "libcalls": [
+      "__aeabi_idivmod",
+      "__aeabi_uidivmod"
+     ]
+    },
+    "03_pointers.c": {
+     "instructions": 277,
+     "text": 648,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 116,
+     "text": 288,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 58,
+     "text": 184,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 15,
+     "text": 68,
+     "libcalls": [
+      "__aeabi_idiv",
+      "__aeabi_idivmod",
+      "__aeabi_uidiv"
+     ]
+    },
+    "11_long_long.c": {
+     "instructions": 21,
+     "text": 80,
+     "libcalls": [
+      "__aeabi_ldivmod",
+      "__aeabi_llsl",
+      "__aeabi_lmul"
+     ]
+    },
+    "12_float.c": {
+     "instructions": 20,
+     "text": 90,
+     "libcalls": [
+      "__aeabi_ddiv",
+      "__aeabi_f2iz",
+      "__aeabi_fadd",
+      "__aeabi_fmul",
+      "__aeabi_i2d"
+     ]
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 25,
+     "text": 108,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 40,
+     "text": 132,
+     "libcalls": [
+      "__atomic_fetch_add_4",
+      "__atomic_load_4"
+     ]
+    }
+   }
+  },
+  {
+   "name": "cortex-m4",
+   "triple": "thumbv7em-none-eabi",
+   "flags": [],
+   "desc": "Armv7E-M, hardware divide, soft float",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "4",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 77,
+     "text": 242,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 163,
+     "text": 480,
+     "libcalls": []
+    },
+    "03_pointers.c": {
+     "instructions": 202,
+     "text": 586,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 88,
+     "text": 282,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 54,
+     "text": 172,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 9,
+     "text": 62,
+     "libcalls": []
+    },
+    "11_long_long.c": {
+     "instructions": 25,
+     "text": 104,
+     "libcalls": [
+      "__aeabi_ldivmod"
+     ]
+    },
+    "12_float.c": {
+     "instructions": 20,
+     "text": 98,
+     "libcalls": [
+      "__aeabi_ddiv",
+      "__aeabi_f2iz",
+      "__aeabi_fadd",
+      "__aeabi_fmul",
+      "__aeabi_i2d"
+     ]
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 24,
+     "text": 110,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 41,
+     "text": 144,
+     "libcalls": []
+    }
+   }
+  },
+  {
+   "name": "cortex-m4f",
+   "triple": "thumbv7em-none-eabi",
+   "flags": [
+    "-mfpu=fpv4-sp-d16",
+    "-mfloat-abi=hard"
+   ],
+   "desc": "same core, single-precision FPU enabled",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "4",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 77,
+     "text": 242,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 163,
+     "text": 480,
+     "libcalls": []
+    },
+    "03_pointers.c": {
+     "instructions": 202,
+     "text": 586,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 88,
+     "text": 282,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 54,
+     "text": 172,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 9,
+     "text": 62,
+     "libcalls": []
+    },
+    "11_long_long.c": {
+     "instructions": 25,
+     "text": 104,
+     "libcalls": [
+      "__aeabi_ldivmod"
+     ]
+    },
+    "12_float.c": {
+     "instructions": 19,
+     "text": 106,
+     "libcalls": [
+      "__aeabi_ddiv",
+      "__aeabi_i2d"
+     ]
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 24,
+     "text": 110,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 41,
+     "text": 144,
+     "libcalls": []
+    }
+   }
+  },
+  {
+   "name": "rv32e",
+   "triple": "riscv32",
+   "flags": [
+    "-march=rv32e",
+    "-mabi=ilp32e"
+   ],
+   "desc": "RISC-V, 16 registers, no multiply",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "4",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 86,
+     "text": 476,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 112,
+     "text": 512,
+     "libcalls": [
+      "__modsi3",
+      "__mulsi3",
+      "__umodsi3"
+     ]
+    },
+    "03_pointers.c": {
+     "instructions": 112,
+     "text": 548,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 104,
+     "text": 428,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 58,
+     "text": 304,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 11,
+     "text": 44,
+     "libcalls": [
+      "__divsi3",
+      "__modsi3",
+      "__mulsi3",
+      "__udivsi3"
+     ]
+    },
+    "11_long_long.c": {
+     "instructions": 40,
+     "text": 152,
+     "libcalls": [
+      "__divdi3",
+      "__muldi3"
+     ]
+    },
+    "12_float.c": {
+     "instructions": 35,
+     "text": 140,
+     "libcalls": [
+      "__addsf3",
+      "__divdf3",
+      "__fixsfsi",
+      "__floatsidf",
+      "__mulsf3"
+     ]
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 27,
+     "text": 84,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 23,
+     "text": 88,
+     "libcalls": [
+      "__atomic_fetch_add_4",
+      "__atomic_load_4"
+     ]
+    }
+   }
+  },
+  {
+   "name": "rv32i",
+   "triple": "riscv32",
+   "flags": [
+    "-march=rv32i",
+    "-mabi=ilp32"
+   ],
+   "desc": "RISC-V base integer only",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "4",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 88,
+     "text": 484,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 119,
+     "text": 540,
+     "libcalls": [
+      "__modsi3",
+      "__mulsi3",
+      "__umodsi3"
+     ]
+    },
+    "03_pointers.c": {
+     "instructions": 112,
+     "text": 548,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 104,
+     "text": 428,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 58,
+     "text": 304,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 11,
+     "text": 44,
+     "libcalls": [
+      "__divsi3",
+      "__modsi3",
+      "__mulsi3",
+      "__udivsi3"
+     ]
+    },
+    "11_long_long.c": {
+     "instructions": 40,
+     "text": 152,
+     "libcalls": [
+      "__divdi3",
+      "__muldi3"
+     ]
+    },
+    "12_float.c": {
+     "instructions": 35,
+     "text": 140,
+     "libcalls": [
+      "__addsf3",
+      "__divdf3",
+      "__fixsfsi",
+      "__floatsidf",
+      "__mulsf3"
+     ]
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 27,
+     "text": 84,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 23,
+     "text": 88,
+     "libcalls": [
+      "__atomic_fetch_add_4",
+      "__atomic_load_4"
+     ]
+    }
+   }
+  },
+  {
+   "name": "rv32im",
+   "triple": "riscv32",
+   "flags": [
+    "-march=rv32im",
+    "-mabi=ilp32"
+   ],
+   "desc": "RISC-V with multiply/divide (tinyc's target)",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "4",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 88,
+     "text": 484,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 89,
+     "text": 396,
+     "libcalls": []
+    },
+    "03_pointers.c": {
+     "instructions": 112,
+     "text": 548,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 104,
+     "text": 428,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 58,
+     "text": 304,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 12,
+     "text": 32,
+     "libcalls": []
+    },
+    "11_long_long.c": {
+     "instructions": 35,
+     "text": 128,
+     "libcalls": [
+      "__divdi3"
+     ]
+    },
+    "12_float.c": {
+     "instructions": 35,
+     "text": 140,
+     "libcalls": [
+      "__addsf3",
+      "__divdf3",
+      "__fixsfsi",
+      "__floatsidf",
+      "__mulsf3"
+     ]
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 27,
+     "text": 84,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 23,
+     "text": 88,
+     "libcalls": [
+      "__atomic_fetch_add_4",
+      "__atomic_load_4"
+     ]
+    }
+   }
+  },
+  {
+   "name": "rv32imf",
+   "triple": "riscv32",
+   "flags": [
+    "-march=rv32imf",
+    "-mabi=ilp32f"
+   ],
+   "desc": "RISC-V with single-precision FPU",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "4",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 88,
+     "text": 484,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 89,
+     "text": 396,
+     "libcalls": []
+    },
+    "03_pointers.c": {
+     "instructions": 112,
+     "text": 548,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 104,
+     "text": 428,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 58,
+     "text": 304,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 12,
+     "text": 32,
+     "libcalls": []
+    },
+    "11_long_long.c": {
+     "instructions": 35,
+     "text": 128,
+     "libcalls": [
+      "__divdi3"
+     ]
+    },
+    "12_float.c": {
+     "instructions": 23,
+     "text": 80,
+     "libcalls": [
+      "__divdf3",
+      "__floatsidf"
+     ]
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 27,
+     "text": 84,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 23,
+     "text": 88,
+     "libcalls": [
+      "__atomic_fetch_add_4",
+      "__atomic_load_4"
+     ]
+    }
+   }
+  },
+  {
+   "name": "rv64gc",
+   "triple": "riscv64",
+   "flags": [
+    "-march=rv64gc",
+    "-mabi=lp64d"
+   ],
+   "desc": "64-bit RISC-V, general purpose, double FPU",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "8",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "8",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 88,
+     "text": 410,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 89,
+     "text": 294,
+     "libcalls": []
+    },
+    "03_pointers.c": {
+     "instructions": 113,
+     "text": 440,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 104,
+     "text": 310,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 58,
+     "text": 258,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 12,
+     "text": 24,
+     "libcalls": []
+    },
+    "11_long_long.c": {
+     "instructions": 12,
+     "text": 22,
+     "libcalls": []
+    },
+    "12_float.c": {
+     "instructions": 15,
+     "text": 30,
+     "libcalls": []
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 27,
+     "text": 52,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 23,
+     "text": 58,
+     "libcalls": []
+    }
+   }
+  },
+  {
+   "name": "i386",
+   "triple": "i386-linux-gnu",
+   "flags": [],
+   "desc": "32-bit x86",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "4",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 108,
+     "text": 483,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 111,
+     "text": 382,
+     "libcalls": []
+    },
+    "03_pointers.c": {
+     "instructions": 185,
+     "text": 691,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 73,
+     "text": 491,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 59,
+     "text": 307,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 20,
+     "text": 59,
+     "libcalls": []
+    },
+    "11_long_long.c": {
+     "instructions": 46,
+     "text": 146,
+     "libcalls": [
+      "__divdi3"
+     ]
+    },
+    "12_float.c": {
+     "instructions": 32,
+     "text": 109,
+     "libcalls": []
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 40,
+     "text": 165,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 24,
+     "text": 103,
+     "libcalls": []
+    }
+   }
+  },
+  {
+   "name": "x86-64",
+   "triple": "x86_64-linux-gnu",
+   "flags": [],
+   "desc": "64-bit x86 (host)",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "8",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "8",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 97,
+     "text": 389,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 96,
+     "text": 328,
+     "libcalls": []
+    },
+    "03_pointers.c": {
+     "instructions": 159,
+     "text": 644,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 45,
+     "text": 356,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 50,
+     "text": 229,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 20,
+     "text": 55,
+     "libcalls": []
+    },
+    "11_long_long.c": {
+     "instructions": 24,
+     "text": 73,
+     "libcalls": []
+    },
+    "12_float.c": {
+     "instructions": 15,
+     "text": 69,
+     "libcalls": []
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 27,
+     "text": 99,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 17,
+     "text": 79,
+     "libcalls": []
+    }
+   }
+  },
+  {
+   "name": "aarch64",
+   "triple": "aarch64-linux-gnu",
+   "flags": [],
+   "desc": "64-bit Arm",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "8",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "8",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 85,
+     "text": 332,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 89,
+     "text": 344,
+     "libcalls": []
+    },
+    "03_pointers.c": {
+     "instructions": 137,
+     "text": 532,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 59,
+     "text": 352,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 57,
+     "text": 220,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 13,
+     "text": 36,
+     "libcalls": []
+    },
+    "11_long_long.c": {
+     "instructions": 12,
+     "text": 32,
+     "libcalls": []
+    },
+    "12_float.c": {
+     "instructions": 15,
+     "text": 40,
+     "libcalls": []
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 26,
+     "text": 80,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 25,
+     "text": 92,
+     "libcalls": []
+    }
+   }
+  },
+  {
+   "name": "mips32",
+   "triple": "mips-linux-gnu",
+   "flags": [],
+   "desc": "32-bit MIPS, big endian",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "4",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "big"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 150,
+     "text": 636,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 130,
+     "text": 528,
+     "libcalls": []
+    },
+    "03_pointers.c": {
+     "instructions": 156,
+     "text": 632,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 121,
+     "text": 520,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 89,
+     "text": 396,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 18,
+     "text": 104,
+     "libcalls": []
+    },
+    "11_long_long.c": {
+     "instructions": 38,
+     "text": 184,
+     "libcalls": [
+      "__divdi3"
+     ]
+    },
+    "12_float.c": {
+     "instructions": 17,
+     "text": 96,
+     "libcalls": []
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 35,
+     "text": 164,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 39,
+     "text": 184,
+     "libcalls": []
+    }
+   }
+  },
+  {
+   "name": "m68k",
+   "triple": "m68k-linux-gnu",
+   "flags": [],
+   "desc": "Motorola 68000 family",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "4",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "big"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 99,
+     "text": 398,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 125,
+     "text": 474,
+     "libcalls": [
+      "__modsi3",
+      "__mulsi3",
+      "__umodsi3"
+     ]
+    },
+    "03_pointers.c": {
+     "instructions": 138,
+     "text": 548,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 66,
+     "text": 388,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 55,
+     "text": 246,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 28,
+     "text": 88,
+     "libcalls": [
+      "__divsi3",
+      "__modsi3",
+      "__mulsi3",
+      "__udivsi3"
+     ]
+    },
+    "11_long_long.c": {
+     "instructions": 57,
+     "text": 192,
+     "libcalls": [
+      "__divdi3",
+      "__muldi3"
+     ]
+    },
+    "12_float.c": {
+     "instructions": 35,
+     "text": 110,
+     "libcalls": [
+      "__addsf3",
+      "__divdf3",
+      "__fixsfsi",
+      "__floatsidf",
+      "__mulsf3"
+     ]
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 47,
+     "text": 136,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 33,
+     "text": 122,
+     "libcalls": [
+      "__atomic_fetch_add_4",
+      "__atomic_load_4"
+     ]
+    }
+   }
+  },
+  {
+   "name": "sparc",
+   "triple": "sparc-linux-gnu",
+   "flags": [],
+   "desc": "32-bit SPARC, big endian, register windows",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "4",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "big"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 94,
+     "text": 360,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 129,
+     "text": 468,
+     "libcalls": []
+    },
+    "03_pointers.c": {
+     "instructions": 132,
+     "text": 480,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 120,
+     "text": 456,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 72,
+     "text": 272,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 25,
+     "text": 68,
+     "libcalls": []
+    },
+    "11_long_long.c": {
+     "instructions": 36,
+     "text": 112,
+     "libcalls": [
+      "__ashldi3",
+      "__divdi3"
+     ]
+    },
+    "12_float.c": {
+     "instructions": 52,
+     "text": 152,
+     "libcalls": []
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 100,
+     "text": 352,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 45,
+     "text": 152,
+     "libcalls": [
+      "__atomic_fetch_add_4",
+      "__atomic_load_4"
+     ]
+    }
+   }
+  },
+  {
+   "name": "wasm32",
+   "triple": "wasm32",
+   "flags": [],
+   "desc": "WebAssembly: a virtual ISA, not a CPU",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "4",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "4",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 121,
+     "text": 358,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "instructions": 163,
+     "text": 363,
+     "libcalls": []
+    },
+    "03_pointers.c": {
+     "instructions": 333,
+     "text": 756,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 98,
+     "text": 409,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 79,
+     "text": 240,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "instructions": 20,
+     "text": 33,
+     "libcalls": []
+    },
+    "11_long_long.c": {
+     "instructions": 21,
+     "text": 34,
+     "libcalls": []
+    },
+    "12_float.c": {
+     "instructions": 32,
+     "text": 59,
+     "libcalls": []
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 35,
+     "text": 72,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "instructions": 36,
+     "text": 92,
+     "libcalls": []
+    }
+   }
+  },
+  {
+   "name": "nvptx64",
+   "triple": "nvptx64-nvidia-cuda",
+   "flags": [],
+   "desc": "NVIDIA PTX: GPU virtual ISA",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "8",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "8",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 411,
+     "note": "object emission not supported; assembly only"
+    },
+    "02_loops.c": {
+     "instructions": 202,
+     "note": "object emission not supported; assembly only"
+    },
+    "03_pointers.c": {
+     "instructions": 390,
+     "note": "object emission not supported; assembly only"
+    },
+    "04_globals.c": {
+     "instructions": 145,
+     "note": "object emission not supported; assembly only"
+    },
+    "05_logic.c": {
+     "instructions": 209,
+     "note": "object emission not supported; assembly only"
+    },
+    "10_mul_div.c": {
+     "instructions": 32,
+     "note": "object emission not supported; assembly only"
+    },
+    "11_long_long.c": {
+     "instructions": 41,
+     "note": "object emission not supported; assembly only"
+    },
+    "12_float.c": {
+     "instructions": 38,
+     "note": "object emission not supported; assembly only"
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 102,
+     "note": "object emission not supported; assembly only"
+    },
+    "14_volatile_atomic.c": {
+     "error": "error in backend: Cannot select: i32,ch = AtomicLoad<(dereferenceable load acquire (s32) from @counter, addrsp..."
+    }
+   }
+  },
+  {
+   "name": "bpf",
+   "triple": "bpf",
+   "flags": [],
+   "desc": "Linux eBPF: deliberately restricted",
+   "macros": {
+    "__CHAR_BIT__": "8",
+    "__SIZEOF_SHORT__": "2",
+    "__SIZEOF_INT__": "4",
+    "__SIZEOF_LONG__": "8",
+    "__SIZEOF_LONG_LONG__": "8",
+    "__SIZEOF_POINTER__": "8",
+    "__SIZEOF_FLOAT__": "4",
+    "__SIZEOF_DOUBLE__": "8",
+    "__BYTE_ORDER__": "little"
+   },
+   "programs": {
+    "01_fib.c": {
+     "instructions": 95,
+     "text": 736,
+     "libcalls": []
+    },
+    "02_loops.c": {
+     "error": "unsupported signed division, please convert to unsigned div/mod."
+    },
+    "03_pointers.c": {
+     "instructions": 132,
+     "text": 984,
+     "libcalls": []
+    },
+    "04_globals.c": {
+     "instructions": 94,
+     "text": 760,
+     "libcalls": []
+    },
+    "05_logic.c": {
+     "instructions": 53,
+     "text": 424,
+     "libcalls": []
+    },
+    "10_mul_div.c": {
+     "error": "unsupported signed division, please convert to unsigned div/mod."
+    },
+    "11_long_long.c": {
+     "error": "unsupported signed division, please convert to unsigned div/mod."
+    },
+    "12_float.c": {
+     "error": "A call to built-in function '__addsf3' is not supported."
+    },
+    "13_funcptr_switch.c": {
+     "instructions": 65,
+     "text": 496,
+     "libcalls": []
+    },
+    "14_volatile_atomic.c": {
+     "error": "error in backend: Invalid usage of the XADD return value"
+    }
+   }
+  }
+ ]
+}

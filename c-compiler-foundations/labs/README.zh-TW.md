@@ -5,7 +5,7 @@
 | 目錄 | 回答的問題 | 入口 |
 | --- | --- | --- |
 | `tinyc/` | 編譯器內部長什麼樣；同一個前端如何接上 RV32 與 x86-64 兩個後端；不同編譯器與處理器為何得到相同結果 | [tinyc/README.md](tinyc/README.md)（英文技術說明） |
-| `probe/` | 一個 C 實作對標準留白的地方做了什麼決定；如何有系統地評估一顆處理器 | [probe/checklist.zh-TW.md](probe/checklist.zh-TW.md) |
+| `probe/` | 一個 C 實作對標準留白的地方做了什麼決定；如何有系統地評估一顆處理器；同一組程式在 19 種目標上的大小與硬體缺口 | [probe/checklist.zh-TW.md](probe/checklist.zh-TW.md)、[compare_targets.py](probe/compare_targets.py) |
 
 ## 五分鐘開始
 
@@ -33,6 +33,12 @@ cc -std=c11 probe.c -o probe && ./probe
 ```
 
 把輸出貼進 [評估清單](probe/checklist.zh-TW.md) 的對應欄位。若手上有交叉編譯器與模擬器，用同一個檔案對目標處理器再跑一次，兩份輸出的差異就是你要在程式中處理的可攜性邊界。
+
+```sh
+python3 compare_targets.py --targets avr,cortex-m0,rv32i,rv32im,x86-64
+```
+
+`compare_targets.py` 不需要交叉函式庫或硬體：它用 clang 內建後端把 `tinyc/examples/` 與 `probe/features/` 的程式編成目的檔，列出每個目標的 `int`／指標大小、`.text` 大小，以及硬體沒有而必須呼叫函式庫的運算。本環境 19 個目標的完整輸出在 [results/](probe/results/)，解讀見 [06 實測](../research/06-target-comparison.zh-TW.md)。
 
 ## 讀程式碼的順序
 

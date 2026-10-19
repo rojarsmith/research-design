@@ -31,6 +31,10 @@
 | GCC C Tests（torture 測試），https://gcc.gnu.org/onlinedocs/gccint/C-Tests.html | 後端正確性測試方法 | |
 | Chris Lattner, "LLVM" in *The Architecture of Open Source Applications*, https://aosabook.org/en/v1/llvm.html | LLVM 的設計理念、以 IR 為中心、2000 年起源 | |
 | LLVM 官方網站與文件，https://llvm.org/ | 版本與後端清單；`clang -print-targets` 可列出本機支援目標 | 本主題實測使用 Ubuntu clang 18.1.3 |
+| compiler-rt builtins，https://compiler-rt.llvm.org/ ；GCC libgcc，https://gcc.gnu.org/onlinedocs/gccint/Libgcc.html | `__mulsi3`、`__divdi3`、`__addsf3` 等執行期函式的定義 | 06 中未定義符號的對照表 |
+| Arm Run-time ABI（RTABI），https://github.com/ARM-software/abi-aa | `__aeabi_idiv`、`__aeabi_fadd` 等 Arm 專用名稱 | |
+| TI MSP430 EABI | `__mspabi_*` 名稱 | 廠商文件 |
+| Linux eBPF 文件，https://docs.kernel.org/bpf/ | BPF 執行模型的刻意限制 | 解釋 06 中的編譯失敗 |
 | Rui Ueyama, chibicc，https://github.com/rui314/chibicc | 逐 commit 建立 C 編譯器的教學實作 | tinyc 的結構受其影響 |
 | Fabrice Bellard, TCC，https://bellard.org/tcc/ | 單遍 C 編譯器 | |
 | SDCC，https://sdcc.sourceforge.net/ | 8051、Z80、PIC、STM8 等架構的 C 支援與限制（靜態區域變數、遞迴限制） | |
@@ -66,6 +70,7 @@
 - 主機：Ubuntu 24.04，gcc 13.3.0，clang 18.1.3（含 riscv32 後端與整合組譯器），python3。
 - `labs/tinyc/run_tests.py`：五個範例在四條路徑（tinyc RV32 → rv32sim 並啟用 `--check-align`、主機 gcc 原生、tinyc x86-64 → 主機 `cc` 原生、clang -O2 riscv32 → rv32sim）輸出與結束碼一致。
 - `labs/probe/probe.c` 於主機的輸出：`CHAR_BIT 8`、LP64、小端序、`-1 >> 1` 為算術位移、`-7 / 2 == -3`。
+- `labs/probe/compare_targets.py`：以 clang 18.1.3 內建後端把 10 個程式編到 19 個目標，原始輸出存於 `labs/probe/results/clang-18.1.3-ubuntu-24.04.{md,json}`，解讀見 06。只到目的檔層，未執行。
 - 未能實測：真實 RISC-V 硬體或 QEMU 執行、`gcc -m32`（缺 32 位元標頭）、8051／AVR 工具鏈。相關敘述來自文件，標示於各篇。
 
 ## 查證邊界
