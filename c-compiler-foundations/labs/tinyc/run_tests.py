@@ -6,6 +6,11 @@
   path C: clang --target=riscv32 -O2 -S + runtime_rv32.s -> rv32sim.py
           (a production compiler targeting our toy machine; skipped when the
           installed clang has no riscv32 backend)
+  path D: tinyc.py --target x86_64 -> host assembler + runtime.c -> native binary
+          (our toy compiler targeting the real machine under your desk)
+
+Paths A and C run the simulator with --check-align, so a call made with a
+misaligned stack pointer is a failure even though the toy CPU would not care.
 
 Identical stdout and exit status for both paths is the observable meaning of
 "C is a portable contract": the source said what should happen, and two very
@@ -41,7 +46,7 @@ def main() -> int:
                 print(f"FAIL {name}: tinyc\n{comp.stderr}")
                 failures += 1
                 continue
-            sim = run([PY, os.path.join(HERE, "rv32sim.py"), asm, "--stats"])
+            sim = run([PY, os.path.join(HERE, "rv32sim.py"), asm, "--stats", "--check-align"])
             if cc is None:
                 print(f"SIM  {name}: exit {sim.returncode}  {sim.stderr.strip()}")
                 print(sim.stdout, end="")
@@ -64,6 +69,21 @@ def main() -> int:
                 print("  host:", repr(host.stdout))
                 if sim.stderr:
                     print("  ", sim.stderr.strip())
+            # path D: our compiler, the host's CPU
+            xasm = os.path.join(tmp, name[:-2] + "_x86.s")
+            xc = run([PY, os.path.join(HERE, "tinyc.py"), src, "--target", "x86_64", "-o", xasm])
+            xexe = os.path.join(tmp, name[:-2] + "_x86")
+            xb = run([cc, xasm, os.path.join(HERE, "runtime.c"), "-o", xexe]) if not xc.returncode else xc
+            if xb.returncode:
+                print(f"FAIL {name}: tinyc x86_64\n{(xc.stderr or xb.stderr)}")
+                failures += 1
+            else:
+                xr = run([xexe])
+                same = (xr.stdout, xr.returncode) == (host.stdout, host.returncode)
+                failures += not same
+                print(f"{'PASS' if same else 'FAIL'} {name:16} tinyc x86_64 native: exit {xr.returncode}")
+                if not same:
+                    print("  x86 :", repr(xr.stdout))
             if clang is None:
                 continue
             casm = os.path.join(tmp, name[:-2] + "_clang.s")
@@ -76,7 +96,7 @@ def main() -> int:
                 continue
             with open(casm, "a") as fh, open(os.path.join(HERE, "runtime_rv32.s")) as rt:
                 fh.write(rt.read())
-            csim = run([PY, os.path.join(HERE, "rv32sim.py"), casm, "--stats"])
+            csim = run([PY, os.path.join(HERE, "rv32sim.py"), casm, "--stats", "--check-align"])
             same = (csim.stdout, csim.returncode) == (host.stdout, host.returncode)
             failures += not same
             stats = csim.stderr.strip().replace("[rv32sim] ", "")

@@ -47,12 +47,14 @@
 | AST | `python3 tinyc.py examples/01_fib.c --ast` | 語法結構，`a[i]` 已變成 `*(a + i)` |
 | RV32 組合語言（笨版） | `python3 tinyc.py examples/01_fib.c` | 每個運算都經過堆疊的直譯式生碼 |
 | RV32 組合語言（工業級） | `clang --target=riscv32 -march=rv32im -mabi=ilp32 -O2 -S examples/01_fib.c` | 相同 ABI 下，最佳化後的暫存器使用 |
-| x86-64 組合語言 | `gcc -O2 -S examples/01_fib.c` | 不同 ISA 與 ABI 下的同一個程式 |
+| x86-64 組合語言（tinyc） | `python3 tinyc.py examples/01_fib.c --target x86_64` | 同一棵語法樹、同一個生碼策略，換一個 `Machine` 後端 |
+| x86-64 組合語言（工業級） | `gcc -O2 -S examples/01_fib.c` | 不同 ISA 與 ABI 下、最佳化後的同一個程式 |
+| 原生執行 tinyc 的輸出 | `cc fib_x86.s runtime.c -o fib_x86 && ./fib_x86` | 玩具編譯器的程式碼在真實處理器、真實 ABI、真實 libc 旁執行 |
 | 機器碼 | `clang --target=riscv32 -march=rv32im -c out.s && llvm-objdump -d out.o` | 組譯器把文字變成位元 |
 | 執行 | `python3 rv32sim.py out.s --stats` | ISA 層的語意：指令數、堆疊深度、結束碼 |
-| 差分驗證 | `python3 run_tests.py` | 三條路徑（tinyc、clang、主機 gcc）輸出一致 |
+| 差分驗證 | `python3 run_tests.py` | 四條路徑（tinyc→RV32 模擬器、主機 gcc、tinyc→x86-64 原生、clang→RV32 模擬器）輸出一致 |
 
-`run_tests.py` 的結果是本主題最重要的一個觀察：同一份 C 原始碼經過三種完全不同的編譯器與兩種處理器，輸出與結束碼完全相同。這就是 C 標準這份契約的可觀察內容。
+`run_tests.py` 的結果是本主題最重要的一個觀察：同一份 C 原始碼經過三種完全不同的編譯器與兩種處理器、四種組合，輸出與結束碼完全相同。這就是 C 標準這份契約的可觀察內容。
 
 ## 學習路線：以可驗證的里程碑推進
 
@@ -68,15 +70,15 @@
 - 做：加入 `char` 型別與 `lb`／`sb` 指令，或加入 `while` 內的 `break`。改完後 `run_tests.py` 必須仍全綠，並新增一個範例。
 - 說：這個功能在詞法、語法、語意、生碼各階段分別需要改什麼。
 
-### 第 3 關：讓 tinyc 遵守完整的 psABI 細節（2 天）
+### 第 3 關：並排讀兩個後端，親手弄壞 ABI（2 天）
 
-- 做：修正巢狀呼叫時 `sp` 未保持 16 位元組對齊的問題；用 `clang -c` 組譯、`llvm-objdump` 檢查。
-- 說：ABI 為什麼要規定對齊；違反它在真實硬體上會出什麼事（例如使用 SIMD 載入的函式庫）。
+- 做：讀 `tinyc.py` 中的 `RV32` 與 `X86_64` 類別，自己整理一張差異表後再對照 [tinyc README](../labs/tinyc/README.md) 的表。接著拿掉 `aligned_call` 的補齊，跑 `run_tests.py`，觀察 `--check-align` 的路徑 A 失敗，以及路徑 D 是否在 `printf` 內當掉。
+- 說：兩個後端之間哪些程式碼可以共用、哪些不能；ABI 為什麼要規定對齊；為什麼同樣的錯在模擬器上無感、在真實 libc 旁邊會當。
 
-### 第 4 關：換一顆「處理器」（3 至 5 天）
+### 第 4 關：換一顆「更弱的處理器」（3 至 5 天）
 
-- 做：為 tinyc 寫第二個後端，目標是 x86-64 的子集（用主機 `as` 組譯與執行）或 ARMv7-M（用 QEMU）。只需支援五個範例。
-- 說：兩個後端之間哪些程式碼可以共用、哪些不能；這就是前後端分離的理由。
+- 做：為 tinyc 加第三個後端 RV32I（無 M 擴充），把乘除改成呼叫 `__mulsi3`、`__divsi3`、`__modsi3`，在 `runtime_rv32.s` 用移位與加法實作，再比較指令數。有 QEMU 時可改做 ARMv7-M。
+- 說：這就是 [03](03-processor-c-readiness.zh-TW.md) 中「可以但有代價」的具體樣貌；代價來自哪些指令。
 
 ### 第 5 關：用真實工具鏈評估一顆真實處理器（1 至 2 天）
 
