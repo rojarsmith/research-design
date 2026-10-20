@@ -27,6 +27,7 @@
 | 網路交友與婚育規劃 | 高雄與跨國認識管道、平台限制、自介與30天行動、來源與研究紀錄 | [English overview](marriage-and-dating/README.md) | [完整研究](marriage-and-dating/README.zh-TW.md) |
 | 機車事故證據與求償 | 對向機車左轉、閃避摔車個案的證據保全、警方資料、醫療、機車修復與求償程序 | [研究目錄](motorcycle-accident-research/README.zh-TW.md) | [個案行動指南](motorcycle-accident-research/README.zh-TW.md) |
 | C 語言、編譯器與處理器 | C 的起源、編譯器的建構與自舉、一天內的處理器 C 支援評估流程、契約堆疊學習路線，以及可執行的 C 子集編譯器與 RV32IM 模擬器 | [English overview](c-compiler-foundations/README.md) | [完整研究](c-compiler-foundations/README.zh-TW.md) |
+| 歐洲 OTA Server 銷售與 CRA | OTA 服務市場進入、CRA 產品邊界與自我評估、ETSI EN 303 645 測試層級、成本模型及客戶信任證據 | [English overview](eu-ota-cra-sales-research/README.md) | [完整研究](eu-ota-cra-sales-research/README.zh-TW.md) |
 
 ## 主要文件
 
@@ -62,6 +63,7 @@
 | `computer-graphics-practice/` | 雙語電腦圖形學實作課程與可執行瀏覽器實驗 |
 | `motorcycle-accident-research/` | 機車事故個案行動指南、六篇參考文章摘要與查核、官方程序與證據清單 |
 | `c-compiler-foundations/` | C 語言與編譯器起源、處理器 C 支援評估、tinyc 編譯器、RV32IM 模擬器與探針實作 |
+| `eu-ota-cra-sales-research/` | 歐洲 OTA 服務銷售、CRA 範圍與評估路徑、ETSI 基線和測試成本、供應商信任方案 |
 
 ## 閱讀與語言慣例
 
