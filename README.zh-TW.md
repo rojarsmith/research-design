@@ -8,6 +8,7 @@
 
 | 主題 | 範圍 | 英文 | 繁體中文 |
 | --- | --- | --- | --- |
+| RAD 快速應用開發工具研發 | 十類領域、原型至成熟平台的工程難度、人力、工期、預算、維護與驗收門檻 | [English overview](rad-tools-research/README.md) | [完整研究](rad-tools-research/README.zh-TW.md) |
 | 動態語言從 0 到 1 | Python、Node.js 與 Lua 的誕生順序、移植性與執行環境六層評估、自製動態語言九階段路線與可執行直譯器範例 | [English overview](dynamic-language-design-research/README.md) | [完整研究](dynamic-language-design-research/README.zh-TW.md) |
 | AI 與 Git 團隊協作研發 | 跨部門交付、分支保留與刪除、AI 分工、PR 審查、CI 及發布流程 | [English overview](ai-team-development-research/README.md) | [完整研究](ai-team-development-research/README.zh-TW.md) |
 | 存讀檔與版本相容性 | 大型軟體與遊戲的存檔架構、資料與內容遷移、安全提交及驗證 | [English overview](save-load-compatibility-research/README.md) | [完整研究](save-load-compatibility-research/README.zh-TW.md) |
@@ -46,6 +47,7 @@
 
 | 目錄 | 內容 |
 | --- | --- |
+| `rad-tools-research/` | RAD 工具領域與產品規模比較、研發資源與預算模型、架構、驗收路線及官方來源 |
 | `dynamic-language-design-research/` | 動態語言誕生史、移植性評估、自製語言路線圖、來源與 minilang 單檔直譯器範例 |
 | `save-load-compatibility-research/` | 存讀檔架構、公開實作、遷移範例、相容性情境與官方來源 |
 | `iam-research/` | IAM 比較、Keycloak 整合與營運、來源索引、現況盤點及獨立本地實驗環境 |
