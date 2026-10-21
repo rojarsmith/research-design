@@ -8,6 +8,7 @@
 
 | 主題 | 範圍 | 英文 | 繁體中文 |
 | --- | --- | --- | --- |
+| 華凌智慧顯示器 | CANopen、自訂 CAN、RS485／Modbus、UART、GUI Builder 版本、容量與整合限制 | [English overview](winstar-smart-display-research/README.md) | [完整研究](winstar-smart-display-research/README.zh-TW.md) |
 | WebAssembly 研究 | 執行模型、Emscripten 移植、Claire Chang 文章查核、JavaScript 整合、效能、部署、安全與 WASI 元件 | [English overview](webassembly-research/README.md) | [完整研究](webassembly-research/README.zh-TW.md) |
 | RAD 快速應用開發工具研發 | 十類領域、原型至成熟平台的工程難度、人力、工期、預算、維護與驗收門檻 | [English overview](rad-tools-research/README.md) | [完整研究](rad-tools-research/README.zh-TW.md) |
 | MSIX 檔案與 Windows 封裝 | 套件身分、工具、簽章、部署更新、相容性與指定教學校正 | [English overview](msix-research/README.md) | [完整研究](msix-research/README.zh-TW.md) |
@@ -49,6 +50,8 @@
 
 | 目錄 | 內容 |
 | --- | --- |
+| `winstar-smart-display-research/` | 智慧顯示器系列、代表型號、GUI Builder 限制、整合與來源差異 |
+| `msix-research/` | MSIX 封裝、簽章、部署、更新與教學校正 |
 | `webassembly-research/` | Wasm 原理、C/C++ 建置指南、部署與採用評估、文章導讀與查證限制 |
 | `rad-tools-research/` | RAD 工具領域與產品規模比較、研發資源與預算模型、架構、驗收路線及官方來源 |
 | `dynamic-language-design-research/` | 動態語言誕生史、移植性評估、自製語言路線圖、來源與 minilang 單檔直譯器範例 |

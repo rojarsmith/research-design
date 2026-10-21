@@ -8,6 +8,7 @@ Engineering research, feasibility studies, architecture proposals for software p
 
 | Topic | Scope | English | Traditional Chinese |
 | --- | --- | --- | --- |
+| Winstar smart displays | CANopen, custom CAN, RS485/Modbus, UART, GUI Builder versions, module capacity and integration constraints | [English overview](winstar-smart-display-research/README.md) | [完整研究](winstar-smart-display-research/README.zh-TW.md) |
 | WebAssembly | Execution model, Emscripten migration, Claire Chang article review, JavaScript integration, performance, deployment, security and WASI components | [English overview](webassembly-research/README.md) | [完整研究](webassembly-research/README.zh-TW.md) |
 | RAD tool development | Ten domains, prototype-to-platform scope, engineering difficulty, staffing, schedule, budgets, maintenance and validation gates | [English overview](rad-tools-research/README.md) | [完整研究](rad-tools-research/README.zh-TW.md) |
 | MSIX files and Windows packaging | Package identity, packaging tools, signing, distribution, updates and compatibility | [English overview](msix-research/README.md) | [完整研究](msix-research/README.zh-TW.md) |
@@ -49,6 +50,8 @@ New topic: [LOXJIE A40 USB audio fault research](loxjie-a40-usb-research/README.
 
 | Directory | Contents |
 | --- | --- |
+| `winstar-smart-display-research/` | Smart display portfolio, representative modules, GUI Builder limits, integration and source discrepancies |
+| `msix-research/` | MSIX packaging, signing, distribution, updates and tutorial review |
 | `webassembly-research/` | Wasm fundamentals, C/C++ build guide, deployment and adoption evaluation, annotated articles and verification limits |
 | `rad-tools-research/` | RAD tool domains, product maturity, development resource models, architecture, validation gates and primary sources |
 | `dynamic-language-design-research/` | Dynamic language origins, portability evaluation, language design roadmap, sources, and the minilang single-file interpreter example |
