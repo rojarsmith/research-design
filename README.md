@@ -8,6 +8,7 @@ Engineering research, feasibility studies, architecture proposals for software p
 
 | Topic | Scope | English | Traditional Chinese |
 | --- | --- | --- | --- |
+| WebAssembly | Execution model, Emscripten migration, Claire Chang article review, JavaScript integration, performance, deployment, security and WASI components | [English overview](webassembly-research/README.md) | [完整研究](webassembly-research/README.zh-TW.md) |
 | RAD tool development | Ten domains, prototype-to-platform scope, engineering difficulty, staffing, schedule, budgets, maintenance and validation gates | [English overview](rad-tools-research/README.md) | [完整研究](rad-tools-research/README.zh-TW.md) |
 | Dynamic languages from zero | How Python, Node.js and Lua came to be, a six-layer portability and runtime evaluation, a nine-stage roadmap for designing a dynamic language, and a runnable interpreter example | [English overview](dynamic-language-design-research/README.md) | [完整研究](dynamic-language-design-research/README.zh-TW.md) |
 | AI assisted team development | Cross-functional delivery, Git branch lifecycle, AI task boundaries, PR review, CI and releases | [English overview](ai-team-development-research/README.md) | [完整研究](ai-team-development-research/README.zh-TW.md) |
@@ -47,6 +48,7 @@ New topic: [LOXJIE A40 USB audio fault research](loxjie-a40-usb-research/README.
 
 | Directory | Contents |
 | --- | --- |
+| `webassembly-research/` | Wasm fundamentals, C/C++ build guide, deployment and adoption evaluation, annotated articles and verification limits |
 | `rad-tools-research/` | RAD tool domains, product maturity, development resource models, architecture, validation gates and primary sources |
 | `dynamic-language-design-research/` | Dynamic language origins, portability evaluation, language design roadmap, sources, and the minilang single-file interpreter example |
 | `save-load-compatibility-research/` | Save/load architecture, public implementations, migration examples, compatibility scenarios and primary sources |
