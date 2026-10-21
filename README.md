@@ -8,6 +8,8 @@ Engineering research, feasibility studies, architecture proposals for software p
 
 | Topic | Scope | English | Traditional Chinese |
 | --- | --- | --- | --- |
+| `webassembly-research/` | Wasm fundamentals, C/C++ build guide, deployment and adoption evaluation, annotated articles and verification limits |
+| WebAssembly | Execution model, Emscripten migration, Claire Chang article review, JavaScript integration, performance, deployment, security and WASI components | [English overview](webassembly-research/README.md) | [完整研究](webassembly-research/README.zh-TW.md) |
 | Dynamic languages from zero | How Python, Node.js and Lua came to be, a six-layer portability and runtime evaluation, a nine-stage roadmap for designing a dynamic language, and a runnable interpreter example | [English overview](dynamic-language-design-research/README.md) | [完整研究](dynamic-language-design-research/README.zh-TW.md) |
 | AI assisted team development | Cross-functional delivery, Git branch lifecycle, AI task boundaries, PR review, CI and releases | [English overview](ai-team-development-research/README.md) | [完整研究](ai-team-development-research/README.zh-TW.md) |
 | Save and load compatibility | Large application and game save architecture, schema evolution, content migration, safe commits and verification | [English overview](save-load-compatibility-research/README.md) | [完整研究](save-load-compatibility-research/README.zh-TW.md) |
