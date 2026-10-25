@@ -8,6 +8,7 @@
 
 | 主題 | 範圍 | 英文 | 繁體中文 |
 | --- | --- | --- | --- |
+| Codex 桌面版與 Claude API key | 直接登入限制、模型閘道、Responses 相容性與 Windows 驗證方向 | [English overview](codex-claude-api-research/README.md) | [完整研究](codex-claude-api-research/README.zh-TW.md) |
 | Computex AI 產品影片 | Claude 經 MCP 指揮雲端影音製作、英文與繁體中文字幕、50 吋 4K／1080p、分鏡、預算及展場驗收 | [English overview](computex-ai-product-video-research/README.md) | [完整規劃](computex-ai-product-video-research/README.zh-TW.md) |
 | 華凌智慧顯示器 | CANopen、自訂 CAN、RS485／Modbus、UART、GUI Builder 版本、容量與整合限制 | [English overview](winstar-smart-display-research/README.md) | [完整研究](winstar-smart-display-research/README.zh-TW.md) |
 | WebAssembly 研究 | 執行模型、Emscripten 移植、Claire Chang 文章查核、JavaScript 整合、效能、部署、安全與 WASI 元件 | [English overview](webassembly-research/README.md) | [完整研究](webassembly-research/README.zh-TW.md) |
