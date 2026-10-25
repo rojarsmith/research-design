@@ -8,6 +8,7 @@
 
 | 主題 | 範圍 | 英文 | 繁體中文 |
 | --- | --- | --- | --- |
+| Computex AI 產品影片 | Claude 經 MCP 指揮雲端影音製作、英文與繁體中文字幕、50 吋 4K／1080p、分鏡、預算及展場驗收 | [English overview](computex-ai-product-video-research/README.md) | [完整規劃](computex-ai-product-video-research/README.zh-TW.md) |
 | 華凌智慧顯示器 | CANopen、自訂 CAN、RS485／Modbus、UART、GUI Builder 版本、容量與整合限制 | [English overview](winstar-smart-display-research/README.md) | [完整研究](winstar-smart-display-research/README.zh-TW.md) |
 | WebAssembly 研究 | 執行模型、Emscripten 移植、Claire Chang 文章查核、JavaScript 整合、效能、部署、安全與 WASI 元件 | [English overview](webassembly-research/README.md) | [完整研究](webassembly-research/README.zh-TW.md) |
 | RAD 快速應用開發工具研發 | 十類領域、原型至成熟平台的工程難度、人力、工期、預算、維護與驗收門檻 | [English overview](rad-tools-research/README.md) | [完整研究](rad-tools-research/README.zh-TW.md) |

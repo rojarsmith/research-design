@@ -1,0 +1,80 @@
+{
+  "schema_version": "planning-example-1",
+  "purpose": "Vendor-neutral production brief; not a render API payload",
+  "status": "planning_not_connected_not_rendered",
+  "research_date": "2026-10-25",
+  "project": "EDT HMI Studio Computex product video",
+  "director": "Claude via MCP",
+  "event": {
+    "year": 2027,
+    "year_confirmed_by_user": false,
+    "provisional_start_date": "2027-06-01",
+    "booth": null
+  },
+  "display": {
+    "diagonal_inches_approx": 50,
+    "orientation": "landscape_assumed",
+    "aspect_ratio": "16:9",
+    "fps": 30,
+    "resolutions": [[3840, 2160], [1920, 1080]],
+    "color": "SDR Rec.709"
+  },
+  "languages": {
+    "simultaneous_captions": ["en", "zh-TW"],
+    "voice": "en",
+    "voice_confirmed_by_user": false
+  },
+  "budget": {
+    "currency": "TWD",
+    "approved_total": null,
+    "approved_platform_credits": null,
+    "paid_execution_ready": false,
+    "max_repair_attempts_per_step": 2
+  },
+  "services": {
+    "compositor_candidate": "Creatomate",
+    "compositor_fallback": "Shotstack",
+    "audio_candidate": "ElevenLabs",
+    "optional_generated_footage": "Runway",
+    "music": "pending_company_license_review",
+    "connected_project_id": null,
+    "template_id": null
+  },
+  "assets": [
+    {
+      "id": "A01",
+      "source_filename": "EDT HMI Studio 0.8.4.dev - EVK043027B Smart Washer.mp4",
+      "media_inspected": false,
+      "approved_for_upload": false,
+      "approved_for_public_use": false,
+      "platform_asset_id": null,
+      "source_url": null,
+      "sha256": null
+    }
+  ],
+  "scenes": [
+    {"id": "S01", "start_seconds": 0, "duration_seconds": 8, "claim_ids": ["C05"], "asset_id": null, "evidence_verified": false},
+    {"id": "S02", "start_seconds": 8, "duration_seconds": 11, "claim_ids": ["C01"], "asset_id": null, "evidence_verified": false},
+    {"id": "S03", "start_seconds": 19, "duration_seconds": 12, "claim_ids": ["C02"], "asset_id": null, "evidence_verified": false},
+    {"id": "S04", "start_seconds": 31, "duration_seconds": 12, "claim_ids": ["C03"], "asset_id": null, "evidence_verified": false},
+    {"id": "S05", "start_seconds": 43, "duration_seconds": 13, "claim_ids": ["C03"], "asset_id": null, "evidence_verified": false},
+    {"id": "S06", "start_seconds": 56, "duration_seconds": 11, "claim_ids": ["C04"], "asset_id": null, "evidence_verified": false},
+    {"id": "S07", "start_seconds": 67, "duration_seconds": 12, "claim_ids": ["C05"], "asset_id": null, "evidence_verified": false},
+    {"id": "S08", "start_seconds": 79, "duration_seconds": 11, "claim_ids": ["C06"], "asset_id": null, "evidence_verified": false}
+  ],
+  "cta": {"url": null, "qr_verified": false},
+  "deliverables": {
+    "durations_seconds": [90, 30],
+    "audio_variants": ["audio", "silent"],
+    "required_mp4_count": 8,
+    "additional_files": ["en.srt", "zh-TW.srt", "clean_version", "audio_stems", "editable_template", "rights_records", "checksums"]
+  },
+  "jobs": [],
+  "quality_checks": {
+    "pilot_passed": false,
+    "product_claims_passed": false,
+    "bilingual_review_passed": false,
+    "actual_50inch_display_passed": false,
+    "offline_loop_test_passed": false
+  }
+}

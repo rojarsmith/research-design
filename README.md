@@ -8,6 +8,7 @@ Engineering research, feasibility studies, architecture proposals for software p
 
 | Topic | Scope | English | Traditional Chinese |
 | --- | --- | --- | --- |
+| Computex AI product video | Claude-directed cloud production via MCP, bilingual captions, 50-inch 4K/1080p playback, storyboards, budget and acceptance | [English overview](computex-ai-product-video-research/README.md) | [完整規劃](computex-ai-product-video-research/README.zh-TW.md) |
 | Winstar smart displays | CANopen, custom CAN, RS485/Modbus, UART, GUI Builder versions, module capacity and integration constraints | [English overview](winstar-smart-display-research/README.md) | [完整研究](winstar-smart-display-research/README.zh-TW.md) |
 | WebAssembly | Execution model, Emscripten migration, Claire Chang article review, JavaScript integration, performance, deployment, security and WASI components | [English overview](webassembly-research/README.md) | [完整研究](webassembly-research/README.zh-TW.md) |
 | RAD tool development | Ten domains, prototype-to-platform scope, engineering difficulty, staffing, schedule, budgets, maintenance and validation gates | [English overview](rad-tools-research/README.md) | [完整研究](rad-tools-research/README.zh-TW.md) |
