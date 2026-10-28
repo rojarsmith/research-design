@@ -1,0 +1,18 @@
+import { chromium } from 'playwright';
+import path from 'node:path';
+const dir = path.resolve('profiles', '_smoke');
+let ctx = await chromium.launchPersistentContext(dir, { headless: true });
+let p = await ctx.newPage();
+await p.goto('https://example.com');
+await ctx.addCookies([{ name: 'fake_session', value: 'abc123', domain: 'example.com', path: '/', expires: Math.floor(Date.now()/1000)+86400 }]);
+await p.evaluate(() => localStorage.setItem('k', 'v'));
+await ctx.close();
+ctx = await chromium.launchPersistentContext(dir, { headless: true });
+p = await ctx.newPage();
+await p.goto('https://example.com');
+const c = (await ctx.cookies()).find(c => c.name === 'fake_session');
+const ls = await p.evaluate(() => localStorage.getItem('k'));
+const ua = await p.evaluate(() => navigator.userAgent);
+const wd = await p.evaluate(() => navigator.webdriver);
+console.log(JSON.stringify({ cookieSurvived: c?.value === 'abc123', localStorageSurvived: ls === 'v', ua, webdriver: wd, exe: chromium.executablePath() }));
+await ctx.close();

@@ -8,6 +8,7 @@ Engineering research, feasibility studies, architecture proposals for software p
 
 | Topic | Scope | English | Traditional Chinese |
 | --- | --- | --- | --- |
+| Job-search AI tools on GitHub | Top three by stars in the last three months (career-ops, ai-job-search, get_jobs), pros and cons, why none support an install-free Playwright browser with persisted login and 2FA, and a verified session-broker prototype | [English overview](job-search-ai-research/README.md) | [完整研究](job-search-ai-research/README.zh-TW.md) |
 | Codex desktop and Claude API keys | Direct sign-in limits, model gateways, Responses compatibility, and Windows validation | [English overview](codex-claude-api-research/README.md) | [完整研究](codex-claude-api-research/README.zh-TW.md) |
 | Computex AI product video | Claude-directed cloud production via MCP, bilingual captions, 50-inch 4K/1080p playback, storyboards, budget and acceptance | [English overview](computex-ai-product-video-research/README.md) | [完整規劃](computex-ai-product-video-research/README.zh-TW.md) |
 | Winstar smart displays | CANopen, custom CAN, RS485/Modbus, UART, GUI Builder versions, module capacity and integration constraints | [English overview](winstar-smart-display-research/README.md) | [完整研究](winstar-smart-display-research/README.zh-TW.md) |
