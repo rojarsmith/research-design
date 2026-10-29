@@ -194,6 +194,23 @@ Patchright 官方建議：真 Chrome 優於 Chromium、`launchPersistentContext`
 
 `wait_human` 的實作：把視窗移回 `--window-position=100,100`、在 CLI 印出原因與 URL、等 Enter、再驗證登入狀態、再把視窗移回原位。原型 `prototype/session-broker.mjs` 的 `login` 子命令就是這個流程。
 
+### 5.6 重用你已手動登入的可攜版 Chrome profile（2026-10-29 補充）
+
+顧慮：求職網站的登入方式越來越複雜（Google 帳號、Passkey、簡訊 OTP），自動化不該要求重新登入，也不該讓手動登入的狀態消失。
+
+結論：同一份 profile 加同一支 chrome.exe，登入狀態就全部保留。可攜版的狀態都在 `Data\profile\Default`，cookie 以 DPAPI 綁定 Windows 帳號加密，同機同使用者可解。實際查核：目前執行中的可攜版 Chrome 命令列為 `chrome.exe --user-data-dir="...\Data\profile"`，Patchright 只要用同樣的路徑即可。
+
+| 方式 | 做法 | 使用體驗 | 注意 |
+| --- | --- | --- | --- |
+| A. 直接開 | `launchPersistentContext('Data\profile', { executablePath: chrome.exe, ignoreDefaultArgs: ['--disable-extensions'] })` | 自動化期間不能同時手動使用，同一 profile 只能開一個實例 | 首次執行前備份 `Data\profile`；Patchright 預設會帶 `--disable-extensions`，需用 `ignoreDefaultArgs` 關掉 |
+| B. 接上執行中的 | 在 `GoogleChromePortable.ini` 加 `AdditionalParameters=--remote-debugging-port=9222`，Patchright 用 `connectOverCDP('http://127.0.0.1:9222')` | 你照常使用，自動化在同一視窗開分頁，2FA 跳出來當場處理 | Chrome 136 起只封鎖預設資料目錄的遠端除錯；可攜版明確傳 `--user-data-dir`，不受此限。9222 只綁 localhost |
+
+建議採 B 作為 S4 與 S5 的預設接法，A 作為無人在場時的備援。兩者都不需要手機門號或安卓裝置：簡訊 OTP、Passkey、Email 驗證只在新登入或網站要求重新驗證時出現，session 通常維持數週到數月，出現時由 `wait_human` 交給人處理。
+
+不要做的事：用兩個不同 profile 登入同一帳號，部分網站會踢掉舊 session；在 Chrome 執行中複製 profile，`Network\Cookies` 被獨佔鎖住，連磁碟區陰影複製也取不到。
+
+待驗證：需要關閉可攜版 Chrome（方式 A）或加參數重開（方式 B）後，以 cookie 網域數量確認登入態可被 Patchright 讀到。
+
 ### 5.5 速率與行為
 
 - 同站台兩次動作間隔隨機 2 到 6 秒，頁面間隔 8 到 20 秒。
