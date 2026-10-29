@@ -25,13 +25,18 @@ Research date: 2026-10-28. The full report is in [README.zh-TW.md](README.zh-TW.
 | Taiwan job boards | No | No | No |
 | License | MIT | MIT | PolyForm Noncommercial |
 
+## Design document
+
+[job-search-loop-design.zh-TW.md](job-search-loop-design.zh-TW.md) plans a nine-stage job-search loop with consistent SOP gates, merges the strengths of the three projects, and specifies a browser layer built on Patchright driving a portable Chrome binary. Verified on 2026-10-29: Patchright 1.64.2 with `App\Chrome-bin\chrome.exe` of Google Chrome Portable 153 reports `navigator.webdriver` false and keeps cookies across runs; pointing at the `GoogleChromePortable.exe` launcher fails because the launcher exits immediately.
+
 ## Prototype
 
 | Script | Purpose |
 | --- | --- |
 | `prototype/smoke.mjs` | Cookie and localStorage persistence test with the bundled Chromium |
 | `prototype/fingerprint.mjs` | Compares automation fingerprints of headless, headed and flag-suppressed launches |
-| `prototype/session-broker.mjs` | Login once by hand, reuse the profile; supports `--exe` for a portable Chrome |
+| `prototype/session-broker.mjs` | Login once by hand, reuse the profile; Patchright, defaults to the portable Chrome binary, `--exe` overrides |
+| `prototype/patchright-portable.mjs` | Patchright plus portable Chrome fingerprint and persistence test |
 
 ```bash
 cd prototype && npm install && npx playwright install chromium

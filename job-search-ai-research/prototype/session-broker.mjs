@@ -1,6 +1,6 @@
 // session-broker.mjs
 // Minimal "login once, reuse forever" session broker for job sites.
-// Uses Playwright's bundled Chromium (no installer, no admin rights) OR a
+// Uses Patchright (stealth Playwright fork) with a portable Chrome binary (no installer, no admin rights) OR a
 // portable Chrome via --exe, plus a dedicated persistent profile per site.
 //
 //   node session-broker.mjs login  <site> <url>   # headed; you finish 2FA by hand
@@ -8,7 +8,7 @@
 //   node session-broker.mjs export <site> <url>   # dump storageState json
 //
 // Options: --exe <path to portable chrome.exe>   --headless   --timeout <ms>
-import { chromium } from 'playwright';
+import { chromium } from 'patchright';
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
@@ -30,7 +30,11 @@ const launch = {
   viewport: null,
   args: ['--disable-blink-features=AutomationControlled'],
 };
-const exe = opt('--exe');
+// Default: portable Chrome. Point at App\Chrome-bin\chrome.exe, NOT the PortableApps
+// launcher GoogleChromePortable.exe (the launcher spawns Chrome and exits, so the
+// CDP pipe closes and launch fails).
+const DEFAULT_EXE = 'C:/my/build/toolchain/GoogleChromePortable64-auto/App/Chrome-bin/chrome.exe';
+const exe = opt('--exe', fs.existsSync(DEFAULT_EXE) ? DEFAULT_EXE : undefined);
 if (exe) launch.executablePath = exe;                         // portable Chrome, no install
 // Without --exe this uses the Chromium that `npx playwright install chromium`
 // dropped into %LOCALAPPDATA%\ms-playwright — also install-free.

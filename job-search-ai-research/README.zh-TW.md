@@ -6,6 +6,8 @@
 
 ## 1. 結論摘要
 
+> 2026-10-29 更新：新增 [求職迴圈工程設計](job-search-loop-design.zh-TW.md)，並實測 Patchright 1.64.2 驅動可攜版 Chrome 153 成功，見第 5 節。
+
 - **前三名都把「登入後的網站操作」排除在產品邊界之外。** career-ops 與 ai-job-search 的核心價值是「用你的 AI coding CLI 評分職缺、改履歷、寫求職信」，而不是幫你投遞。get_jobs 是唯一真正操作登入後網站的專案，但做法是微信掃碼而非帳密 2FA，且只支援中國大陸四大平台。
 - **你的觀察是對的，但原因不是 Playwright 做不到。** career-ops 的 apply 模式刻意規定「每次用 `chromium.launch` 開一個全新瀏覽器，禁止 connectOverCDP、禁止 user-data-dir、禁止 attach 到你已登入的瀏覽器」，而且視窗被移到螢幕外座標。這是產品安全政策，不是技術限制。ai-job-search 則完全沒有瀏覽器自動化。
 - **免安裝瀏覽器在技術上已經驗證可行。** 本目錄的 `prototype/` 用 Playwright 內建 Chromium（下載到使用者目錄，不需要安裝程式或管理員權限）配合獨立的持久化 profile，實測 cookie 與 localStorage 都能跨次重啟保留。2FA 只需在第一次 headed 登入時人工完成一次，之後重用 profile。
@@ -113,7 +115,8 @@ GitHub 不提供「某段期間的星數增量」API，因此採兩條線交叉�
 | --- | --- | --- |
 | `smoke.mjs` | 用 `launchPersistentContext` 寫入 cookie 與 localStorage，關閉後重開驗證 | cookie 與 localStorage 都保留 |
 | `fingerprint.mjs` | 比較三種啟動方式的自動化指紋 | 見下表 |
-| `session-broker.mjs` | 「登入一次，之後重用」的最小工作流 | 可指定 `--exe` 使用可攜版 Chrome |
+| `session-broker.mjs` | 「登入一次，之後重用」的最小工作流 | 已改用 Patchright，預設指向可攜版 Chrome 的 `App\Chrome-bin\chrome.exe`，可用 `--exe` 覆寫 |
+| `patchright-portable.mjs` | Patchright 加可攜版 Chrome 的指紋與持久化測試 | `navigator.webdriver` false、UA Chrome/153、無殘留鍵、cookie 保留；指向 `GoogleChromePortable.exe` 啟動器會因程序立即退出而失敗 |
 
 指紋比較：
 
