@@ -57,7 +57,7 @@
 | 方式 | 誰是法律上的賣方 | 稅務 | 費用（查核時） | 台灣主體能否用 |
 | --- | --- | --- | --- | --- |
 | Stripe（Billing＋Tax） | 你 | 你自己登記、申報；Stripe Tax 只計算 | 美國卡約 2.9% + 30¢，另計 Billing、Tax | 不支援台灣公司；需美國等支援國公司 |
-| Stripe Managed Payments | Stripe | Stripe 處理 80+ 國 | 官方文件未列，第三方報導約 3.5% 加在一般手續費上 | **否**。官方支援商家地區只有美加、歐洲多國、澳、港、日、新加坡；也不支援 Connect／Express 帳戶 |
+| Stripe Managed Payments | Stripe | Stripe 處理 80+ 國 | 官方產品頁：一般 Stripe 手續費再加 3.5%；Billing 與在地支付方式另計 | **否**。官方支援商家地區只有美加、歐洲多國、澳、港、日、新加坡；也不支援 Connect／Express 帳戶 |
 | Paddle | Paddle | Paddle 處理 | 5% + 50¢（多方來源一致） | 可用公司文件申請；個人資格與撥款方式需向 Paddle 確認 |
 | Lemon Squeezy | Lemon Squeezy | 代處理 | 5% + 50¢，國際卡另加 | 個人可申請；2024 年被 Stripe 收購，產品路線往 Managed Payments 靠攏，長期性要評估 |
 | Polar | Polar | 代處理 | Starter 5% + 50¢；Pro $20/月 3.8% + 40¢；國際卡 +1.5%；拒付每件 $15 | **可**。撥款走 Stripe Connect Express，官方列表含台灣 |
@@ -164,8 +164,73 @@
 | 企業員工離職（SCIM 停權） | 下次刷新 token 失敗，席位釋放 |
 | 登入使用系統瀏覽器、Passkey、企業 SSO | 都能回到 App 並取得權益 |
 
+## 七、案例：Typora 怎麼做
+
+Typora（Markdown 編輯器）屬於「MoR 收款＋自建簽章授權、沒有帳號系統」的組合。以下依 2026-11-03 對本機安裝目錄（1.14.10，Electron）的唯讀檢視與官方商店頁整理；未反組譯，也未分析或繞過驗證邏輯，標為「推測」的部分只根據檔案結構與字串判斷。
+
+### 觀察
+
+| 觀察 | 判讀 |
+| --- | --- |
+| 安裝檔中搜尋不到 Keygen、Cryptlex、LicenseSpring、Gumroad、Lemon Squeezy 等字串或網域；唯一的 `paddle` 是拼字字典單字 | 沒有使用現成授權服務 SDK |
+| 程式內的商店與啟用網域是 `store.typora.io`，中國另有 `typoraio.cn/store` | 啟用伺服器自建，中國市場另一套商店 |
+| 使用 `node-machine-id`，讀取 Windows `MachineGuid` | 以機器 ID 作指紋，配合裝置數上限 |
+| 程式含 `publicDecrypt`，原生模組 `main.node` 含 RSA 字串 | 推測：伺服器以私鑰簽發啟用資料，App 內建公鑰驗證 |
+| 主程式為 `atom.compiled.dist.jsc`（ByteNode 編譯的 V8 bytecode）＋原生模組 | 以編譯與原生模組提高逆向與竄改門檻 |
+| 官方商店：FastSpring 與 2Checkout（Verifone）寄送授權碼與發票 | 收款、稅務、退款交給 MoR |
+| 官方條款：$14.99 買斷、無到期日、同一使用者最多同時啟用 3 台、需同一 Email、可離線啟用、試用 15 天、30 天內可退款、不提供大量授權 | 授權規則刻意簡單 |
+| 授權畫面只顯示部分遮罩的 Email 與授權碼，並提供「Deactivate」 | 降低截圖外流風險；使用者可自行釋放裝置名額 |
+
+### 推測流程
+
+1. 使用者在 FastSpring 或 2Checkout 結帳，MoR 處理稅務、收據與退款。
+2. 授權碼由 MoR 付款時呼叫 Typora 伺服器即時產生，或由 Typora 預先產生一批交給 MoR 發送；兩家平台都支援，無法從客戶端判斷是哪一種。
+3. App 送出 Email、授權碼與機器指紋到 `store.typora.io`，伺服器檢查啟用台數，未超過 3 台就回傳簽章的啟用資料。
+4. App 以內建公鑰驗章後存於本機，之後啟動不一定需要連網；「Deactivate」通知伺服器釋放該台名額。
+
+### 對新創的意義
+
+- **適合**：單一產品、買斷制、規則只限裝置數、團隊能自己維護一個小型啟用伺服器、不想付授權服務月費或被廠商綁住。
+- **代價**：換機與找回授權碼依賴客服或自助頁；Email 只是綁定欄位而非帳號，難延伸到訂閱、團隊席位、雲端同步或企業 SSO。
+- 若要複製這個模式，對應本文第五節的組合 A，但把 MoR 內建 License Key 換成自建簽章服務，或用自架 Keygen CE 取代自己寫。
+
+## 八、已有美國 LLC＋Stripe 帳號的入門方案
+
+適用：公司登記在美國、已有 Stripe 帳號、產品沒有持續的雲端成本。建議：**Payment Link 或 Checkout 開啟 Managed Payments，賣買斷授權碼，先不做帳號與訂閱**。這是第五節組合 C 的簡化版。
+
+### 為什麼是 Managed Payments
+
+- 美國在 Managed Payments 的支援商家所在地名單內（台灣不在），可以沿用現有 Stripe 帳號，讓 Stripe 成為 MoR。
+- 不開的話，稅務要自己處理：非歐盟公司賣電子服務給歐盟消費者，從第一筆起就要收 VAT，沒有門檻（通常透過 non-Union OSS 申報）；英國對非英國賣家同樣沒有門檻；美國各州銷售稅則依經濟關聯門檻判斷，不少州對下載軟體課稅。
+- 費用：一般手續費再加 3.5%。以美國卡 2.9% + 30¢ 計，合計約 6.4% + 30¢，略高於 Paddle 的 5% + 50¢，換來不用換平台。
+- 限制：需通過資格審核；只能用 Checkout 或 Payment Links；訂閱只能透過 Checkout 建立；每個產品要設軟體類 tax code，例如 `txcd_10202000`（個人用下載軟體）或 `txcd_10202003`（商用）；不支援 Connect。官方產品頁沒有標示目前是全面開放還是邀請制。
+
+### 入門設計
+
+| 項目 | 做法 |
+| --- | --- |
+| 收費 | 買斷，含 3 台裝置與當前大版本更新；大版本另收升級費 |
+| 結帳 | Payment Link 或 Checkout＋Managed Payments；官網與 App 的購買按鈕都開這個連結 |
+| 發授權碼 | `checkout.session.completed` Webhook → 後端產生簽章授權碼並寄 Email；或交給 Keygen（免費層 100 活躍授權使用者） |
+| 退款、拒付 | `charge.refunded`、`charge.dispute.created` → 撤銷授權 |
+| App | Email＋授權碼啟用，檢查裝置數，本機存簽章資料，提供寬限期與「停用此裝置」 |
+| 帳號 | 先不做，客戶以 Stripe 收據與 Email 找回授權碼 |
+
+### 之後的升級路徑
+
+1. 加年訂閱：同樣走 Checkout，用 Customer Portal 讓客戶自行換卡與取消；授權改為「訂閱有效＋寬限期」。
+2. 有雲端功能或團隊客戶時：加登入（第四節），用 Stripe Entitlements 或 Keygen 管功能權益。
+
+### 例外
+
+- 產品有 AI、同步等持續雲端成本：一開始就用訂閱或點數，不賣買斷。
+- Managed Payments 審核未通過：改用 Stripe Tax 自行登記稅籍，或改用 Paddle、Polar。
+- 客群以美國企業為主：可不開 Managed Payments，用 Stripe Tax 自行處理，費率較低。
+
 ## 來源與查核
 
+- [Stripe Managed Payments 產品頁](https://stripe.com/managed-payments)：一般手續費再加 3.5%，無設定費與月費；未標示開放階段。
+- [Typora 官方商店](https://store.typora.io)：付款平台、價格、裝置數、離線啟用、試用與退款條款；本機安裝目錄的觀察見第七節。
 - [Stripe Managed Payments 文件](https://docs.stripe.com/payments/managed-payments)、[資格與支援商家地區](https://docs.stripe.com/payments/managed-payments/eligibility)：支援國家列表不含台灣；不支援 Connect／Express；軟體類 tax code 可用。
 - [Polar 價格](https://polar.sh/resources/pricing)、[Polar 支援國家](https://polar.sh/docs/documentation/polar-as-merchant-of-record/supported-countries)、[Polar License Keys](https://polar.sh/docs/features/benefits/license-keys)。
 - [Lemon Squeezy License API](https://docs.lemonsqueezy.com/api/license-api)。
