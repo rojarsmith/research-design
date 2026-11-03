@@ -118,14 +118,14 @@ function placeMarket(MarketId m, Side side, uint128 amount,
 
 | 層 | 選擇 | 說明 |
 | --- | --- | --- |
-| 合約 | Solidity 0.8.x＋Foundry＋OpenZeppelin 5 | 業界主流；Foundry 的 fuzz 與 invariant 測試對撮合邏輯特別重要 |
+| 合約 | Solidity 0.8.x＋Foundry 或 Hardhat 3＋OpenZeppelin 5 | 兩者都支援 fuzz 與 invariant 測試，對撮合邏輯特別重要；選擇方式見下方「開發工具鏈」 |
 | 前端 | Next.js＋TypeScript＋Tailwind＋shadcn/ui | 也可用 Vite＋React，純靜態部署更容易多處鏡像 |
 | 錢包 | wagmi＋viem，連線 UI 用 RainbowKit 或 Reown AppKit | MetaMask、Rabby、Coinbase Wallet 都能接 |
 | 圖表 | TradingView Lightweight Charts | 開源、輕量 |
 | 索引 | Ponder 或 Envio（TypeScript），存 PostgreSQL | 從合約事件產生 K 線、成交紀錄、訂單簿快照、使用者掛單列表 |
 | 即時資料 | 索引器提供 WebSocket；訂單簿最佳價也可直接讀合約 | 索引器只是加速，不是必要依賴 |
 | RPC | Alchemy、QuickNode 或自架節點 | 每條鏈至少兩家備援 |
-| 資安 | Slither、Foundry invariant、外部稽核、Immunefi 漏洞賞金 | 稽核費用約數萬到十幾萬美元，視程式碼量 |
+| 資安 | Slither、invariant 測試、外部稽核、Immunefi 漏洞賞金 | 稽核費用約數萬到十幾萬美元，視程式碼量 |
 
 前端維持「沒有後端也能用」：索引器只做查詢加速，掛單、撤單、領款都直接從瀏覽器呼叫合約。前端可放 IPFS，降低被下架的影響。
 
@@ -142,11 +142,31 @@ Consensys 在 2023 年 9 月宣布停止維護 Truffle 與 Ganache，之後業�
 | Brownie（Python） | 已停止維護 | Ape Framework，或直接改用 Foundry |
 | Goerli、Holesky 測試網 | 已關閉 | **Sepolia**、Hoodi，以及各 L2 的 Sepolia 測試網 |
 
+#### Foundry 還是 Hardhat 3
+
+Hardhat 3 推出後，兩者差距已大幅縮小，這個案子兩個都能勝任。
+
+| 面向 | Foundry | Hardhat 3 |
+| --- | --- | --- |
+| Solidity 單元、模糊、不變量測試 | 有，使用多年、最成熟 | 有，與 Foundry 測試相容；功能較新，進階設定是否一樣完整需再比較 |
+| TypeScript 整合測試 | 要另外起 anvil，用 Vitest＋viem 連上去 | 內建，viem 型別完整，在同一個 process 內執行 |
+| 多鏈模擬 | 開多個 anvil 實例 | 本地網路可指定鏈類型（例如 OP Stack）；Solidity 測試能否跨多種鏈，需查最新文件 |
+| 部署 | `forge script` | Ignition 部署模組 |
+| 命令列工具 | `cast`、`anvil`、`chisel` | 較少，但 `anvil`、`cast` 可以單獨安裝來用 |
+| 生態慣例 | Clober、Uniswap v4 等參考專案與稽核 PoC 多用 Foundry | JavaScript／TypeScript 團隊與從 Truffle 轉移的人較熟悉 |
+
+選擇方式：
+
+- **重心在「合約＋前端＋索引器」整合測試、團隊熟 TypeScript** → **Hardhat 3**。合約測試照樣用 Solidity 寫，整合測試用 TypeScript，全部在同一套工具裡。從 Truffle／Ganache 轉過來的學習成本也較低。
+- **重心在撮合正確性與 gas 最佳化、要大量參考現有訂單簿合約與稽核報告** → **Foundry**，整合測試用 Vitest 連 anvil。
+
+兩者不衝突：選 Hardhat 3 也可以單獨使用 `anvil` 分叉主網、用 `cast` 操作鏈上資料。下表以 Foundry 指令為例，Hardhat 3 多數有對應功能。
+
 建議的開發流程與工具：
 
 | 用途 | 工具 | 說明 |
 | --- | --- | --- |
-| 合約框架 | **Foundry**（`forge`、`cast`、`anvil`、`chisel`） | 用 Solidity 寫測試，速度快；訂單簿這種重邏輯合約特別適合。也想用 TypeScript 寫測試的話，可以搭配 Hardhat 3 |
+| 合約框架 | **Foundry** 或 **Hardhat 3** | 見上方比較 |
 | 本地鏈 | `anvil` | 取代 Ganache：預設 10 個有錢的測試帳戶，chain id 31337；`--block-time` 模擬出塊時間 |
 | 分叉主網測試 | `anvil --fork-url <RPC>` | 在本地複製 Base 或 Arbitrum 的真實狀態，拿真的 USDC 合約測試 |
 | 多鏈本地測試 | 開多個 `anvil` 實例，各用不同 port 和 chain id | 測前端切換網路；OP 系鏈也可用 Supersim |
@@ -160,7 +180,7 @@ Consensys 在 2023 年 9 月宣布停止維護 Truffle 與 Ganache，之後業�
 | 部署 | `forge script --broadcast`＋CreateX | 各鏈部署到相同地址 |
 | 原始碼驗證 | `forge verify-contract`＋Etherscan API V2 | V2 一把 API key 可以驗證多條鏈 |
 | 擁有者權限 | Safe 多簽錢包 | 費率調整、緊急開關都由多簽執行 |
-| 前端型別 | wagmi CLI 或 `@wagmi/cli` Foundry 外掛 | 從 Foundry 編譯產物自動產生 TypeScript ABI 與 hooks |
+| 前端型別 | wagmi CLI 的 Foundry 或 Hardhat 外掛；Hardhat 3 也內建型別 | 從編譯產物自動產生 TypeScript ABI 與 hooks |
 | 前端測試 | Vitest＋viem test client 接 anvil，端對端用 Playwright | Playwright 可搭配 Synpress 自動操作 MetaMask |
 | 索引器開發 | `ponder dev` 接本地 anvil | 合約事件改了，索引器馬上更新 |
 | CI | GitHub Actions＋`foundry-rs/foundry-toolchain` | 跑測試、Slither、gas 比較 |
@@ -245,7 +265,7 @@ MetaMask 接本地鏈：新增自訂網路 `http://127.0.0.1:8545`、chain id 31
 ## 十、下一步
 
 1. 先諮詢律師，確認公司所在地、能否收費、前端要做哪些限制，這決定其他設計。
-2. 用 Foundry 寫單一市場的 `OrderBook` 原型，重點測撮合正確性與每筆 gas。
+2. 選定 Foundry 或 Hardhat 3，寫單一市場的 `OrderBook` 原型，重點測撮合正確性與每筆 gas。
 3. 讀 Clober、Kuru 的合約設計與稽核報告，借用成熟的價格層級資料結構。
 4. 找幾個真正的 ICO 發起方試用，確認「自己掛單操盤」的流程是否真的比 AMM 好用。
 
