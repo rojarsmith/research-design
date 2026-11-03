@@ -16,6 +16,8 @@ Research date: 2026-11-03. The full report is in [README.zh-TW.md](README.zh-TW.
 
 - With a US LLC and an existing Stripe account, the simplest start is a one-time license sold through Payment Links or Checkout with Stripe Managed Payments turned on. It adds 3.5% on top of standard processing fees, and Stripe handles global VAT and sales tax. A webhook-driven backend, or Keygen, issues the license keys. Accounts and subscriptions can come later.
 
+- Key and subscription system design: one `licenses` table covers both models. A subscription is a license whose expiry is pushed forward on each `invoice.paid`. Stripe webhooks are verified, deduplicated by event ID and mapped to license states. The server exposes `/activate`, `/refresh` and `/deactivate`, and issues Ed25519-signed license files that the app checks offline with an embedded public key. A self-built service is recommended over Keygen when Stripe already holds the billing state.
+
 ## Recommended stacks
 
 | Stage | Stack |

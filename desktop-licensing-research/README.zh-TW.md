@@ -227,6 +227,96 @@ Typora（Markdown 編輯器）屬於「MoR 收款＋自建簽章授權、沒有�
 - Managed Payments 審核未通過：改用 Stripe Tax 自行登記稅籍，或改用 Paddle、Polar。
 - 客群以美國企業為主：可不開 Managed Payments，用 Stripe Tax 自行處理，費率較低。
 
+## 九、授權碼與訂閱系統的實作設計
+
+第三節講授權層的選項，本節是自建授權服務時的具體設計，以 Stripe 為收款層。核心觀念：
+
+- Stripe 只記錄付款與訂閱狀態，不知道「這台電腦能不能開 App」；中間的授權服務把 Stripe 事件轉成授權，並簽發授權檔給 App。
+- 授權碼只是使用者找到自己授權的憑證，可信度來自伺服器簽章。
+- **訂閱是一筆到期日會被自動延長的授權**：扣款成功就把到期日往後推，取消或扣款失敗就不再延長。買斷與訂閱共用同一套資料表與程式。
+
+### 資料表（最小版）
+
+```text
+customers   id, email, stripe_customer_id
+licenses    id, key_hash, customer_id, type(perpetual|subscription),
+            plan, status(active|past_due|revoked), max_devices,
+            expires_at(買斷為空), updates_until(買斷才有),
+            stripe_subscription_id, stripe_checkout_session_id
+activations id, license_id, fingerprint_hash, device_name, last_seen_at
+stripe_events event_id(唯一), processed_at     ← 同一事件只處理一次
+```
+
+- 授權碼由 128-bit 隨機數轉成 `XXXXX-XXXXX-XXXXX-XXXXX` 格式。
+- 資料庫只存授權碼的雜湊，與密碼同樣處理，資料庫外洩也拿不到可用的授權碼。
+- 不用「授權碼本身含檢查碼」的演算法，避免演算法被看懂後出現序號產生器。
+
+### Stripe 事件對應
+
+| Stripe 事件 | 授權服務的動作 |
+| --- | --- |
+| `checkout.session.completed`（一次付款） | 建立買斷授權並寄出授權碼；`updates_until` 設為一年後或當前大版本 |
+| `checkout.session.completed`（訂閱） | 建立訂閱授權，綁定 `subscription_id`，寄出授權碼 |
+| `invoice.paid` | `expires_at` 改為本期結束日加寬限天數（例如 7 天） |
+| `invoice.payment_failed` | 狀態改為 `past_due`，寬限期內仍可用，寄信提醒更新付款方式 |
+| `customer.subscription.updated` | 同步方案升降級與「到期後取消」設定 |
+| `customer.subscription.deleted` | 不再延長到期日，到期後自然失效 |
+| `charge.refunded`、`charge.dispute.created` | 狀態改為 `revoked`，立即撤銷 |
+
+處理原則：
+
+- 先驗證 Webhook 簽章，確認事件來自 Stripe。
+- 以 `event_id` 去重，重送的事件只處理一次。
+- 盡快回應 2xx，耗時工作排入背景佇列。
+- 每日排程比對資料庫與 Stripe 的訂閱狀態，補上遺漏的事件。
+- 開啟 Managed Payments 時，結帳與訂閱一樣走 Checkout 與 Billing，事件理論上相同，但尚未實測，需在測試模式確認。
+
+### 授權伺服器 API
+
+| 端點 | 用途 |
+| --- | --- |
+| `POST /activate` `{key, fingerprint, device_name}` | 檢查授權狀態與裝置數，回傳簽章授權檔 |
+| `POST /refresh` `{license_id, fingerprint}` | 定期換發新授權檔；訂閱的新到期日透過這裡送到 App |
+| `POST /deactivate` | 釋放該裝置名額 |
+| 自助頁（Email 登入連結） | 查看授權碼、停用舊裝置、連到 Stripe Customer Portal 換卡或取消 |
+
+### 簽章授權檔
+
+```json
+{
+  "license_id": "lic_123",
+  "plan": "pro",
+  "features": ["export-pdf"],
+  "fingerprint": "sha256(...)",
+  "expires_at": "2026-12-10T00:00:00Z",
+  "updates_until": null,
+  "issued_at": "2026-11-03T08:00:00Z",
+  "refresh_after": "2026-11-10T00:00:00Z"
+}
+```
+
+伺服器以 Ed25519 私鑰簽章，App 只內建公鑰：App 能驗證檔案未被修改，但無法自行產生授權檔。
+
+### App 端判斷流程
+
+1. 啟動時讀取授權檔，依序檢查：簽章正確、指紋符合本機、現在早於 `expires_at`；買斷授權另檢查 App 版本發布日不晚於 `updates_until`。
+2. 超過 `refresh_after` 且有網路時呼叫 `/refresh`；失敗不鎖住，沿用舊檔到 `expires_at`。
+3. 記錄看過的最晚時間，本機時間早於它就要求連網。
+4. 沒有授權檔時進入試用或輸入授權碼畫面。
+
+訂閱與買斷共用這套邏輯：訂閱的 `expires_at` 持續被延長；買斷的 `expires_at` 為空，只檢查 `updates_until`。
+
+### 自建或 Keygen
+
+| | 自建（Typora 型） | Keygen |
+| --- | --- | --- |
+| 工作量 | 後端約數百行（Webhook、三支 API、簽章、寄信），約 1–2 週含測試 | 約 2–4 天，主要寫 Stripe Webhook 呼叫 Keygen API |
+| 現成功能 | 需自己做 | 機器綁定、浮動授權、簽章授權檔、功能權益、發布版本管理 |
+| 成本 | 一台小主機＋資料庫 | 免費層 100 活躍授權使用者且為硬上限；之後付費或自架 CE（需 Postgres、Redis） |
+| 風險 | 簽章、去重、時鐘回撥等細節要自己做對 | 廠商綁定 |
+
+已有美國 LLC 與 Stripe 時，建議自建：計費狀態由 Stripe 保管，授權服務只負責事件轉換與簽章，規模小、可控。不想維運伺服器，或之後需要浮動席位、地端授權時，再改用 Keygen。以上工作量為估計，尚未以原型驗證。
+
 ## 來源與查核
 
 - [Stripe Managed Payments 產品頁](https://stripe.com/managed-payments)：一般手續費再加 3.5%，無設定費與月費；未標示開放階段。
