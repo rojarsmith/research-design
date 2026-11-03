@@ -8,6 +8,7 @@
 
 | 主題 | 範圍 | 英文 | 繁體中文 |
 | --- | --- | --- | --- |
+| 付費 Markdown 編輯器市場 | 免費與付費對手、定價與營收量級、仍有空間的利基、著陸頁預購驗證與定價建議 | [English overview](markdown-editor-market-research/README.md) | [完整研究](markdown-editor-market-research/README.zh-TW.md) |
 | 桌面軟體收費、授權與 IAM | 序號與訂閱模式、MoR 與 Stripe（台灣主體限制）、Keygen／Cryptlex／LicenseSpring、桌面 OAuth 登入、IdP 選型與驗收情境 | [English overview](desktop-licensing-research/README.md) | [完整研究](desktop-licensing-research/README.zh-TW.md) |
 | GitHub 求職 AI 應用 | 近三個月星數前三名（career-ops、ai-job-search、get_jobs）優劣比較、為何都不支援免安裝 Playwright 瀏覽器保留登入與 2FA、以及已實測的 session broker 原型 | [English overview](job-search-ai-research/README.md) | [完整研究](job-search-ai-research/README.zh-TW.md) |
 | Codex 桌面版與 Claude API key | 直接登入限制、模型閘道、Responses 相容性與 Windows 驗證方向 | [English overview](codex-claude-api-research/README.md) | [完整研究](codex-claude-api-research/README.zh-TW.md) |
