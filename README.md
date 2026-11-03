@@ -8,6 +8,7 @@ Engineering research, feasibility studies, architecture proposals for software p
 
 | Topic | Scope | English | Traditional Chinese |
 | --- | --- | --- | --- |
+| Hyperliquid and decentralized derivatives exchanges | How a DEX moved from EtherDelta-style L1 contracts to an app-specific chain, gasless signed orders, perpetual mechanics, decentralization tradeoffs, and how state and history growth are handled | [English overview](hyperliquid-dex-research/README.md) | [完整研究](hyperliquid-dex-research/README.zh-TW.md) |
 | Software worth charging for | Criteria, categories that do and do not sell, Bitdove OTA plus CRA as the priority direction, employer IP checks and next steps | [English overview](paid-software-opportunity-research/README.md) | [完整研究](paid-software-opportunity-research/README.zh-TW.md) |
 | Paid Markdown editor market | Free and paid competitors, pricing and revenue scale, remaining niches, landing-page pre-order validation and pricing | [English overview](markdown-editor-market-research/README.md) | [完整研究](markdown-editor-market-research/README.zh-TW.md) |
 | Desktop software billing, licensing and IAM | Keys vs subscriptions, Merchant of Record vs Stripe (Taiwan limits), Keygen/Cryptlex/LicenseSpring, desktop OAuth sign-in, IdP choice and acceptance scenarios | [English overview](desktop-licensing-research/README.md) | [完整研究](desktop-licensing-research/README.zh-TW.md) |
