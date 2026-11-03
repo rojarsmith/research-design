@@ -129,6 +129,52 @@ function placeMarket(MarketId m, Side side, uint128 amount,
 
 前端維持「沒有後端也能用」：索引器只做查詢加速，掛單、撤單、領款都直接從瀏覽器呼叫合約。前端可放 IPFS，降低被下架的影響。
 
+### 開發工具鏈
+
+Consensys 在 2023 年 9 月宣布停止維護 Truffle 與 Ganache，之後業界主要改用 Foundry 和 Hardhat。舊工具與替代品對照：
+
+| 舊工具 | 現況 | 替代 |
+| --- | --- | --- |
+| Ganache（本地鏈） | 已停止維護 | **Anvil**（Foundry 內建），或 Hardhat 內建的本地節點 |
+| Truffle（編譯、測試、部署） | 已停止維護 | **Foundry**（`forge`）或 **Hardhat 3** |
+| Truffle migrations | 隨 Truffle 停止 | `forge script`，或 Hardhat Ignition |
+| web3.js | 已封存 | **viem**（新專案首選）或 ethers v6 |
+| Brownie（Python） | 已停止維護 | Ape Framework，或直接改用 Foundry |
+| Goerli、Holesky 測試網 | 已關閉 | **Sepolia**、Hoodi，以及各 L2 的 Sepolia 測試網 |
+
+建議的開發流程與工具：
+
+| 用途 | 工具 | 說明 |
+| --- | --- | --- |
+| 合約框架 | **Foundry**（`forge`、`cast`、`anvil`、`chisel`） | 用 Solidity 寫測試，速度快；訂單簿這種重邏輯合約特別適合。也想用 TypeScript 寫測試的話，可以搭配 Hardhat 3 |
+| 本地鏈 | `anvil` | 取代 Ganache：預設 10 個有錢的測試帳戶，chain id 31337；`--block-time` 模擬出塊時間 |
+| 分叉主網測試 | `anvil --fork-url <RPC>` | 在本地複製 Base 或 Arbitrum 的真實狀態，拿真的 USDC 合約測試 |
+| 多鏈本地測試 | 開多個 `anvil` 實例，各用不同 port 和 chain id | 測前端切換網路；OP 系鏈也可用 Supersim |
+| 鏈上指令 | `cast` | 查餘額、呼叫合約、送交易、解碼 calldata、`cast run` 重播交易 |
+| 單元與模糊測試 | `forge test`（fuzz、invariant） | 不變量範例：合約持有的代幣總額 ≥ 所有掛單鎖定額＋未領取成交款 |
+| 進階模糊與形式驗證 | Echidna、Medusa、Halmos | 稽核前補強撮合與記帳邏輯 |
+| gas 量測 | `forge snapshot`、`forge test --gas-report` | 每次改撮合邏輯都要比較 gas |
+| 靜態分析 | Slither、Aderyn、Solhint | 放進 CI，每次 PR 都跑 |
+| 除錯 | `forge test -vvvv` 呼叫追蹤、`forge debug`、Tenderly | Tenderly 可以視覺化追蹤測試網或主網的失敗交易 |
+| 依賴管理 | `forge install`（git submodule）或 Soldeer | 取得 OpenZeppelin 等函式庫 |
+| 部署 | `forge script --broadcast`＋CreateX | 各鏈部署到相同地址 |
+| 原始碼驗證 | `forge verify-contract`＋Etherscan API V2 | V2 一把 API key 可以驗證多條鏈 |
+| 擁有者權限 | Safe 多簽錢包 | 費率調整、緊急開關都由多簽執行 |
+| 前端型別 | wagmi CLI 或 `@wagmi/cli` Foundry 外掛 | 從 Foundry 編譯產物自動產生 TypeScript ABI 與 hooks |
+| 前端測試 | Vitest＋viem test client 接 anvil，端對端用 Playwright | Playwright 可搭配 Synpress 自動操作 MetaMask |
+| 索引器開發 | `ponder dev` 接本地 anvil | 合約事件改了，索引器馬上更新 |
+| CI | GitHub Actions＋`foundry-rs/foundry-toolchain` | 跑測試、Slither、gas 比較 |
+| 測試幣 | 各鏈 Sepolia 水龍頭（Alchemy、QuickNode、Coinbase CDP 等） | 公開測試前取得 ETH；USDC 有官方測試網水龍頭 |
+
+MetaMask 接本地鏈：新增自訂網路 `http://127.0.0.1:8545`、chain id 31337，再匯入 anvil 印出的測試私鑰。**開發用的 MetaMask 最好用獨立的瀏覽器設定檔**，別和放真錢的錢包混用：anvil 的預設私鑰是公開的，任何人轉進這些地址的主網資產都會立刻被盜。
+
+日常開發迴圈：
+
+1. 開一個終端機跑 `anvil`。
+2. `forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast` 部署合約與測試代幣。
+3. `ponder dev` 和前端 `pnpm dev` 都接本地鏈。
+4. 用 MetaMask 下單，用 `cast` 查狀態；改合約就重新部署，或用 `anvil --load-state`／`--dump-state` 保留測試資料。
+
 ## 六、收費方式
 
 | 收入 | 做法 | 業界常見水準 |
