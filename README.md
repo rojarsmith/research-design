@@ -8,6 +8,7 @@ Engineering research, feasibility studies, architecture proposals for software p
 
 | Topic | Scope | English | Traditional Chinese |
 | --- | --- | --- | --- |
+| Software worth charging for | Criteria, categories that do and do not sell, Bitdove OTA plus CRA as the priority direction, employer IP checks and next steps | [English overview](paid-software-opportunity-research/README.md) | [完整研究](paid-software-opportunity-research/README.zh-TW.md) |
 | Paid Markdown editor market | Free and paid competitors, pricing and revenue scale, remaining niches, landing-page pre-order validation and pricing | [English overview](markdown-editor-market-research/README.md) | [完整研究](markdown-editor-market-research/README.zh-TW.md) |
 | Desktop software billing, licensing and IAM | Keys vs subscriptions, Merchant of Record vs Stripe (Taiwan limits), Keygen/Cryptlex/LicenseSpring, desktop OAuth sign-in, IdP choice and acceptance scenarios | [English overview](desktop-licensing-research/README.md) | [完整研究](desktop-licensing-research/README.zh-TW.md) |
 | Job-search AI tools on GitHub | Top three by stars in the last three months (career-ops, ai-job-search, get_jobs), pros and cons, why none support an install-free Playwright browser with persisted login and 2FA, and a verified session-broker prototype | [English overview](job-search-ai-research/README.md) | [完整研究](job-search-ai-research/README.zh-TW.md) |
