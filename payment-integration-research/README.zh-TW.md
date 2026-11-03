@@ -10,6 +10,7 @@
 
 - [Stripe 測試信用卡與驗收情境](research/01-stripe-test-cards.zh-TW.md)：彙整指定的 Karbon 文章，列出官方核對後的卡號、錯誤碼、原文修正及測試清單。
 - [英文概要](research/01-stripe-test-cards.md)：來源、範圍與完整繁體中文資料入口。
+- [海外客戶刷卡購買 BTC 禮物卡](research/02-btc-gift-card.zh-TW.md)：Stripe 受限行業規定、FinCEN MSB 與州牌照、刷卡退單風險，以及改用持牌 onramp 的做法與禮物形式的變通。
 
 ## 軟體平台的初步整合方向
 
