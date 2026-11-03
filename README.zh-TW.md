@@ -8,6 +8,7 @@
 
 | 主題 | 範圍 | 英文 | 繁體中文 |
 | --- | --- | --- | --- |
+| 限價訂單簿 DEX 與 ICO 發幣平台 | 每條 EVM 鏈各自部署的全鏈上訂單簿、合約設計、MetaMask 多鏈、2026 技術選型、收費方式、無審查的極限、ICO rug pull 與法律風險、開發路線 | [English overview](orderbook-dex-launchpad-research/README.md) | [完整研究](orderbook-dex-launchpad-research/README.zh-TW.md) |
 | Hyperliquid 與去中心化衍生品交易所 | 從 EtherDelta 式 L1 合約到專用應用鏈、免 gas 簽名下單、永續合約機制、去中心化取捨，以及狀態與歷史成長的處理方式 | [English overview](hyperliquid-dex-research/README.md) | [完整研究](hyperliquid-dex-research/README.zh-TW.md) |
 | 適合收費的軟體類型 | 判斷條件、適合與不適合收費的類別、Bitdove OTA＋CRA 優先方向、任職公司權利歸屬與下一步 | [English overview](paid-software-opportunity-research/README.md) | [完整研究](paid-software-opportunity-research/README.zh-TW.md) |
 | 付費 Markdown 編輯器市場 | 免費與付費對手、定價與營收量級、仍有空間的利基、著陸頁預購驗證與定價建議 | [English overview](markdown-editor-market-research/README.md) | [完整研究](markdown-editor-market-research/README.zh-TW.md) |
