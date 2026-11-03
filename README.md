@@ -8,6 +8,7 @@ Engineering research, feasibility studies, architecture proposals for software p
 
 | Topic | Scope | English | Traditional Chinese |
 | --- | --- | --- | --- |
+| Desktop software billing, licensing and IAM | Keys vs subscriptions, Merchant of Record vs Stripe (Taiwan limits), Keygen/Cryptlex/LicenseSpring, desktop OAuth sign-in, IdP choice and acceptance scenarios | [English overview](desktop-licensing-research/README.md) | [完整研究](desktop-licensing-research/README.zh-TW.md) |
 | Job-search AI tools on GitHub | Top three by stars in the last three months (career-ops, ai-job-search, get_jobs), pros and cons, why none support an install-free Playwright browser with persisted login and 2FA, and a verified session-broker prototype | [English overview](job-search-ai-research/README.md) | [完整研究](job-search-ai-research/README.zh-TW.md) |
 | Codex desktop and Claude API keys | Direct sign-in limits, model gateways, Responses compatibility, and Windows validation | [English overview](codex-claude-api-research/README.md) | [完整研究](codex-claude-api-research/README.zh-TW.md) |
 | Computex AI product video | Claude-directed cloud production via MCP, bilingual captions, 50-inch 4K/1080p playback, storyboards, budget and acceptance | [English overview](computex-ai-product-video-research/README.md) | [完整規劃](computex-ai-product-video-research/README.zh-TW.md) |

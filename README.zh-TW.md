@@ -8,6 +8,7 @@
 
 | 主題 | 範圍 | 英文 | 繁體中文 |
 | --- | --- | --- | --- |
+| 桌面軟體收費、授權與 IAM | 序號與訂閱模式、MoR 與 Stripe（台灣主體限制）、Keygen／Cryptlex／LicenseSpring、桌面 OAuth 登入、IdP 選型與驗收情境 | [English overview](desktop-licensing-research/README.md) | [完整研究](desktop-licensing-research/README.zh-TW.md) |
 | GitHub 求職 AI 應用 | 近三個月星數前三名（career-ops、ai-job-search、get_jobs）優劣比較、為何都不支援免安裝 Playwright 瀏覽器保留登入與 2FA、以及已實測的 session broker 原型 | [English overview](job-search-ai-research/README.md) | [完整研究](job-search-ai-research/README.zh-TW.md) |
 | Codex 桌面版與 Claude API key | 直接登入限制、模型閘道、Responses 相容性與 Windows 驗證方向 | [English overview](codex-claude-api-research/README.md) | [完整研究](codex-claude-api-research/README.zh-TW.md) |
 | Computex AI 產品影片 | Claude 經 MCP 指揮雲端影音製作、英文與繁體中文字幕、50 吋 4K／1080p、分鏡、預算及展場驗收 | [English overview](computex-ai-product-video-research/README.md) | [完整規劃](computex-ai-product-video-research/README.zh-TW.md) |
