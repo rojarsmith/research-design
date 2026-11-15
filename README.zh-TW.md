@@ -8,6 +8,7 @@
 
 | 主題 | 範圍 | 英文 | 繁體中文 |
 | --- | --- | --- | --- |
+| 高級工程師演算法以外的面試回合 | 不背答案的準備方式：系統設計框架、容量估算、需求觸發與設計模式對照、14 題選題；對應 Meta 與 Amazon 評估訊號的 6 到 8 個 STAR 故事；LLD/OOD；Meta、Canva、Google 與 HackerRank Chakra 的 AI 輔助回合；時間分配，以及與 DSA 計畫並排的 12 週計畫；已驗證的 VS Code 三階段 AI 輔助回合練習包 | [English overview](senior-interview-beyond-dsa-research/README.md) | [完整研究](senior-interview-beyond-dsa-research/README.zh-TW.md) |
 | 高級工程師 HackerRank 與 LeetCode 刷題 | 不背答案的模式化練習：學習科學依據、每題固定流程、觸發條件與模式對照、題單與題量、8 至 12 週計畫、HackerRank 線上測驗格式、2026 AI 輔助面試回合、兩個解答 repo 評估，以及已驗證的 VS Code C++ 練習專案 | [English overview](coding-interview-practice-research/README.md) | [完整研究](coding-interview-practice-research/README.zh-TW.md) |
 | 限價訂單簿 DEX 與 ICO 發幣平台 | 每條 EVM 鏈各自部署的全鏈上訂單簿、合約設計、MetaMask 多鏈、2026 技術選型、收費方式、無審查的極限、ICO rug pull 與法律風險、開發路線 | [English overview](orderbook-dex-launchpad-research/README.md) | [完整研究](orderbook-dex-launchpad-research/README.zh-TW.md) |
 | Hyperliquid 與去中心化衍生品交易所 | 從 EtherDelta 式 L1 合約到專用應用鏈、免 gas 簽名下單、永續合約機制、去中心化取捨，以及狀態與歷史成長的處理方式 | [English overview](hyperliquid-dex-research/README.md) | [完整研究](hyperliquid-dex-research/README.zh-TW.md) |

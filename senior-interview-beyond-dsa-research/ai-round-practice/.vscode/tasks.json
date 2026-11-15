@@ -1,0 +1,71 @@
+{
+    // 每個工作都呼叫 build/drill.exe。第一次執行時會自動用 g++ 建置 drill.exe（約 10 秒）。
+    // 開始練習之後，到新視窗裡的練習資料夾用那裡的工作（測試、下一階段、結束並複盤）。
+    "version": "2.0.0",
+    "options": { "cwd": "${workspaceFolder}" },
+    "tasks": [
+        {
+            "label": "drill: 確認工具已建置",
+            "type": "shell",
+            "command": "test -x build/drill.exe || g++ -std=c++20 -O2 -o build/drill.exe tools/drill.cpp",
+            "windows": {
+                "command": "if not exist build\\drill.exe g++ -std=c++20 -O2 -static -o build/drill.exe tools/drill.cpp",
+                "options": { "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } }
+            },
+            "presentation": { "reveal": "silent", "showReuseMessage": false },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "drill: 重新建置工具",
+            "type": "process",
+            "command": "g++",
+            "args": ["-std=c++20", "-O2", "-o", "build/drill.exe", "tools/drill.cpp"],
+            "windows": { "args": ["-std=c++20", "-O2", "-static", "-o", "build/drill.exe", "tools/drill.cpp"] },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "drill: 情境清單",
+            "detail": "三個情境與過去的練習紀錄",
+            "type": "process",
+            "command": "${workspaceFolder}/build/drill.exe",
+            "args": ["list"],
+            "dependsOn": "drill: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "drill: 開始新的練習",
+            "detail": "建立練習資料夾、開始計時，並用新視窗打開",
+            "type": "process",
+            "command": "${workspaceFolder}/build/drill.exe",
+            "args": ["start", "${input:scenario}", "--mode", "${input:mode}"],
+            "dependsOn": "drill: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "scenario",
+            "type": "pickString",
+            "description": "要練哪一個情境？",
+            "options": [
+                { "label": "build-planner：建置排程器", "value": "build-planner" },
+                { "label": "log-alerts：日誌告警", "value": "log-alerts" },
+                { "label": "room-booking：會議室分配", "value": "room-booking" }
+            ],
+            "default": "build-planner"
+        },
+        {
+            "id": "mode",
+            "type": "pickString",
+            "description": "AI 怎麼用？",
+            "options": [
+                { "label": "chat：只用聊天問 AI，程式碼自己打（像 Meta）", "value": "chat" },
+                { "label": "open：任何 AI 工具都行，包括會改檔案的 agent（像 Canva、Chakra）", "value": "open" },
+                { "label": "none：完全不用 AI，量自己的基準", "value": "none" }
+            ],
+            "default": "chat"
+        }
+    ]
+}

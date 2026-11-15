@@ -1,0 +1,6 @@
+2026-11-15T10:00:00.120Z api INFO I1000 request served
+2026-11-15T10:00:00.480Z api ERROR E5003 upstream timeout
+2026-11-15T10:00:01.050Z api WARN W2001 slow query
+2026-11-15T10:00:02.300Z api ERROR E5003 upstream timeout
+not a log line
+2026-11-15T10:00:03.900Z api INFO I1000 request served

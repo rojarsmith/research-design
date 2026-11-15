@@ -1,0 +1,4 @@
+2026-11-15T10:00:00.3Z billing INFO I1000 invoice created
+2026-11-15T10:00:01.0Z billing ERROR E4100 card declined
+2026-11-15T10:00:02.5Z billing ERROR E4100 card declined
+2026-11-15T10:00:04Z billing FATAL F9000 ledger unavailable

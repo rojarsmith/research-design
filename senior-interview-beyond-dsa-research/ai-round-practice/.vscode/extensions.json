@@ -1,0 +1,4 @@
+{
+    // 唯一需要的擴充：C/C++（IntelliSense 與 gdb 除錯）
+    "recommendations": ["ms-vscode.cpptools"]
+}

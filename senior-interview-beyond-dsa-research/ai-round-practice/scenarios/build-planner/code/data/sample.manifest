@@ -1,0 +1,9 @@
+# Sample manifest for the web frontend.
+target proto      400ms
+target core       1.2s      deps=proto
+target net        900ms     deps=core
+target ui         2.5s      deps=core
+target assets     1.8s
+target app        3s        deps=ui,net,assets,core
+target tests      1.5s      deps=app
+target docs       700ms
