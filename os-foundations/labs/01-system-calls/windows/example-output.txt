@@ -1,0 +1,132 @@
+Recorded 2026-11-15 on the machine this lab was written on.
+Windows 11 Pro, build 26300 (RtlGetVersion reports 10.0.26300); hypervisor present (Win32_ComputerSystem.HypervisorPresent = True).
+CPU: 11th Gen Intel(R) Core(TM) i7-11700 @ 2.50GHz, 16 logical processors.
+Compiler: gcc 16.2.0 (MinGW-W64 x86_64-ucrt-posix-seh, WinLibs). Debugger: GNU gdb 18.1 (same package).
+Your numbers will differ. Keep your own copy in NOTES.md.
+
+> gcc -O2 -Wall -o build\nt_boundary.exe nt_boundary.c
+> build\nt_boundary.exe
+
+Windows 10.0 build 26300
+
+Part 1: cost per call, and this thread's kernel and user time during the loop
+        (batches of 100000 calls, at least 0.5 s per row)
+
+  call                          prediction to check               calls  ns/call kernel ms   user ms
+  plain C function call         user only                     247400000      2.0        16       484
+  GetCurrentProcessId()         user only (reads the TEB)     210400000      2.4         0       500
+  GetTickCount64()              user only (shared page)       188700000      2.7         0       500
+  GetProcessHandleCount()       kernel (Win32 wrapper)          1400000    373.1       266       266
+  NtQueryInformationProcess()   kernel (native, direct)         1200000    438.0       234       297
+  WaitForSingleObject(set, 0)   kernel                          1200000    429.7       250       266
+
+Part 2: the user-mode side of a system call, inside ntdll.dll
+
+  NtQueryInformationProcess  00007FFB9D4E2060: 4C 8B D1 B8 19 00 00 00 F6 04 25 08 03 FE 7F 01 75 03 0F 05 C3 CD 2E C3
+                             mov eax, 0x19  (system service number on this build)
+                             syscall at +18
+  NtWaitForSingleObject      00007FFB9D4E1DC0: 4C 8B D1 B8 04 00 00 00 F6 04 25 08 03 FE 7F 01 75 03 0F 05 C3 CD 2E C3
+                             mov eax, 0x4  (system service number on this build)
+                             syscall at +18
+  NtWriteFile                00007FFB9D4E1E40: 4C 8B D1 B8 08 00 00 00 F6 04 25 08 03 FE 7F 01 75 03 0F 05 C3 CD 2E C3
+                             mov eax, 0x8  (system service number on this build)
+                             syscall at +18
+  NtClose                    00007FFB9D4E1F20: 4C 8B D1 B8 0F 00 00 00 F6 04 25 08 03 FE 7F 01 75 03 0F 05 C3 CD 2E C3
+                             mov eax, 0xF  (system service number on this build)
+                             syscall at +18
+
+Part 3: bad pointers handed to the kernel from user mode
+
+  NtQueryInformationProcess(good buffer)    -> NTSTATUS 0x00000000, len 48, pid 30908
+  NtQueryInformationProcess(kernel address) -> NTSTATUS 0xC0000005
+  NtQueryInformationProcess(NULL)           -> NTSTATUS 0xC0000005
+
+  WriteFile(file, good buffer   ,  6) -> TRUE  written 6
+  WriteFile(file, kernel address, 16) -> FALSE written 0, error 998: Invalid access to memory location.
+  WriteFile(file, NULL          , 16) -> FALSE written 0, error 1784: The supplied user buffer is not valid for the requested operation.
+
+  NtWriteFile(file, good buffer   ,  6) -> NTSTATUS 0x00000000
+  NtWriteFile(file, kernel address, 16) -> NTSTATUS 0xC0000005 -> Win32 998
+  NtWriteFile(file, NULL          , 16) -> NTSTATUS 0xC00000E8 -> Win32 1784
+
+> gcc -O0 -g -Wall -o build\win32_write.exe win32_write.c
+> gdb -q -batch -x find_nt_routine.gdb build\win32_write.exe   (stdout was a pipe, not a console)
+
+Breakpoint 1 at 0x14000176d: file win32_write.c, line 19.
+[New Thread 9408.0x73f8 (id 2)]
+
+Thread 1 hit Breakpoint 1, main () at win32_write.c:19
+19	    DWORD n = 0;
+Breakpoint 2 at 0x7ffb9d4e1e40
+Breakpoint 3 at 0x7ffb9d4e1e20
+
+Thread 1 hit Breakpoint 2, 0x00007ffb9d4e1e40 in ntdll!ZwWriteFile () from C:/WINDOWS/SYSTEM32/ntdll.dll
+
+=== first stop: backtrace ===
+#0  0x00007ffb9d4e1e40 in ntdll!ZwWriteFile () from C:/WINDOWS/SYSTEM32/ntdll.dll
+#1  0x00007ffb9a751fbd in WriteFile () from C:/WINDOWS/System32/KernelBase.dll
+#2  0x00007ff7e35117b3 in main () at win32_write.c:22
+
+=== instructions at the stop ===
+=> 0x7ffb9d4e1e40 <ntdll!ZwWriteFile>:	mov    r10,rcx
+   0x7ffb9d4e1e43 <ntdll!ZwWriteFile+3>:	mov    eax,0x8
+   0x7ffb9d4e1e48 <ntdll!ZwWriteFile+8>:	test   BYTE PTR ds:0x7ffe0308,0x1
+   0x7ffb9d4e1e50 <ntdll!ZwWriteFile+16>:	jne    0x7ffb9d4e1e55 <ntdll!ZwWriteFile+21>
+   0x7ffb9d4e1e52 <ntdll!ZwWriteFile+18>:	syscall
+   0x7ffb9d4e1e54 <ntdll!ZwWriteFile+20>:	ret
+   0x7ffb9d4e1e55 <ntdll!ZwWriteFile+21>:	int    0x2e
+   0x7ffb9d4e1e57 <ntdll!ZwWriteFile+23>:	ret
+
+=== rax, r10, rcx before the syscall (r10 gets rcx, eax gets the service number) ===
+0x00007ffb9d4e1e48 in ntdll!ZwWriteFile () from C:/WINDOWS/SYSTEM32/ntdll.dll
+rax            0x8                 8
+r10            0x990               2448
+rcx            0x990               2448
+hello from WriteFile
+
+Thread 1 hit Breakpoint 2, 0x00007ffb9d4e1e40 in ntdll!ZwWriteFile () from C:/WINDOWS/SYSTEM32/ntdll.dll
+
+=== second stop: backtrace ===
+#0  0x00007ffb9d4e1e40 in ntdll!ZwWriteFile () from C:/WINDOWS/SYSTEM32/ntdll.dll
+#1  0x00007ffb9a751fbd in WriteFile () from C:/WINDOWS/System32/KernelBase.dll
+#2  0x00007ff7e3511828 in main () at win32_write.c:27
+[Thread 9408.0x73f8 (id 2) exited with code 0]
+[Inferior 1 (process 9408) exited normally]
+
+> gdb -q -batch -x user_mode_calls.gdb build\win32_write.exe
+
+Breakpoint 1 at 0x14000176d: file win32_write.c, line 19.
+[New Thread 22516.0x660 (id 2)]
+
+Thread 1 hit Breakpoint 1, main () at win32_write.c:19
+19	    DWORD n = 0;
+
+=== GetCurrentProcessId ===
+   0x7ffb9c352bb0 <KERNEL32!GetCurrentProcessId>:	mov    rax,QWORD PTR gs:0x40
+   0x7ffb9c352bb9 <KERNEL32!GetCurrentProcessId+9>:	ret
+   0x7ffb9c352bba <KERNEL32!GetCurrentProcessId+10>:	int3
+   0x7ffb9c352bbb <KERNEL32!GetCurrentProcessId+11>:	int3
+
+=== GetTickCount64 ===
+   0x7ffb9c342b00 <KERNEL32!GetTickCount64>:	mov    ecx,DWORD PTR ds:0x7ffe0004
+   0x7ffb9c342b07 <KERNEL32!GetTickCount64+7>:	mov    eax,0x7ffe0320
+   0x7ffb9c342b0c <KERNEL32!GetTickCount64+12>:	shl    rcx,0x20
+   0x7ffb9c342b10 <KERNEL32!GetTickCount64+16>:	mov    rax,QWORD PTR [rax]
+   0x7ffb9c342b13 <KERNEL32!GetTickCount64+19>:	shl    rax,0x8
+   0x7ffb9c342b17 <KERNEL32!GetTickCount64+23>:	mul    rcx
+   0x7ffb9c342b1a <KERNEL32!GetTickCount64+26>:	mov    rax,rdx
+   0x7ffb9c342b1d <KERNEL32!GetTickCount64+29>:	ret
+   0x7ffb9c342b1e <KERNEL32!GetTickCount64+30>:	int3
+   0x7ffb9c342b1f <KERNEL32!GetTickCount64+31>:	int3
+   0x7ffb9c342b20 <KERNEL32!GetTickCount64+32>:	int3
+   0x7ffb9c342b21 <KERNEL32!GetTickCount64+33>:	int3
+
+=== GetProcessHandleCount (first instructions only) ===
+   0x7ffb9c3738e0 <KERNEL32!GetProcessHandleCount>:	rex.W jmp QWORD PTR [rip+0x48269]        # 0x7ffb9c3bbb50
+   0x7ffb9c3738e7 <KERNEL32!GetProcessHandleCount+7>:	int3
+   0x7ffb9c3738e8 <KERNEL32!GetProcessHandleCount+8>:	int3
+   0x7ffb9c3738e9 <KERNEL32!GetProcessHandleCount+9>:	int3
+   0x7ffb9c3738ea <KERNEL32!GetProcessHandleCount+10>:	int3
+   0x7ffb9c3738eb <KERNEL32!GetProcessHandleCount+11>:	int3
+[Inferior 1 (process 22516) killed]
+

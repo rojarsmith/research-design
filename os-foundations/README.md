@@ -2,7 +2,7 @@
 
 **English** | [繁體中文](README.zh-TW.md) | [Build plan](SYLLABUS.md)
 
-> **Draft for review, 2026-11-15.** This is a plan, not a finished course, and no labs exist yet. The stage order, hour estimates and tool choices are proposals. Technical claims were checked that day against the official pages listed under [Sources](SYLLABUS.md#sources). Recheck versions before building anything.
+> **Draft for review, 2026-11-15.** This is a plan, not a finished course. Draft labs exist for stages 00–02 only, under [`labs/`](labs/). Their Windows programs were built and run when they were written; their xv6 and Linux steps have not been run yet. The stage order, hour estimates and tool choices are proposals. Technical claims were checked that day against the official pages listed under [Sources](SYLLABUS.md#sources). Recheck versions before building anything.
 
 This is a build-first operating systems course with one goal: being able to build a desktop graphics system, meaning a window system and compositor that runs real applications. Part I builds the OS foundation: you change a small teaching kernel, and you write Linux and Windows programs against the real interfaces. Part II takes those mechanisms to the display. It covers how buffers move between client processes, the kernel and the display hardware, and it ends with a minimal Wayland compositor on Linux DRM/KMS.
 
@@ -140,7 +140,11 @@ This is the graphics course's loop with one addition from `mcu-foundations`: **p
 ## Files
 
 - [`SYLLABUS.md`](SYLLABUS.md) / [`SYLLABUS.zh-TW.md`](SYLLABUS.zh-TW.md): stage-by-stage build plan, the interface with the graphics course, side quests and sources.
-- No labs yet. The planned layout is `labs/NN-name/`, one folder per stage, each with a README of exercises and checkpoints, following the graphics course.
+- [`labs/`](labs/): one folder per stage, `labs/NN-name/`, each with a README of exercises, predictions, checkpoints and failure modes, following the graphics course. Each README states which of its steps were executed and which were not. Drafts so far:
+  - [`labs/00-workbench/`](labs/00-workbench/README.md): boot xv6 in QEMU and step from the reset vector to `main()` in GDB. Not executed yet.
+  - [`labs/01-system-calls/`](labs/01-system-calls/README.md): follow one system call across the boundary, add one, and pass bad pointers to xv6, Linux and NT. The Windows programs were built and run, with recorded output. The xv6 and Linux parts were not executed.
+  - [`labs/02-processes-threads/`](labs/02-processes-threads/README.md): a `fork`/`exec`/`pipe` pipeline, `fork()` and `swtch()` traced, user-level threads, and process, thread and switch costs on Linux and NT. The Windows programs, including a hand-written x64 context switch, were built and run, with recorded output. The xv6 and Linux parts were not executed.
+  - Stages 03–18 have no lab folder yet.
 
 ## Completion target
 

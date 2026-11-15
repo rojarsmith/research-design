@@ -1,0 +1,5 @@
+# Build outputs of the companion programs
+build/
+*.exe
+*.o
+*.obj
