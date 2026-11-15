@@ -297,4 +297,4 @@ Answer these in `NOTES.md`.
 
 ## Next
 
-Stage 02 of the [build plan](../../SYLLABUS.md#02-processes-threads-and-context-switches) builds a pipeline with `fork`, `exec`, `pipe` and `wait`, traces `swtch`, and writes user-level threads.
+[Lab 02](../02-processes-threads/README.md) builds a pipeline with `fork`, `exec`, `pipe` and `wait`, traces `swtch`, and writes user-level threads.

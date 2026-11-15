@@ -1,0 +1,141 @@
+Recorded 2026-11-15 on the machine this lab was written on.
+Windows 11 Pro, build 26300; hypervisor present (Win32_ComputerSystem.HypervisorPresent = True).
+CPU: 11th Gen Intel(R) Core(TM) i7-11700 @ 2.50GHz, 16 logical processors.
+Compiler: gcc 16.2.0 (MinGW-W64 x86_64-ucrt-posix-seh, WinLibs).
+Your numbers will differ. Keep your own copy in NOTES.md.
+
+> gcc -O2 -Wall -o build\nt_procthread.exe nt_procthread.c
+> build\nt_procthread.exe
+
+Logical processors: 16
+
+1. Identity
+  main thread:    pid 2460, tid 29936
+  created thread: pid 2460, tid 4548
+  child process:  pid 6492, tid 29164
+  CreateProcess returned: child pid 6492, its first thread tid 29164
+
+2. Creation cost (create, wait for exit, close handles)
+  CreateProcess + wait:   43594.3 us each  (200 runs)
+  CreateThread + wait:       85.2 us each  (5000 runs)
+
+3. Switch between two kernel threads (event ping-pong, ns per hand-off)
+  same logical CPU:          1277 ns
+  unpinned:                  3264 ns
+
+4. Switch between two fibers on one thread (SwitchToFiber)
+  fiber switch:              27.1 ns
+
+> gcc -O2 -Wall -o build\uthread_win64.exe uthread_win64.c uswitch_win64.S
+> build\uthread_win64.exe
+
+Three threads, three rounds each:
+  thread_a round 0
+  thread_b round 0
+  thread_c round 0
+  thread_a round 1
+  thread_b round 1
+  thread_c round 1
+  thread_a round 2
+  thread_b round 2
+  thread_c round 2
+  thread 0: integer sum 3 (expected 3), double sum 0.75 (expected 0.75) ok
+  thread 1: integer sum 6 (expected 6), double sum 3.75 (expected 3.75) ok
+  thread 2: integer sum 9 (expected 9), double sum 6.75 (expected 6.75) ok
+  16 switches
+
+Two threads, 5,000,000 rounds each (timed):
+  thread 0: integer sum 12499997500000 (expected 12499997500000), double sum 3124999375000.00 (expected 3124999375000.00) ok
+  thread 1: integer sum 24999995000000 (expected 24999995000000), double sum 3125004375000.00 (expected 3125004375000.00) ok
+  15000003 switches
+
+uswitch round robin: 12.5 ns per switch, including the scheduler loop
+(exit code 0)
+
+> gcc -O2 -Wall -DSKIP_XMM -o build\uthread_noxmm.exe uthread_win64.c uswitch_win64.S
+> build\uthread_noxmm.exe
+
+Built with SKIP_XMM: uswitch does not save xmm6-xmm15.
+
+Three threads, three rounds each:
+  thread_a round 0
+  thread_b round 0
+  thread_c round 0
+  thread_a round 1
+  thread_b round 1
+  thread_c round 1
+  thread_a round 2
+  thread_b round 2
+  thread_c round 2
+  thread 0: integer sum 3 (expected 3), double sum 10.25 (expected 0.75) WRONG
+  thread 1: integer sum 6 (expected 6), double sum 0.00 (expected 3.75) WRONG
+  thread 2: integer sum 9 (expected 9), double sum 0.00 (expected 6.75) WRONG
+  16 switches
+
+Two threads, 5,000,000 rounds each (timed):
+  thread 0: integer sum 12499997500000 (expected 12499997500000), double sum 6250003750000.00 (expected 3124999375000.00) WRONG
+  thread 1: integer sum 24999995000000 (expected 24999995000000), double sum 0.00 (expected 3125004375000.00) WRONG
+  15000003 switches
+
+uswitch round robin: 10.9 ns per switch, including the scheduler loop
+(exit code 1)
+
+
+> objdump -d -M intel --no-show-raw-insn build\uthread_win64.exe   (function worker only)
+
+00000001400018c0 <worker>:
+   1400018c0:	push   rdi
+   1400018c1:	push   rsi
+   1400018c2:	push   rbx
+   1400018c3:	sub    rsp,0x40
+   1400018c7:	movaps XMMWORD PTR [rsp+0x20],xmm6
+   1400018cc:	movaps XMMWORD PTR [rsp+0x30],xmm7
+   1400018d1:	mov    edx,DWORD PTR [rcx+0x4]
+   1400018d4:	mov    rsi,rcx
+   1400018d7:	test   edx,edx
+   1400018d9:	jle    140001970 <worker+0xb0>
+   1400018df:	movsd  xmm7,QWORD PTR [rip+0x3961]        # 140005248 <names.0+0x18>
+   1400018e7:	xor    ebx,ebx
+   1400018e9:	pxor   xmm6,xmm6
+   1400018ed:	xor    edi,edi
+   1400018ef:	jmp    140001917 <worker+0x57>
+   1400018f1:	nop    DWORD PTR [rax+0x0]
+   1400018f8:	mov    rax,QWORD PTR [rip+0x7789]        # 140009088 <current>
+   1400018ff:	add    rbx,0x1
+   140001903:	mov    DWORD PTR [rax+0xf0],0x1
+   14000190d:	call   1400017b0 <thread_schedule>
+   140001912:	cmp    DWORD PTR [rsi+0x4],ebx
+   140001915:	jle    140001976 <worker+0xb6>
+   140001917:	mov    edx,DWORD PTR [rsi]
+   140001919:	pxor   xmm0,xmm0
+   14000191d:	pxor   xmm1,xmm1
+   140001921:	cvtsi2sd xmm0,ebx
+   140001925:	mulsd  xmm0,xmm7
+   140001929:	lea    eax,[rdx+0x1]
+   14000192c:	cvtsi2sd xmm1,edx
+   140001930:	cdqe
+   140001932:	imul   rax,rbx
+   140001936:	addsd  xmm0,xmm1
+   14000193a:	add    rdi,rax
+   14000193d:	mov    eax,DWORD PTR [rsi+0x8]
+   140001940:	addsd  xmm6,xmm0
+   140001944:	test   eax,eax
+   140001946:	je     1400018f8 <worker+0x38>
+   140001948:	mov    rax,QWORD PTR [rip+0x7739]        # 140009088 <current>
+   14000194f:	mov    r8d,ebx
+   140001952:	lea    rcx,[rip+0x3755]        # 1400050ae <.rdata+0x5e>
+   140001959:	mov    rdx,QWORD PTR [rax+0xf8]
+   140001960:	call   140003840 <printf>
+   140001965:	jmp    1400018f8 <worker+0x38>
+   140001967:	nop    WORD PTR [rax+rax*1+0x0]
+   140001970:	pxor   xmm6,xmm6
+   140001974:	xor    edi,edi
+   140001976:	mov    QWORD PTR [rsi+0x10],rdi
+   14000197a:	movsd  QWORD PTR [rsi+0x18],xmm6
+   14000197f:	movaps xmm6,XMMWORD PTR [rsp+0x20]
+   140001984:	movaps xmm7,XMMWORD PTR [rsp+0x30]
+   140001989:	add    rsp,0x40
+   14000198d:	pop    rbx
+   14000198e:	pop    rsi
+   14000198f:	pop    rdi
+   140001990:	ret

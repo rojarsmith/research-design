@@ -297,4 +297,4 @@ gdb -q -batch -x user_mode_calls.gdb win32_write.exe
 
 ## 下一步
 
-[建置計畫](../../SYLLABUS.zh-TW.md)的階段 02 會用 `fork`、`exec`、`pipe`、`wait` 建立管線，追蹤 `swtch`，並撰寫使用者層級執行緒。
+[實驗 02](../02-processes-threads/README.zh-TW.md) 會用 `fork`、`exec`、`pipe`、`wait` 建立管線，追蹤 `swtch`，並撰寫使用者層級執行緒。

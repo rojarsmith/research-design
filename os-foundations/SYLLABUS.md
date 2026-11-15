@@ -2,7 +2,7 @@
 
 **English** | [繁體中文](SYLLABUS.zh-TW.md) | [Course overview](README.md)
 
-> **Draft for review, 2026-11-15.** Only stages 00 and 01 have lab drafts so far, in [`labs/`](labs/); each lab README says which of its steps were executed. Nothing else here is built yet. Stages, hours and tools are proposals. Technical claims link to the official page they were checked against. The full list is under [Sources](#sources).
+> **Draft for review, 2026-11-15.** Only stages 00–02 have lab drafts so far, in [`labs/`](labs/); each lab README says which of its steps were executed. Nothing else here is built yet. Stages, hours and tools are proposals. Technical claims link to the official page they were checked against. The full list is under [Sources](#sources).
 
 This is a build sequence, not a list of topics. Every stage lists **Prerequisites**, **Hours** (focused hours, reading included) and **Runs on**. Then come **Build**, **Learn as needed**, a **Linux / NT** comparison where it helps, and a **Checkpoint**. As in the graphics course, a stage is finished when you can explain what the code does, not just when it runs.
 
@@ -43,7 +43,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 
 ### 02: Processes, threads and context switches
 
-**Prerequisites:** 01. **Hours:** 8–14. **Runs on:** WSL 2, Windows. **MIT lab:** `util`.
+**Prerequisites:** 01. **Hours:** 8–14. **Runs on:** WSL 2, Windows. **MIT lab:** `util`. **Lab draft:** [`labs/02-processes-threads/`](labs/02-processes-threads/README.md) (Windows part run; xv6 and Linux parts not executed yet).
 
 **Build:** a small pipeline in xv6 using `fork`, `exec`, `pipe` and `wait`. Trace `fork()` and `swtch()`. Then write user-level threads for xv6: a thread table, your own context switch in assembly, and a `yield`. On Linux, create threads with `pthread_create` and use `strace -f` to find the `clone` flags underneath.
 
