@@ -4,7 +4,7 @@
 
 這個專案把 [研究報告](../README.zh-TW.md) 的建議做成可以每天照著走的練習流程。
 
-- **24 題**：觸發條件對照表的 22 種模式各 1 題，加上 2 題要自己讀 STDIN 的 HackerRank 題。
+- **49 題**：研究報告觸發條件對照表的 30 種模式都有題目，常考的模式各有好幾題；其中 2 題是要自己讀 STDIN 的 HackerRank 題。
 - **每題都附自己出的測資**：範例與邊界、暴力 oracle 對拍、上限大小的效能測試。
 - **`pp` 練習工具**：用 C++ 寫成，負責計時、分層提示、強制寫卡片、間隔複習排程、交錯抽題和弱項統計。
 
@@ -96,7 +96,7 @@ cpp-practice/
 
 ## 5. 題目清單
 
-依研究報告第 6.2 節的週計畫排列。`pp today` 會照這個順序給新題。
+49 題分成 8 週，大致依研究報告第 6.2 節的主題順序排列，`pp today` 會照這個順序給新題。題數增加後，第 7 週集中練動態規劃，原本第 7 週的貪婪、區間、位元運算和 HackerRank 計時練習移到第 8 週。第 9 到 12 週留給到期複習、交錯練習、公司標籤題和模擬面試。
 
 | 週 | 題目 | 模式 | 難度 |
 | --- | --- | --- | --- |
@@ -104,28 +104,55 @@ cpp-practice/
 | 1 | LC 3 Longest Substring Without Repeating Characters | 滑動視窗 | M |
 | 1 | LC 560 Subarray Sum Equals K | 前綴和加雜湊 | M |
 | 1 | LC 128 Longest Consecutive Sequence | 雜湊表 | M |
+| 1 | LC 48 Rotate Image | 矩陣操作 | M |
+| 1 | LC 54 Spiral Matrix | 矩陣模擬 | M |
 | 2 | LC 875 Koko Eating Bananas | 二分搜尋（對答案二分） | M |
+| 2 | LC 33 Search in Rotated Sorted Array | 二分搜尋（旋轉陣列） | M |
+| 2 | LC 153 Find Minimum in Rotated Sorted Array | 二分搜尋（旋轉陣列） | M |
 | 2 | LC 739 Daily Temperatures | 單調堆疊 | M |
-| 3 | LC 215 Kth Largest Element in an Array | 堆積 | M |
+| 3 | LC 206 Reverse Linked List | 鏈結串列操作 | E |
+| 3 | LC 21 Merge Two Sorted Lists | 鏈結串列操作 | E |
 | 3 | LC 142 Linked List Cycle II | 快慢指針 | M |
-| 3 | LC 124 Binary Tree Maximum Path Sum | 樹 DFS | H |
-| 4 | LC 39 Combination Sum | 回溯 | M |
-| 4 | LC 208 Implement Trie | Trie | M |
+| 3 | LC 215 Kth Largest Element in an Array | 堆積 | M |
+| 3 | LC 23 Merge k Sorted Lists | 堆積（多路合併） | H |
+| 3 | LC 102 Binary Tree Level Order Traversal | 樹 BFS（層序） | M |
+| 4 | LC 98 Validate Binary Search Tree | 樹 DFS（上下界） | M |
+| 4 | LC 236 Lowest Common Ancestor of a Binary Tree | 樹 DFS（後序回傳） | M |
+| 4 | LC 124 Binary Tree Maximum Path Sum | 樹 DFS | H |
+| 4 | LC 297 Serialize and Deserialize Binary Tree | 樹（序列化） | H |
+| 4 | LC 208 Implement Trie (Prefix Tree) | Trie | M |
 | 4 | LC 295 Find Median from Data Stream | 雙堆積 | H |
+| 5 | LC 78 Subsets | 回溯（子集） | M |
+| 5 | LC 46 Permutations | 回溯（排列） | M |
+| 5 | LC 39 Combination Sum | 回溯 | M |
+| 5 | LC 79 Word Search | 回溯（網格 DFS） | M |
+| 5 | LC 200 Number of Islands | 網格 BFS/DFS（連通塊） | M |
 | 5 | LC 994 Rotting Oranges | BFS | M |
-| 5 | LC 210 Course Schedule II | 拓撲排序 | M |
-| 5 | LC 684 Redundant Connection | 併查集 | M |
+| 6 | LC 417 Pacific Atlantic Water Flow | 網格 BFS（從邊界反向搜尋） | M |
+| 6 | LC 785 Is Graph Bipartite? | 圖著色（二分圖） | M |
+| 6 | LC 210 Course Schedule II | 拓撲排序 | M |
+| 6 | LC 684 Redundant Connection | 併查集（Union-Find） | M |
 | 6 | LC 743 Network Delay Time | Dijkstra | M |
-| 6 | LC 322 Coin Change | 動態規劃 | M |
-| 7 | LC 56 Merge Intervals | 區間排序掃描 | M |
-| 7 | LC 134 Gas Station | 貪婪 | M |
-| 7 | LC 239 Sliding Window Maximum | 單調佇列 | H |
-| 7 | HackerRank Count Triplets | 雜湊計數（STDIN） | M |
-| 7 | HackerRank Array Manipulation | 差分陣列（STDIN） | H |
+| 6 | LC 787 Cheapest Flights Within K Stops | 限制步數的最短路（Bellman-Ford） | M |
+| 6 | LC 1584 Min Cost to Connect All Points | 最小生成樹（Prim） | M |
+| 7 | LC 198 House Robber | 動態規劃（1D） | M |
+| 7 | LC 300 Longest Increasing Subsequence | 動態規劃加二分搜尋 | M |
+| 7 | LC 322 Coin Change | 動態規劃 | M |
+| 7 | LC 139 Word Break | 動態規劃（字串切分） | M |
+| 7 | LC 62 Unique Paths | 動態規劃（2D 網格） | M |
+| 7 | LC 1143 Longest Common Subsequence | 動態規劃（兩字串） | M |
+| 7 | LC 72 Edit Distance | 動態規劃（兩字串） | M |
+| 8 | LC 56 Merge Intervals | 區間排序掃描 | M |
+| 8 | LC 134 Gas Station | 貪婪 | M |
+| 8 | LC 239 Sliding Window Maximum | 單調佇列 | H |
+| 8 | HackerRank Count Triplets | 雜湊計數，左右兩側（STDIN） | M |
+| 8 | HackerRank Array Manipulation | 差分陣列（STDIN） | H |
 | 8 | LC 338 Counting Bits | 位元運算 | E |
-| 8 | LC 146 LRU Cache | 雜湊表加雙向鏈結串列 | M |
+| 8 | LC 146 LRU Cache | 設計：雜湊表加雙向鏈結串列 | M |
 
-24 題只是骨架。做完後依研究報告的建議擴充到 150 到 250 題（Grind 169 或 NeetCode 150），用 `pp new` 加題。
+**覆蓋範圍。** 這 49 題和 Blind 75 重疊 28 題（37%）。研究報告第 4.4 節觸發條件對照表的每一種模式都至少有 1 題，常考的模式題數較多：二分搜尋 3 題、鏈結串列 4 題、樹 5 題、回溯 4 題、圖 9 題、動態規劃 7 題。
+
+49 題仍然是骨架。研究報告建議的題量是 150 到 250 題，例如 Grind 169 或 NeetCode 150。做完這 49 題後，先用 `pp stats` 找出弱項，再用 `pp new` 補同一模式的題目。
 
 ## 6. 測試怎麼運作
 
@@ -136,21 +163,25 @@ cpp-practice/
 3. `STRESS` 對拍：隨機產生由小到大的輸入，比對你的答案和 oracle，失敗時印出最小反例。
 4. 效能測試：題目上限大小的輸入，O(n²) 的寫法會明確失敗。
 
+**時間上限：** 單一測試跑超過 10 秒，程式會被終止並顯示 TIMEOUT，`pp` 會提示「多半是指數時間或無窮迴圈」。例如沒有記憶化的遞迴，就會停在這裡，而不是一直卡住。
+
 **兩種建置模式：**
 
-- 測試版：`-O2 -D_GLIBCXX_ASSERTIONS`。會檢查越界，也會檢查時限。
-- 除錯版（F5）：`-O0 -g -D_GLIBCXX_DEBUG`。檢查更完整，不檢查時限。
+- 測試版：`-O2 -D_GLIBCXX_ASSERTIONS`。會檢查越界，也會檢查時限和 10 秒的時間上限。
+- 除錯版（F5）：`-O0 -g -D_GLIBCXX_DEBUG`。檢查更完整，但不檢查時限，也沒有時間上限，停在中斷點不會被終止。
 
 **常用的測試參數：**
 
 - 只跑部分測試：`pp test 739 random`。
 - 重現一次對拍失敗：`pp test 739 random --seed=失敗訊息裡的數字`。
+- 調整時間上限：`pp test 322 --timeout=3`。
 
 **HackerRank 題：**
 
 - 逐一執行 `tests/*.in`，比對 `*.out`，每個測資時限 2 秒（含程式啟動時間）。
 - `big.in` 由 `gen.cpp` 產生，同時檢查溢位和速度。
 - 判定結果有 AC、WA、TLE、RE；只有輸入、沒有標準答案的測資只檢查時間。
+- 這兩題是完整程式，沒有 10 秒的時間上限。程式陷入無窮迴圈時，在終端機按 Ctrl+C 中止。
 
 ## 7. 加新題
 
@@ -174,9 +205,10 @@ HackerRank 類的題目把 `fn` 換成 `io`。
 | IntelliSense 滿是紅線 | 確認已安裝 C/C++ 擴充。如果還是不行，把 `.vscode/c_cpp_properties.json` 的 `compilerPath` 改成 `where g++` 顯示的完整路徑。 |
 | 中文變亂碼 | `pp` 已經把主控台切換成 UTF-8。如果還是亂碼，先在終端機執行 `chcp 65001`。 |
 | 結束碼 `-1073741819` 或 `-1073741571` | 分別是存取違規與堆疊溢位。按 F5 用除錯版重跑，會停在出錯的那一行。 |
+| 顯示 TIMEOUT，結束碼 3 | 某個測試超過 10 秒還沒跑完，多半是指數時間或無窮迴圈。先想複雜度；要追蹤就按 F5，除錯版沒有時間上限。 |
 | gdb 顯示 `No module named 'libstdcxx'`，容器印成一長串內部欄位 | 這是從 Git Bash 啟動 gdb 時的環境問題。改用 VS Code 預設的 PowerShell 終端機或按 F5，STL 容器就會正常顯示成 `{1, 1}` 這樣的格式。 |
 | 改了 `tools/pp.cpp` | 執行工作 `pp: 重新建置工具` |
 | `build/` 太大 | 預先編譯標頭每個約 130 MB，可以整個刪掉，下次會自動重建 |
 | Linux 或 macOS | 一樣用 g++，測試版會多開 AddressSanitizer。macOS 除錯要把 `MIMode` 改成 `lldb`。 |
 
-已在 Windows 11 上用 WinLibs g++ 16.2.0 驗證過兩件事：24 題的空白 stub 都不會通過測試；參考解答都通過全部測試，包含效能測試。參考解答沒有放進專案。
+已在 Windows 11 上用 WinLibs g++ 16.2.0 驗證過兩件事：49 題的空白 stub 都不會通過測試；參考解答都通過全部測試，包含效能測試。參考解答沒有放進專案。

@@ -451,7 +451,10 @@ static void after_run(const Problem& p, bool ok, int rc) {
                   << p.id << " pass｜hint｜solution\n";
         return;
     }
-    if (rc != 1)
+    if (rc == 3)
+        std::cout << "超過時間上限還沒結束：多半是指數時間（例如沒有記憶化的遞迴）或無窮迴圈。"
+                     "先想複雜度，或用小輸入手算一次；要追蹤就按 F5，在迴圈裡設中斷點。\n";
+    else if (rc != 1)
         std::cout << "程式崩潰（越界存取、空指標或遞迴太深）。按 F5 用除錯版重跑，_GLIBCXX_DEBUG 會停在越界的那一行。\n";
     else
         std::cout << "未通過：先看最小反例並手算，找出不變量在哪一步被破壞，再改程式。不要靠猜改到通過。\n";
@@ -807,7 +810,7 @@ static void usage() {
     std::cout << "pp：刷題練習迴圈\n"
                  "  pp today                    今天做什麼：先到期複習，再一題新題\n"
                  "  pp start <題> [--blind]     開始或重做：封存舊版，還原空白檔（--blind 隱藏模式）\n"
-                 "  pp test <題> [篩選] [--seed=N]  編譯並跑測試（HackerRank 題跑 tests/*.in）\n"
+                 "  pp test <題> [篩選] [--seed=N] [--timeout=秒]  編譯並跑測試（HackerRank 題跑 tests/*.in）\n"
                  "  pp hint <題>                分層提示，每次多一層\n"
                  "  pp done <題> pass|hint|solution [--force]  記錄結果並排下次複習\n"
                  "  pp due                      列出到期複習\n"

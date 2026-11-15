@@ -11,6 +11,7 @@
 #pragma once
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -24,6 +25,7 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -227,6 +229,39 @@ inline void expect_under_ms(const char* file, int line, double ms, double limit)
 #endif
 }
 
+// ---------- watchdog ----------
+// An exponential or endless solution would otherwise hang forever. In optimized builds a
+// background thread ends the program when one test runs longer than the limit (exit code 3).
+// Debug builds have no watchdog, so pausing at a breakpoint is safe.
+
+inline long long steady_ms() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+        .count();
+}
+inline std::atomic<long long>& test_started_ms() { static std::atomic<long long> v{0}; return v; }
+inline std::atomic<const std::string*>& running_test() { static std::atomic<const std::string*> v{nullptr}; return v; }
+
+inline void start_watchdog(double limit_s) {
+#ifdef __OPTIMIZE__
+    std::thread([limit_s] {
+        for (;;) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            long long started = test_started_ms().load();
+            if (started == 0 || steady_ms() - started <= static_cast<long long>(limit_s * 1000)) continue;
+            const std::string* name = running_test().load();
+            std::fflush(stdout);
+            std::printf("\n    TIMEOUT: \"%s\" still running after %.0f s. The algorithm is probably exponential "
+                        "(for example recursion without memoization) or stuck in an endless loop.\n",
+                        name ? name->c_str() : "?", limit_s);
+            std::fflush(stdout);
+            std::_Exit(3);
+        }
+    }).detach();
+#else
+    (void)limit_s;
+#endif
+}
+
 // ---------- runner ----------
 
 inline int run_all(int argc, char** argv) {
@@ -234,17 +269,22 @@ inline int run_all(int argc, char** argv) {
     SetConsoleOutputCP(65001);
 #endif
     std::string filter;
+    double timeout_s = 10;
     for (int i = 1; i < argc; ++i) {
         std::string a = argv[i];
         if (a.rfind("--seed=", 0) == 0) seed() = std::stoull(a.substr(7));
+        else if (a.rfind("--timeout=", 0) == 0) timeout_s = std::stod(a.substr(10));
         else filter = a;
     }
+    start_watchdog(timeout_s);
     int passed = 0, failed = 0;
     for (auto& t : registry()) {
         if (!filter.empty() && t.name.find(filter) == std::string::npos) continue;
         failures() = 0;
         iteration() = -1;
         std::cout << "[ RUN  ] " << t.name << std::endl;  // flushed, so a crash shows which test was running
+        running_test() = &t.name;
+        test_started_ms() = steady_ms();
         auto t0 = std::chrono::steady_clock::now();
         try {
             t.fn();
@@ -254,6 +294,7 @@ inline int run_all(int argc, char** argv) {
         } catch (...) {
             report("test", 0, "uncaught non-standard exception");
         }
+        test_started_ms() = 0;
         auto ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
         if (failures() == 0) {
             ++passed;
