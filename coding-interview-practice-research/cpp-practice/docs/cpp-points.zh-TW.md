@@ -43,6 +43,7 @@ cin.tie(nullptr);
 - `cin >> n` 之後接著用 `getline`，會讀到剩下的換行。中間先寫 `cin >> ws`。
 - 輸出用 `'\n'`，不要用 `endl`。`endl` 每一行都會沖洗緩衝區，輸出很多行時會慢很多。
 - 輸出浮點數：`cout << fixed << setprecision(6) << x;`
+- 一次給多組測資時（例如 Roads and Libraries），每組開始前用 `assign` 重設容器，上一組的資料不能留下來。
 
 ## 4. 讓程式更短、更不容易錯的現代寫法
 

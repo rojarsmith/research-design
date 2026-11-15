@@ -781,11 +781,12 @@ static string replace_all(string s, const string& from, const string& to) {
 static int cmd_new(const vector<string>& a) {
     if (a.size() < 6) {
         std::cout << "用法：pp new <id> <fn|io> <模式> <網址> [E|M|H] [週]\n"
-                     "例：pp new lc0076-minimum-window-substring fn 滑動視窗 https://leetcode.com/problems/minimum-window-substring/ H 2\n";
+                     "例：pp new lc0438-find-all-anagrams-in-a-string fn 滑動視窗 https://leetcode.com/problems/find-all-anagrams-in-a-string/ M 1\n";
         return 1;
     }
     string id = a[2], kind = a[3], pattern = a[4], url = a[5];
-    string level = a.size() > 6 ? a[6] : "M", week = a.size() > 7 ? a[7] : "9";
+    // Without a week, a new problem goes after the 10-week list (weeks 11-12 are for reviews and mocks).
+    string level = a.size() > 6 ? a[6] : "M", week = a.size() > 7 ? a[7] : "11";
     if (kind != "fn" && kind != "io") { std::cout << "種類只能是 fn（LeetCode 函式題）或 io（HackerRank 讀 STDIN）\n"; return 1; }
     for (auto& p : g_catalog) if (p.id == id) { std::cout << "已經有 " << id << "\n"; return 1; }
     fs::path from = g_root / "templates" / kind, to = g_root / "problems" / id;
