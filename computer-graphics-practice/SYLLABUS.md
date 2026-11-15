@@ -1,6 +1,6 @@
 # Build plan
 
-This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Labs 01–03 are implemented and run from `index.html`; later milestones are planned exercises.
+This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Labs 01–04 are implemented and run from `index.html`; later milestones are planned exercises.
 
 ## 00 — Set up a pixel workspace
 
@@ -34,13 +34,13 @@ This is a practical sequence, not a list of topics to memorize. Each milestone a
 
 **Checkpoint:** trace one vertex through each space and explain why points farther away appear smaller. Draw the camera frustum and label the clip-volume convention used in your code. Complete exercises A–G in `labs/03-first-3d/README.md`.
 
-## 04 — Decide what is visible
+## 04 — Decide what is visible (implemented)
 
 **Build:** a depth buffer, back-face culling, and clipping against the near plane. Add a toggle to compare each feature on and off.
 
 **Learn as needed:** depth test, triangle winding, homogeneous clipping, z-fighting, depth precision.
 
-**Checkpoint:** show two intersecting or overlapping meshes and explain why painter's sorting fails while per-sample depth succeeds. Explain a case that still causes z-fighting.
+**Checkpoint:** show two intersecting or overlapping meshes and explain why painter's sorting fails while per-sample depth succeeds. Explain a case that still causes z-fighting. Complete exercises A–G in `labs/04-visibility/README.md`.
 
 ## 05 — Move geometry to the GPU
 
