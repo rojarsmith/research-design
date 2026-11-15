@@ -2,7 +2,7 @@
 
 **English** | [繁體中文](SYLLABUS.zh-TW.md) | [Course overview](README.md)
 
-> **Draft for review, 2026-11-15.** None of this is built yet. Stages, hours and tools are proposals. Technical claims link to the official page they were checked against. The full list is under [Sources](#sources).
+> **Draft for review, 2026-11-15.** Only stages 00 and 01 have lab drafts so far, in [`labs/`](labs/); each lab README says which of its steps were executed. Nothing else here is built yet. Stages, hours and tools are proposals. Technical claims link to the official page they were checked against. The full list is under [Sources](#sources).
 
 This is a build sequence, not a list of topics. Every stage lists **Prerequisites**, **Hours** (focused hours, reading included) and **Runs on**. Then come **Build**, **Learn as needed**, a **Linux / NT** comparison where it helps, and a **Checkpoint**. As in the graphics course, a stage is finished when you can explain what the code does, not just when it runs.
 
@@ -13,7 +13,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 ### 00: Workbench, booting and debugging xv6
 
 **Prerequisites:** C with pointers and structs, a Linux shell, git and make, and reading RISC-V assembly at the level of stage 1 in the [`c-compiler-foundations` path](../c-compiler-foundations/research/04-integration-path.zh-TW.md).
-**Hours:** 4–8. **Runs on:** WSL 2 with Ubuntu 24.04.
+**Hours:** 4–8. **Runs on:** WSL 2 with Ubuntu 24.04. **Lab draft:** [`labs/00-workbench/`](labs/00-workbench/README.md) (not executed yet).
 
 **Build:** install WSL 2 and the packages from MIT's [tools page](https://pdos.csail.mit.edu/6.1810/2025/tools.html): `git build-essential gdb-multiarch qemu-system-misc gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu`. The page asks for QEMU 7.2+ and GDB 8.3+. Clone [xv6-riscv](https://github.com/mit-pdos/xv6-riscv), run `make qemu`, then `make qemu-gdb` and attach `gdb-multiarch`. Step from `_entry` through `start()` to `main()`. Record every tool version in `NOTES.md`.
 
@@ -27,7 +27,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 
 ### 01: System calls, crossing the boundary
 
-**Prerequisites:** 00. **Hours:** 8–14. **Runs on:** WSL 2, plus Windows for the NT part. **MIT lab:** `syscall`.
+**Prerequisites:** 00. **Hours:** 8–14. **Runs on:** WSL 2, plus Windows for the NT part. **MIT lab:** `syscall`. **Lab draft:** [`labs/01-system-calls/`](labs/01-system-calls/README.md) (Windows part run; xv6 and Linux parts not executed yet).
 
 **Build:** add a system call to xv6. Follow one call from the user stub (`ecall` in `usys.S`) through `uservec` in `trampoline.S`, `usertrap()` and `syscall()`, and back out through `userret`. Then pass a bad pointer from user space and show that `copyin`/`copyout` reject it. On Linux, run the same small program under `strace` once, then once more calling `syscall(2)` directly. On Windows, write the same program against Win32 and use a debugger to find the `Nt*` routine underneath it.
 

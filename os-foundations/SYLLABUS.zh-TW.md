@@ -2,7 +2,7 @@
 
 # 實作建置計畫
 
-> **草稿，待審閱（2026-11-15）。** 以下內容都尚未實作。階段、時數與工具皆屬提案。技術敘述附上查核時對照的官方頁面，完整清單見[來源](#來源)。
+> **草稿，待審閱（2026-11-15）。** 目前只有階段 00 與 01 有實驗草稿，放在 [`labs/`](labs/)；每份實驗 README 都註明哪些步驟有執行。其餘內容都尚未實作。階段、時數與工具皆屬提案。技術敘述附上查核時對照的官方頁面，完整清單見[來源](#來源)。
 
 這是一條建置路線，而非主題清單。每個階段先列出**先備**、**時數**（專注時間，含閱讀）與**執行環境**，接著是**製作**、**需要時再學**，有助理解時加上 **Linux／NT 對照**，最後是**檢核**。與圖學課程相同：能解釋程式的行為才算完成，程式能跑還不夠。
 
@@ -13,7 +13,7 @@
 ### 00 — 工作環境：開機並除錯 xv6
 
 **先備：** 會用指標與結構的 C、Linux shell、git 與 make，以及讀懂 RISC-V 組合語言，程度相當於 [`c-compiler-foundations` 學習路線](../c-compiler-foundations/research/04-integration-path.zh-TW.md)第 1 關。
-**時數：** 4–8。**執行環境：** WSL 2，搭配 Ubuntu 24.04。
+**時數：** 4–8。**執行環境：** WSL 2，搭配 Ubuntu 24.04。**實驗草稿：** [`labs/00-workbench/`](labs/00-workbench/README.zh-TW.md)（尚未執行）。
 
 **製作：** 安裝 WSL 2，以及 MIT [工具頁](https://pdos.csail.mit.edu/6.1810/2025/tools.html)列出的套件：`git build-essential gdb-multiarch qemu-system-misc gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu`。該頁要求 QEMU 7.2 以上、GDB 8.3 以上。複製 [xv6-riscv](https://github.com/mit-pdos/xv6-riscv) 後執行 `make qemu`，再執行 `make qemu-gdb` 並接上 `gdb-multiarch`。從 `_entry` 經 `start()` 逐步追到 `main()`。所有工具版本都記入 `NOTES.md`。
 
@@ -27,7 +27,7 @@
 
 ### 01 — 系統呼叫：跨越邊界
 
-**先備：** 00。**時數：** 8–14。**執行環境：** WSL 2；NT 部分在 Windows 上做。**MIT 實驗：** `syscall`。
+**先備：** 00。**時數：** 8–14。**執行環境：** WSL 2；NT 部分在 Windows 上做。**MIT 實驗：** `syscall`。**實驗草稿：** [`labs/01-system-calls/`](labs/01-system-calls/README.zh-TW.md)（Windows 部分已執行；xv6 與 Linux 部分尚未執行）。
 
 **製作：** 在 xv6 新增一個系統呼叫，從使用者端 stub（`usys.S` 的 `ecall`）開始追蹤，經 `trampoline.S` 的 `uservec`、`usertrap()`、`syscall()`，再從 `userret` 返回。接著從使用者空間傳入錯誤指標，證明 `copyin`／`copyout` 會拒絕它。在 Linux 上，先用 `strace` 執行同一個小程式，再改成直接呼叫 `syscall(2)` 執行一次。在 Windows 上，用 Win32 寫同樣的程式，再用除錯器找出底下的 `Nt*` 常式。
 
