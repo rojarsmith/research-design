@@ -161,3 +161,10 @@ inline vector<vector<int>> normalized(vector<vector<int>> v) {
     sort(v.begin(), v.end());
     return v;
 }
+
+// Sorts only the outer vector: use it when the order inside each answer matters
+// (permutations, [row, col] pairs) but the answers may come in any order.
+inline vector<vector<int>> sorted_outer(vector<vector<int>> v) {
+    sort(v.begin(), v.end());
+    return v;
+}
