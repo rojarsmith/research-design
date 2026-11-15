@@ -27,7 +27,7 @@ No graphics card setup, engine, package manager, or prior graphics course is req
 | 6. Shadows and quality | Add a shadow map and anti-aliasing experiments | Multiple passes, bias, aliasing, trade-offs |
 | 7. Final project | Build a compact interactive scene and explain its pipeline | Profiling, debugging, design choices, reproducible demos |
 
-The detailed milestone-by-milestone build plan is in [`SYLLABUS.md`](SYLLABUS.md). Labs 01–02 are implemented in this directory; later milestones are the planned course sequence to build as you progress.
+The detailed milestone-by-milestone build plan is in [`SYLLABUS.md`](SYLLABUS.md). Labs 01–03 are implemented in this directory; later milestones are the planned course sequence to build as you progress.
 
 Hardware is part of the course too: a thread woven through the labs covers pipeline stages, GPU parallel execution, memory and CPU/GPU data movement, and evidence-based performance diagnosis. The browser labs provide a low-friction start. The NVIDIA path adds a native OpenGL renderer and Nsight Graphics frame analysis on your RTX 5070 Ti; CUDA image processing and Vulkan ray tracing are optional extensions. It stays at the level useful for graphics programming; circuit design is out of scope.
 
@@ -46,6 +46,8 @@ For every lab: **predict → implement → inspect → explain**. Change one thi
 - [`labs/01-triangle/README.md`](labs/01-triangle/README.md) — experiment brief and implementation checkpoints.
 - [`labs/02-transforms/app.js`](labs/02-transforms/app.js) — 3×3 homogeneous transforms, a viewport matrix, and a wireframe debug overlay on top of the Lab 01 rasterizer.
 - [`labs/02-transforms/README.md`](labs/02-transforms/README.md) — transform-order experiments, exercises A–G, and checkpoints.
+- [`labs/03-first-3d/app.js`](labs/03-first-3d/app.js) — 4×4 matrices, an orbit camera, perspective and orthographic projection, a vertex trace, and an observer view, still on the CPU.
+- [`labs/03-first-3d/README.md`](labs/03-first-3d/README.md) — coordinate conventions, exercises A–G, and checkpoints.
 
 ## Completion target
 

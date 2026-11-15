@@ -27,7 +27,7 @@
 | 6. 陰影與品質 | 加入陰影貼圖並實驗抗鋸齒 | 多重繪製階段、偏移、混疊與取捨 |
 | 7. 期末專題 | 製作精簡互動場景並說明渲染流程 | 效能分析、除錯、設計選擇、可重現展示 |
 
-逐階段的建置計畫請見 [`SYLLABUS.zh-TW.md`](SYLLABUS.zh-TW.md)。目前目錄已實作第 01–02 個實驗；後續階段是隨學習逐步完成的課程路線。
+逐階段的建置計畫請見 [`SYLLABUS.zh-TW.md`](SYLLABUS.zh-TW.md)。目前目錄已實作第 01–03 個實驗；後續階段是隨學習逐步完成的課程路線。
 
 課程也會穿插硬體知識：渲染管線各階段、GPU 平行執行、記憶體與 CPU/GPU 資料搬運，以及以證據診斷效能。瀏覽器實驗方便起步；NVIDIA 實作路線會加入原生 OpenGL 渲染器，並用 Nsight Graphics 擷取和分析 RTX 5070 Ti 上的影格。CUDA 影像處理與 Vulkan 光線追蹤是選修延伸，不會把 CUDA 當成圖形管線本身。
 
@@ -46,6 +46,8 @@
 - [`labs/01-triangle/README.md`](labs/01-triangle/README.md) — 實驗說明與實作檢核點。
 - [`labs/02-transforms/app.js`](labs/02-transforms/app.js) — 3×3 齊次變換、視口矩陣，以及疊在實驗 01 光柵器上的線框除錯覆層。
 - [`labs/02-transforms/README.md`](labs/02-transforms/README.md) — 變換順序實驗、A–G 練習與檢核問題。
+- [`labs/03-first-3d/app.js`](labs/03-first-3d/app.js) — 4×4 矩陣、環繞攝影機、透視與正交投影、頂點追蹤與旁觀者檢視，仍在 CPU 上執行。
+- [`labs/03-first-3d/README.md`](labs/03-first-3d/README.md) — 座標慣例、A–G 練習與檢核問題。
 
 ## 完成目標
 
