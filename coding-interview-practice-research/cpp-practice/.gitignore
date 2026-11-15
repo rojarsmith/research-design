@@ -1,0 +1,12 @@
+# 建置產物（pp.exe、測試執行檔、預先編譯標頭，每個約 130 MB）
+build/*
+!build/.gitkeep
+
+# 個人練習紀錄與解答：每個人自己的，不進版本控制。
+# 想保存自己的紀錄，就刪掉下面幾行，改成提交到自己的分支。
+progress/
+problems/*/solution.hpp
+problems/*/solution.cpp
+
+# 由 gen.cpp 產生的大型測資
+problems/*/tests/big.in

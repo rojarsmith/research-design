@@ -39,6 +39,26 @@ Research date: 2026-11-15. The full report is in [README.zh-TW.md](README.zh-TW.
 | 7 | Evaluation of the two repos and rules for using solution repos |
 | 8 | HackerRank online assessment prep: fast-input templates in Java and Python, edge-case checklist, proctoring |
 | 9 | Senior prep beyond DSA: AI-assisted rounds, system design, behavioral, LLD |
-| 10–11 | Verification gaps and references |
+| 10 | The VS Code C++ practice project (see below) |
+| 11–12 | Verification gaps and references |
+
+## C++ practice project
+
+[cpp-practice/](cpp-practice/README.md) puts the method into practice as a project you open in VS Code. It needs only VS Code, the C/C++ extension and WinLibs GCC.
+
+- **Problems:** 24, one for each pattern in the trigger table plus 2 HackerRank STDIN problems, ordered by the weekly plan.
+- **Tests:** examples and edge cases, a stress test against a brute-force oracle, and a timing test for each problem.
+- **The `pp` CLI** enforces the method:
+  - re-solve from a blank file
+  - time-boxed, layered hints
+  - a required review card
+  - spaced reviews at 1, 3, 7, 14 and 30 days
+  - interleaving with the pattern hidden
+  - a report of weak patterns
+
+It was verified on Windows 11 with g++ 16.2.0:
+- Every stub fails its tests.
+- Reference solutions pass every test.
+- Solutions deliberately written with the wrong complexity fail only the timing tests.
 
 Web sources were checked on 2026-11-15. Claims that rest only on secondary or vendor sources are marked unverified in the full report. The correctness of the repos' solutions was not checked problem by problem.

@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "name": "WinLibs g++",
+            "compilerPath": "g++",
+            "cppStandard": "c++20",
+            "cStandard": "c17",
+            "intelliSenseMode": "windows-gcc-x64",
+            "includePath": ["${workspaceFolder}/include"],
+            // solution.hpp 本身沒有 #include，強制先讀 leetcode.hpp，IntelliSense 才認得 vector、string 等
+            "forcedInclude": ["${workspaceFolder}/include/leetcode.hpp"]
+        }
+    ],
+    "version": 4
+}

@@ -1,0 +1,21 @@
+{
+    // 模擬考場：關掉 AI 行內補全。HackerRank 監考模式不能複製貼上，也沒有 AI 補全。
+    // 要練 AI 輔助面試回合時，再暫時打開。
+    "editor.inlineSuggest.enabled": false,
+    "github.copilot.enable": { "*": false },
+
+    // 從空白檔重寫才算複習：在檔案總管和搜尋中隱藏封存的舊版與建置產物。
+    "files.exclude": {
+        "build": true,
+        "progress/history": true
+    },
+    "search.exclude": {
+        "build": true,
+        "progress": true
+    },
+
+    "files.encoding": "utf8",
+    "files.associations": { "*.hpp": "cpp" },
+    "editor.formatOnSave": false,
+    "C_Cpp.default.cppStandard": "c++20"
+}

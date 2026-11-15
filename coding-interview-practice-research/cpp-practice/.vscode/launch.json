@@ -1,0 +1,41 @@
+{
+    // F5：先在編輯器打開該題的 solution 檔，再選下面其中一個設定。
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "除錯這題（LeetCode 函式題）",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/${fileDirnameBasename}-debug.exe",
+            // 只跑某些測試：填測試名稱的一部分，例如 ["random"] 或 ["perf"]。
+            // 重現對拍失敗：加上失敗訊息裡的 seed，例如 ["random", "--seed=20261115"]。
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "gdb",
+            "preLaunchTask": "pp: 建置除錯版",
+            "setupCommands": [
+                { "description": "Pretty-print STL containers", "text": "-enable-pretty-printing", "ignoreFailures": true }
+            ]
+        },
+        {
+            "name": "除錯這題（HackerRank，從 tests/1.in 讀輸入）",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/${fileDirnameBasename}-debug.exe",
+            // 換成其他測資：改成 tests/2.in 等。程式裡的 freopen 會從這個檔案讀入。
+            "args": ["${fileDirname}/tests/1.in"],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "gdb",
+            "preLaunchTask": "pp: 建置除錯版",
+            "setupCommands": [
+                { "description": "Pretty-print STL containers", "text": "-enable-pretty-printing", "ignoreFailures": true }
+            ]
+        }
+    ]
+}

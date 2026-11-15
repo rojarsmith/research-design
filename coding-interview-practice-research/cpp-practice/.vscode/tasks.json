@@ -1,0 +1,148 @@
+{
+    // 每個工作都呼叫 build/pp.exe。第一次執行時會自動用 g++ 建置 pp.exe（約 5 秒）。
+    // 「這題」指目前編輯器裡打開的檔案所在的題目資料夾。
+    "version": "2.0.0",
+    "options": { "cwd": "${workspaceFolder}" },
+    "tasks": [
+        {
+            "label": "pp: 確認工具已建置",
+            "type": "shell",
+            "command": "test -x build/pp.exe || g++ -std=c++20 -O2 -o build/pp.exe tools/pp.cpp",
+            "windows": {
+                "command": "if not exist build\\pp.exe g++ -std=c++20 -O2 -static -o build/pp.exe tools/pp.cpp",
+                "options": { "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } }
+            },
+            "presentation": { "reveal": "silent", "showReuseMessage": false },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "pp: 重新建置工具",
+            "type": "process",
+            "command": "g++",
+            "args": ["-std=c++20", "-O2", "-o", "build/pp.exe", "tools/pp.cpp"],
+            "windows": { "args": ["-std=c++20", "-O2", "-static", "-o", "build/pp.exe", "tools/pp.cpp"] },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "pp: 測試這題",
+            "detail": "編譯並執行 test.cpp（HackerRank 題跑 tests/*.in）。快捷鍵 Ctrl+Shift+B",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["test", "${fileDirname}"],
+            "dependsOn": "pp: 確認工具已建置",
+            "group": { "kind": "build", "isDefault": true },
+            "presentation": { "clear": true, "focus": false, "showReuseMessage": false },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "pp: 今日練習",
+            "detail": "先列到期複習，再給一題新題",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["today"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "pp: 開始/重做這題",
+            "detail": "封存上一版，還原空白的 solution 檔，開始計時",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["start", "${fileDirname}"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "pp: 盲練這題（隱藏模式）",
+            "detail": "交錯練習用：不顯示這題屬於哪個模式",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["start", "${fileDirname}", "--blind"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "pp: 提示",
+            "detail": "分層提示，每執行一次多一層；用過提示的這次只能記 hint 或 solution",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["hint", "${fileDirname}"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "clear": false, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "pp: 記錄結果",
+            "detail": "檢查卡片、記錄結果、排定下次複習，並顯示本題學習要點",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["done", "${fileDirname}", "${input:result}"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "pp: 到期複習",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["due"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "pp: 交錯抽題",
+            "detail": "從做過的題目隨機抽 3 題，模式隱藏",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["mix", "3"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "pp: 弱項統計",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["stats"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "pp: 題目清單",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["list"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "pp: 建置除錯版",
+            "detail": "F5 會自動執行：-O0 -g -D_GLIBCXX_DEBUG",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["debug", "${fileDirname}"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "reveal": "silent", "showReuseMessage": false },
+            "problemMatcher": ["$gcc"]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "result",
+            "type": "pickString",
+            "description": "這次的結果（誠實記錄，排程才準）",
+            "options": [
+                { "label": "pass：沒看提示，自己解出來", "value": "pass" },
+                { "label": "hint：看了提示才解出來", "value": "hint" },
+                { "label": "solution：看了解答", "value": "solution" }
+            ],
+            "default": "pass"
+        }
+    ]
+}
