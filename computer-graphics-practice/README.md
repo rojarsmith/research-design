@@ -27,7 +27,7 @@ No graphics card setup, engine, package manager, or prior graphics course is req
 | 6. Shadows and quality | Add a shadow map and anti-aliasing experiments | Multiple passes, bias, aliasing, trade-offs |
 | 7. Final project | Build a compact interactive scene and explain its pipeline | Profiling, debugging, design choices, reproducible demos |
 
-The detailed milestone-by-milestone build plan is in [`SYLLABUS.md`](SYLLABUS.md). Labs 01–07 are implemented in this directory; later milestones are the planned course sequence to build as you progress.
+The detailed milestone-by-milestone build plan is in [`SYLLABUS.md`](SYLLABUS.md). Labs 01–08 are implemented in this directory, which covers all of Part I. Lab 08 is the final project: a brief, a design-note outline, and a reference demo to compare your own renderer against.
 
 **Part II (draft, awaiting review):** [`SYLLABUS-PART2.md`](SYLLABUS-PART2.md) outlines what comes after the browser: native Vulkan or Direct3D 12 on the RTX 5070 Ti, a shared core, and two tracks, a game-engine renderer or 2D, text and compositing rendering. It is a proposal only; none of it is implemented. Parts I and II can both be completed on Windows.
 
@@ -47,7 +47,7 @@ For every lab: **predict → implement → inspect → explain**. Change one thi
 
 - [`index.html`](index.html) — bilingual course overview and interactive labs; choose a lab from the lab bar. It works when opened directly from disk.
 - [`CONVENTIONS.md`](CONVENTIONS.md) — the course's coordinate, matrix, depth, winding, and color conventions, and how each changes in Vulkan and Direct3D 12.
-- [`labs/common/math.js`](labs/common/math.js), [`labs/common/color.js`](labs/common/color.js) — shared vector/matrix/camera/projection helpers and sRGB conversions for Labs 02–07, loaded as classic scripts on `window.cg` so no server is needed.
+- [`labs/common/math.js`](labs/common/math.js), [`labs/common/color.js`](labs/common/color.js) — shared vector/matrix/camera/projection helpers and sRGB conversions for Labs 02–08, loaded as classic scripts on `window.cg` so no server is needed.
 - [`labs/common/mesh.js`](labs/common/mesh.js), [`labs/common/webgl.js`](labs/common/webgl.js) — from Lab 07 on: sphere, box and plane meshes in Lab 06's vertex layout, and WebGL 2 helpers for programs, meshes, textures, shadow-map and color render targets, and GPU timer queries.
 - [`SYLLABUS-PART2.md`](SYLLABUS-PART2.md) — **draft** Part II plan (native GPU rendering, engine track, 2D/text/compositing track), awaiting review.
 - [`labs/01-triangle/app.js`](labs/01-triangle/app.js) — deliberately readable CPU triangle rasterizer to extend.
@@ -64,6 +64,8 @@ For every lab: **predict → implement → inspect → explain**. Change one thi
 - [`labs/06-materials/README.md`](labs/06-materials/README.md) — lighting and color-space experiments, exercises A–H, and checkpoints.
 - [`labs/07-shadows/app.js`](labs/07-shadows/app.js) — a two-pass shadow map rendered to a depth texture, constant and slope-scaled bias, PCF, MSAA and SSAA compared with an aliased reference in side-by-side magnifiers, debug views, and GPU timing.
 - [`labs/07-shadows/README.md`](labs/07-shadows/README.md) — shadow acne, detached shadows and anti-aliasing experiments, exercises A–H, and checkpoints.
+- [`labs/08-tiny-renderer/app.js`](labs/08-tiny-renderer/app.js) — the final project's reference demo: a fly camera, textured lit materials, a shadow map, MSAA, a render scale, a debug view per stage, a vertex trace, and per-pass GPU timing.
+- [`labs/08-tiny-renderer/README.md`](labs/08-tiny-renderer/README.md) — the final-project brief and checklist, deliverables, a design-note outline, extension exercises A–H, self-review, and checkpoints.
 
 ## Completion target
 

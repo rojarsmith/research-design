@@ -76,4 +76,4 @@ Answer these in your lab notebook:
 
 ## Next
 
-Lab 08 combines Labs 05–07 into a small navigable renderer and asks for a short design note about it.
+[Lab 08](../08-tiny-renderer/README.md) combines Labs 05–07 into a small navigable renderer and asks for a short design note about it.
