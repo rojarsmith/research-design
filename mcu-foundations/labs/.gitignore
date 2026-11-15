@@ -1,0 +1,14 @@
+# 建置產物與個人量測檔，不進版本控制
+*.exe
+*.o
+*.map
+*.bin
+01-reset-to-main/boot_sim
+01-reset-to-main/globals
+02-gpio-registers/gpio_model
+02-gpio-registers/delay_O0
+02-gpio-registers/delay_O2
+03-timer-scheduler/sched_sim
+04-uart-pipeline/test_pipeline
+04-uart-pipeline/rx_check
+04-uart-pipeline/budget

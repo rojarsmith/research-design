@@ -8,9 +8,21 @@
 
 1. 讀 [共通架構與軟體堆疊](01-mental-model.md)，建立分類方式。
 2. 做 [第一課](lessons/00-first-principles.md)，今天不用開發板也能開始。
-3. 按 [實作路線](02-learning-path.md) 推進，每一關都有可觀察的驗收條件。
-4. 選板前讀 [選型與文件閱讀](03-selection-and-documents.md)。已有板子就先評估能否沿用。
-5. 用 [學習紀錄](learning-log.md) 留下預測、證據與錯誤，而不只是抄程式。
+3. 接著做第二到第五課。每課先做不需要開發板的 [桌機實驗](labs/README.md)，有板子之後再做上板部分；兩者的驗收條件分開記錄。
+4. 按 [實作路線](02-learning-path.md) 推進，每一關都有可觀察的驗收條件。
+5. 選板前讀 [選型與文件閱讀](03-selection-and-documents.md)。已有板子就先評估能否沿用。
+6. 用 [學習紀錄](learning-log.md) 留下預測、證據與錯誤，而不只是抄程式。
+
+## 課程地圖
+
+| 階段 | 課程 | 桌機實驗 | 上板驗收重點 |
+| --- | --- | --- | --- |
+| 0 | [第一課 從程式流程理解 MCU](lessons/00-first-principles.md) | 手算資料率 | 不需要開發板 |
+| 1 | [第二課 從 reset 走到 main](lessons/01-reset-to-main.md) | [reset 模擬器、map file](labs/01-reset-to-main/) | 斷在 main，找到變數的 VMA 與 LMA |
+| 2 | [第三課 GPIO、接腳與時脈](lessons/02-gpio-and-clocks.md) | [GPIO 暫存器模型、延遲迴圈](labs/02-gpio-registers/) | 從 API 追到暫存器，解釋低電位有效的 LED |
+| 3 | [第四課 Timer、中斷與非阻塞流程](lessons/03-timer-and-interrupts.md) | [中斷與排程模擬](labs/03-timer-scheduler/) | 量出週期與抖動，說明 busy wait 的影響 |
+| 4 | [第五課 UART、環形緩衝區與封包](lessons/04-uart-ring-buffer.md) | [資料採集器整合測試](labs/04-uart-pipeline/) | 完整封包、設定命令、超載與感測器逾時 |
+| 5 至 8 | 尚未撰寫，依 [實作路線](02-learning-path.md) 進行 | | |
 
 ## 課程主線
 
