@@ -46,8 +46,8 @@ Research date: 2026-11-15. The full report is in [README.zh-TW.md](README.zh-TW.
 
 [cpp-practice/](cpp-practice/README.md) puts the method into practice as a project you open in VS Code. It needs only VS Code, the C/C++ extension and WinLibs GCC.
 
-- **Problems:** 49 over 8 weeks. Every one of the 30 patterns in the trigger table has at least one problem, and the frequently tested patterns have 3 to 9. Two are HackerRank STDIN problems, and 28 overlap with the Blind 75.
-- **Tests:** examples and edge cases, a stress test against a brute-force oracle, and a timing test for each problem.
+- **Problems:** 74 over 10 weeks, leaving weeks 11 and 12 for reviews and mock interviews. Every one of the 30 patterns in the trigger table has at least one problem, 24 have two or more, and the frequently tested patterns have 3 to 14. Four are HackerRank STDIN problems, and 42 overlap with the Blind 75.
+- **Tests:** examples and edge cases and a stress test against a brute-force oracle for each problem, plus a timing test for the 60 problems where the complexity matters.
 - **The `pp` CLI** enforces the method:
   - re-solve from a blank file
   - time-boxed, layered hints
@@ -57,8 +57,8 @@ Research date: 2026-11-15. The full report is in [README.zh-TW.md](README.zh-TW.
   - a report of weak patterns
 
 It was verified on Windows 11 with g++ 16.2.0:
-- Every stub fails its tests.
+- All 74 stubs fail their tests.
 - Reference solutions pass every test.
-- Six solutions deliberately written with the wrong complexity fail only the timing tests.
+- 14 solutions deliberately written with the wrong complexity fail only the timing tests.
 
 Web sources were checked on 2026-11-15. Claims that rest only on secondary or vendor sources are marked unverified in the full report. The correctness of the repos' solutions was not checked problem by problem.
