@@ -25,68 +25,12 @@
   let frameMs = 0;
 
   // ---------------------------------------------------------------------------
-  // Math: Lab 03–05 helpers plus a 3×3 normal matrix.
+  // Shared math from ../common/math.js, including the 3×3 normal matrix
+  // (the inverse transpose of the model matrix's upper-left 3×3).
   // ---------------------------------------------------------------------------
-  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-  const scale = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
-  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-  const normalize = (a) => scale(a, 1 / Math.hypot(a[0], a[1], a[2]));
-  const radians = (degrees) => (degrees * Math.PI) / 180;
-  const fromRows = (r) => [0, 1, 2, 3].flatMap((c) => [r[c], r[4 + c], r[8 + c], r[12 + c]]);
-  const at = (m, row, col) => m[col * 4 + row];
-  function multiply(a, b) {
-    const out = new Array(16).fill(0);
-    for (let c = 0; c < 4; c++) {
-      for (let r = 0; r < 4; r++) {
-        let sum = 0;
-        for (let k = 0; k < 4; k++) sum += at(a, r, k) * at(b, k, c);
-        out[c * 4 + r] = sum;
-      }
-    }
-    return out;
-  }
-  function rotationY(a) {
-    const c = Math.cos(a);
-    const s = Math.sin(a);
-    return fromRows([c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0, 0, 0, 0, 1]);
-  }
-  const scaling = (x, y, z) => fromRows([x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1]);
-  function lookAt(eye, target, worldUp) {
-    const forward = normalize(sub(target, eye));
-    const right = normalize(cross(forward, worldUp));
-    const up = cross(right, forward);
-    return fromRows([
-      ...right, -dot(right, eye),
-      ...up, -dot(up, eye),
-      ...scale(forward, -1), dot(forward, eye),
-      0, 0, 0, 1,
-    ]);
-  }
-  function perspective(fovY, aspect, near, far) {
-    const f = 1 / Math.tan(fovY / 2);
-    return fromRows([
-      f / aspect, 0, 0, 0,
-      0, f, 0, 0,
-      0, 0, (far + near) / (near - far), (2 * far * near) / (near - far),
-      0, 0, -1, 0,
-    ]);
-  }
-
-  // The upper-left 3×3 of a 4×4, column-major: the part that acts on directions.
-  const upper3x3 = (m) => [m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10]];
-  // Normals must stay perpendicular to surfaces, which needs the inverse transpose.
-  // For a 3×3 matrix, inverse transpose = cofactor matrix / determinant (column-major here).
-  function normalMatrix(m4) {
-    const [a, b, c, d, e, f, g, h, i] = upper3x3(m4); // columns: (a b c), (d e f), (g h i)
-    const cofactors = [
-      e * i - f * h, f * g - d * i, d * h - e * g,
-      c * h - b * i, a * i - c * g, b * g - a * h,
-      b * f - c * e, c * d - a * f, a * e - b * d,
-    ];
-    const det = a * cofactors[0] + d * cofactors[3] + g * cofactors[6];
-    return cofactors.map((value) => value / det);
-  }
+  const {
+    scale, multiply, rotationY, scaling, radians, lookAt, perspective, upper3x3, normalMatrix,
+  } = window.cg.math;
 
   // ---------------------------------------------------------------------------
   // Meshes with normals and UVs: 8 floats per vertex (position, normal, uv), 32 bytes.

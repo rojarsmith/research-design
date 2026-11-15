@@ -23,6 +23,7 @@
   const sliders = Object.fromEntries(Object.keys(DEFAULTS).map((key) => [key, byId(`l5-${key}`)]));
   const shadingSelect = byId('l5-shading');
   const compareSelect = byId('l5-compare');
+  const colorSelect = byId('l5-color');
   const editor = byId('l5-fs');
   const toggles = { spin: true, depth: true, cull: true };
   const NEAR = 0.1;
@@ -34,56 +35,11 @@
   const timing = { cpu: 0, submit: 0, readback: 0 };
 
   // ---------------------------------------------------------------------------
-  // Matrices: the same column-major helpers as Labs 03–04. WebGL reads these
-  // 16-number arrays directly with uniformMatrix4fv(location, false, data).
+  // Shared math from ../common/math.js: the same column-major matrices as Labs 03–04.
+  // WebGL reads these 16-number arrays directly with uniformMatrix4fv(location, false, data).
   // ---------------------------------------------------------------------------
-  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-  const scale = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
-  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-  const normalize = (a) => scale(a, 1 / Math.hypot(a[0], a[1], a[2]));
-  const radians = (degrees) => (degrees * Math.PI) / 180;
-  const fromRows = (r) => [0, 1, 2, 3].flatMap((c) => [r[c], r[4 + c], r[8 + c], r[12 + c]]);
-  const at = (m, row, col) => m[col * 4 + row];
-  function multiply(a, b) {
-    const out = new Array(16).fill(0);
-    for (let c = 0; c < 4; c++) {
-      for (let r = 0; r < 4; r++) {
-        let sum = 0;
-        for (let k = 0; k < 4; k++) sum += at(a, r, k) * at(b, k, c);
-        out[c * 4 + r] = sum;
-      }
-    }
-    return out;
-  }
-  function transform(m, v) {
-    return [0, 1, 2, 3].map((r) => at(m, r, 0) * v[0] + at(m, r, 1) * v[1] + at(m, r, 2) * v[2] + at(m, r, 3) * v[3]);
-  }
-  function rotationY(a) {
-    const c = Math.cos(a);
-    const s = Math.sin(a);
-    return fromRows([c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0, 0, 0, 0, 1]);
-  }
-  function lookAt(eye, target, worldUp) {
-    const forward = normalize(sub(target, eye));
-    const right = normalize(cross(forward, worldUp));
-    const up = cross(right, forward);
-    return fromRows([
-      ...right, -dot(right, eye),
-      ...up, -dot(up, eye),
-      ...scale(forward, -1), dot(forward, eye),
-      0, 0, 0, 1,
-    ]);
-  }
-  function perspective(fovY, aspect, near, far) {
-    const f = 1 / Math.tan(fovY / 2);
-    return fromRows([
-      f / aspect, 0, 0, 0,
-      0, f, 0, 0,
-      0, 0, (far + near) / (near - far), (2 * far * near) / (near - far),
-      0, 0, -1, 0,
-    ]);
-  }
+  const { multiply, transform, rotationY, radians, orbitEye, lookAt, perspective } = window.cg.math;
+  const { srgbToLinear, linearToSrgb } = window.cg.color;
 
   // ---------------------------------------------------------------------------
   // The mesh, laid out the way the GPU will read it.
@@ -126,12 +82,18 @@ layout(location = 1) in vec3 aColor;
 layout(location = 2) in vec2 aUV;
 
 uniform mat4 uModelViewProjection;
+uniform bool uLinear;  // true: decode colors to linear light so they interpolate correctly
 
 out vec3 vColor;  // "varyings": written per vertex, interpolated per sample
 out vec2 vUV;
 
+// The vertex colors are sRGB-encoded, the way a color picker writes them.
+vec3 srgbToLinear(vec3 c) {
+  return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+}
+
 void main() {
-  vColor = aColor;
+  vColor = uLinear ? srgbToLinear(aColor) : aColor;
   vUV = aUV;
   gl_Position = uModelViewProjection * vec4(aPosition, 1.0);  // clip space
 }
@@ -146,21 +108,33 @@ uniform int uMode;     // 0 = vertex color, 1 = checker from UV, 2 = depth
 uniform float uNear;
 uniform float uFar;
 uniform float uFocus;  // camera distance, used to stretch the depth view
+uniform bool uLinear;  // true: vColor is linear light, so encode to sRGB once, here
 
 out vec4 outColor;
 
+vec3 srgbToLinear(vec3 c) {
+  return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+}
+vec3 linearToSrgb(vec3 c) {
+  return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+}
+
 void main() {
-  if (uMode == 1) {
-    float cell = mod(floor(vUV.x * 4.0) + floor(vUV.y * 4.0), 2.0);
-    outColor = vec4(mix(vec3(0.12, 0.16, 0.2), vColor, cell), 1.0);
-  } else if (uMode == 2) {
+  if (uMode == 2) {
     // gl_FragCoord.z is the window depth d in [0, 1]; turn it back into distance.
+    // This gray is a measurement for your eyes, not light, so it is not encoded.
     float z = uNear * uFar / (uFar - gl_FragCoord.z * (uFar - uNear));
     float g = clamp((uFocus + 1.8 - z) / 3.6, 0.0, 1.0);
     outColor = vec4(vec3(g), 1.0);
-  } else {
-    outColor = vec4(vColor, 1.0);
+    return;
   }
+  vec3 color = vColor;
+  if (uMode == 1) {
+    vec3 dark = vec3(0.12, 0.16, 0.2);  // sRGB-encoded, like the vertex colors
+    float cell = mod(floor(vUV.x * 4.0) + floor(vUV.y * 4.0), 2.0);
+    color = mix(uLinear ? srgbToLinear(dark) : dark, vColor, cell);
+  }
+  outColor = vec4(uLinear ? linearToSrgb(clamp(color, 0.0, 1.0)) : color, 1.0);
 }
 `;
 
@@ -208,7 +182,7 @@ void main() {
     if (program) gl.deleteProgram(program);
     program = linked;
     uniforms = Object.fromEntries(
-      ['uModelViewProjection', 'uMode', 'uNear', 'uFar', 'uFocus'].map((name) => [name, gl.getUniformLocation(program, name)]),
+      ['uModelViewProjection', 'uMode', 'uNear', 'uFar', 'uFocus', 'uLinear'].map((name) => [name, gl.getUniformLocation(program, name)]),
     );
   }
 
@@ -254,24 +228,26 @@ void main() {
   // ---------------------------------------------------------------------------
   function cpuVertexShader(i, u) {
     const v = VERTEX_DATA.subarray(i * FLOATS_PER_VERTEX, (i + 1) * FLOATS_PER_VERTEX);
+    const rgb = [v[3], v[4], v[5]].map((c) => (u.linear ? srgbToLinear(c) : c));
     return {
       position: transform(u.modelViewProjection, [v[0], v[1], v[2], 1]),
-      varyings: [v[3], v[4], v[5], v[6], v[7]], // vColor.rgb, vUV.xy
+      varyings: [...rgb, v[6], v[7]], // vColor.rgb, vUV.xy
     };
   }
 
   function cpuFragmentShader(varyings, fragDepth, u) {
-    const color = varyings.slice(0, 3);
-    if (u.mode === 1) {
-      const cell = (((Math.floor(varyings[3] * 4) + Math.floor(varyings[4] * 4)) % 2) + 2) % 2;
-      return [0.12, 0.16, 0.2].map((dark, k) => dark + (color[k] - dark) * cell);
-    }
     if (u.mode === 2) {
       const z = (u.near * u.far) / (u.far - fragDepth * (u.far - u.near));
       const g = Math.min(1, Math.max(0, (u.focus + 1.8 - z) / 3.6));
       return [g, g, g];
     }
-    return color;
+    let color = varyings.slice(0, 3);
+    if (u.mode === 1) {
+      const cell = (((Math.floor(varyings[3] * 4) + Math.floor(varyings[4] * 4)) % 2) + 2) % 2;
+      const dark = [0.12, 0.16, 0.2].map((c) => (u.linear ? srgbToLinear(c) : c));
+      color = dark.map((d, k) => d + (color[k] - d) * cell);
+    }
+    return u.linear ? color.map((c) => linearToSrgb(Math.min(1, Math.max(0, c)))) : color;
   }
 
   function edge(a, b, p) {
@@ -361,6 +337,7 @@ void main() {
     gl.uniform1f(uniforms.uNear, u.near);
     gl.uniform1f(uniforms.uFar, u.far);
     gl.uniform1f(uniforms.uFocus, u.focus);
+    gl.uniform1i(uniforms.uLinear, u.linear ? 1 : 0);
     gl.bindVertexArray(vao);
     gl.drawElements(gl.TRIANGLES, INDEX_DATA.length, gl.UNSIGNED_SHORT, 0);
     gl.bindVertexArray(null);
@@ -403,10 +380,8 @@ void main() {
   // Frame loop and readouts.
   // ---------------------------------------------------------------------------
   function frameUniforms() {
-    const yaw = radians(Number(sliders.yaw.value));
-    const pitch = radians(Number(sliders.pitch.value));
     const dist = Number(sliders.dist.value);
-    const eye = [dist * Math.cos(pitch) * Math.sin(yaw), dist * Math.sin(pitch), dist * Math.cos(pitch) * Math.cos(yaw)];
+    const eye = orbitEye(Number(sliders.yaw.value), Number(sliders.pitch.value), dist);
     const projection = perspective(radians(Number(sliders.fov.value)), W / H, NEAR, FAR);
     return {
       modelViewProjection: multiply(projection, multiply(lookAt(eye, [0, 0, 0], [0, 1, 0]), rotationY(angle))),
@@ -414,6 +389,7 @@ void main() {
       near: NEAR,
       far: FAR,
       focus: dist,
+      linear: colorSelect.value === 'linear',
       depthTest: toggles.depth,
       cull: toggles.cull,
     };
@@ -468,7 +444,7 @@ void main() {
   editor.value = FRAGMENT_SHADER;
   byId('l5-buffers').textContent =
     `VBO ${VERTEX_COUNT} × ${STRIDE} B = ${VERTEX_DATA.byteLength} B\nIBO ${INDEX_DATA.length} × 2 B = ${INDEX_DATA.byteLength} B`;
-  byId('l5-uploads').textContent = 'mat4           64 B\nint + 3 float  16 B\ntotal          80 B';
+  byId('l5-uploads').textContent = 'mat4              64 B\nint, bool, 3 float 20 B\ntotal             84 B';
   if (gl) {
     buildProgram(FRAGMENT_SHADER);
     uploadMesh();
@@ -479,7 +455,7 @@ void main() {
   }
 
   Object.values(sliders).forEach((el) => el.addEventListener('input', render));
-  [shadingSelect, compareSelect].forEach((el) => el.addEventListener('change', render));
+  [shadingSelect, compareSelect, colorSelect].forEach((el) => el.addEventListener('change', render));
   document.querySelectorAll('[data-l5-toggle]').forEach((button) => {
     const key = button.dataset.l5Toggle;
     button.setAttribute('aria-pressed', String(toggles[key]));

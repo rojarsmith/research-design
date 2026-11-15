@@ -3,9 +3,12 @@
 //   clip space --(near-plane clipping)--> ÷ w --(back-face culling)--> rasterize --(depth test)--> pixel
 //
 // Each tool can be switched off on the page, so you can see exactly what it fixes.
-// Conventions are Lab 03's: column vectors, column-major storage, the camera looks
-// down −z, the OpenGL clip volume −w ≤ x, y, z ≤ w, and window depth
-// d = (z_ndc + 1) / 2, so the near plane stores 0 and the far plane stores 1.
+// Conventions are Lab 03's (see ../../CONVENTIONS.md): column vectors, column-major
+// storage, the camera looks down −z, the OpenGL clip volume −w ≤ x, y, z ≤ w, and window
+// depth d = (z_ndc + 1) / 2, so the near plane stores 0 and the far plane stores 1.
+// Counter-clockwise in NDC (+y up) is the front face. Vulkan and Direct3D 12 clip depth
+// to [0, 1] instead, and Vulkan's NDC +y points down: an unflipped projection renders
+// upside down there, with every winding reversed.
 //
 // Work through README.md in this folder. TODO(exercise X) comments mark code you write.
 (function () {
@@ -35,68 +38,13 @@
   let mouse = null;
 
   // ---------------------------------------------------------------------------
-  // Vectors and 4×4 matrices, unchanged from Lab 03 (plus rotationX/Z and translation).
+  // Shared math from ../common/math.js (loaded before this file by index.html).
   // ---------------------------------------------------------------------------
-  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-  const scale = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
-  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-  const normalize = (a) => scale(a, 1 / Math.hypot(a[0], a[1], a[2]));
-  const radians = (degrees) => (degrees * Math.PI) / 180;
-  const fromRows = (r) => [0, 1, 2, 3].flatMap((c) => [r[c], r[4 + c], r[8 + c], r[12 + c]]);
-  const at = (m, row, col) => m[col * 4 + row];
-  const IDENTITY = fromRows([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-
-  function multiply(a, b) {
-    const out = new Array(16).fill(0);
-    for (let c = 0; c < 4; c++) {
-      for (let r = 0; r < 4; r++) {
-        let sum = 0;
-        for (let k = 0; k < 4; k++) sum += at(a, r, k) * at(b, k, c);
-        out[c * 4 + r] = sum;
-      }
-    }
-    return out;
-  }
-  function transform(m, v) {
-    return [0, 1, 2, 3].map((r) => at(m, r, 0) * v[0] + at(m, r, 1) * v[1] + at(m, r, 2) * v[2] + at(m, r, 3) * v[3]);
-  }
-  const translation = (x, y, z) => fromRows([1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1]);
-  function rotationX(a) {
-    const c = Math.cos(a);
-    const s = Math.sin(a);
-    return fromRows([1, 0, 0, 0, 0, c, -s, 0, 0, s, c, 0, 0, 0, 0, 1]);
-  }
-  function rotationY(a) {
-    const c = Math.cos(a);
-    const s = Math.sin(a);
-    return fromRows([c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0, 0, 0, 0, 1]);
-  }
-  function rotationZ(a) {
-    const c = Math.cos(a);
-    const s = Math.sin(a);
-    return fromRows([c, -s, 0, 0, s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-  }
-  function lookAt(eye, target, worldUp) {
-    const forward = normalize(sub(target, eye));
-    const right = normalize(cross(forward, worldUp));
-    const up = cross(right, forward);
-    return fromRows([
-      ...right, -dot(right, eye),
-      ...up, -dot(up, eye),
-      ...scale(forward, -1), dot(forward, eye),
-      0, 0, 0, 1,
-    ]);
-  }
-  function perspective(fovY, aspect, near, far) {
-    const f = 1 / Math.tan(fovY / 2);
-    return fromRows([
-      f / aspect, 0, 0, 0,
-      0, f, 0, 0,
-      0, 0, (far + near) / (near - far), (2 * far * near) / (near - far),
-      0, 0, -1, 0,
-    ]);
-  }
+  const {
+    multiply, transform, identity, translation, rotationX, rotationY, rotationZ,
+    radians, orbitEye, lookAt, perspective,
+  } = window.cg.math;
+  const IDENTITY = identity();
 
   // ---------------------------------------------------------------------------
   // Meshes. Every triangle is counter-clockwise when seen from its front side.
@@ -336,10 +284,7 @@
   function render() {
     const started = performance.now();
     Object.values(sliders).forEach((el) => { el.nextElementSibling.value = el.value; });
-    const yaw = radians(Number(sliders.yaw.value));
-    const pitch = radians(Number(sliders.pitch.value));
-    const dist = Number(sliders.dist.value);
-    const eye = [dist * Math.cos(pitch) * Math.sin(yaw), dist * Math.sin(pitch), dist * Math.cos(pitch) * Math.cos(yaw)];
+    const eye = orbitEye(Number(sliders.yaw.value), Number(sliders.pitch.value), Number(sliders.dist.value));
     const viewProj = multiply(perspective(radians(60), W / H, near(), far()), lookAt(eye, [0, 0, 0], [0, 1, 0]));
 
     for (let i = 0; i < image.data.length; i += 4) {

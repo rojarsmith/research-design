@@ -2,6 +2,8 @@
 
 This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Labs 01–06 are implemented and run from `index.html`; later milestones are planned exercises.
 
+The coordinate, depth, winding, and color conventions every milestone relies on are collected in [`CONVENTIONS.md`](CONVENTIONS.md).
+
 ## 00 — Set up a pixel workspace
 
 **Build:** a CPU color buffer and a way to display it in a browser canvas.
@@ -24,7 +26,7 @@ This is a practical sequence, not a list of topics to memorize. Each milestone a
 
 **Learn as needed:** column versus row vectors, matrix multiplication order, homogeneous coordinates, coordinate handedness.
 
-**Checkpoint:** predict the result of two transforms applied in opposite orders. Keep world coordinates separate from pixel coordinates. Complete exercises A–G in `labs/02-transforms/README.md`.
+**Checkpoint:** predict the result of two transforms applied in opposite orders. Keep world coordinates separate from pixel coordinates. Complete exercises A–H in `labs/02-transforms/README.md`.
 
 ## 03 — Make the first 3D image (implemented)
 

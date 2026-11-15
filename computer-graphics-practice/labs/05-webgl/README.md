@@ -25,7 +25,13 @@ The "GPU and API reported by the browser" readout names the adapter that actuall
 6. **The CPU reference.** `cpuVertexShader` and `cpuFragmentShader` are line-by-line JavaScript copies of the two shaders. `cpuRender` runs the vertex shader once per vertex, assembles triangles from the same index buffer, culls counter-clockwise-is-front exactly like `gl.frontFace(gl.CCW)`, and rasterizes with the Lab 04 depth test.
 7. **The live editor** recompiles only the GPU fragment shader. If compilation fails, the log shows the error and the previous program keeps running.
 
+8. **Color math.** The vertex colors are sRGB-encoded values. With "Color math → Linear light, sRGB output" (the default and the course rule), the vertex shader decodes them to linear light, the GPU interpolates linear values, and the fragment shader encodes once with `linearToSrgb`. "Interpolate sRGB numbers" skips both steps, as the original version of this lab did. The CPU reference mirrors both modes with `../common/color.js`. The depth view writes its gray directly: it is a measurement, not light.
+
 The CPU reference deliberately interpolates varyings with plain screen-space barycentric weights, as Labs 01–04 did. The GPU interpolates perspective-correctly. That is the largest difference you will see, and fixing it is exercise B.
+
+## Conventions
+
+This lab relies on [`../../CONVENTIONS.md`](../../CONVENTIONS.md): column-major matrices uploaded with `transpose = false`, counter-clockwise front faces (`gl.frontFace(gl.CCW)`), NDC +y up, window origin at the bottom-left (hence the row flip after `readPixels`), and the clip volume `−w ≤ z ≤ w`. A Vulkan or Direct3D 12 port of this lab changes the depth range and the y direction, and has to choose its front-face setting explicitly. The matrix helpers come from `../common/math.js`.
 
 ## Exercises
 
@@ -47,6 +53,11 @@ Answer these in your lab notebook:
 3. Why can WebGL take the Lab 03 matrix arrays unchanged with `transpose = false`? What would you see if you passed `true`?
 4. List every kind of difference between the CPU and GPU images and its cause: interpolation, coverage rule, rounding to 8 bits, depth format. Which ones would a real renderer care about?
 5. Why does `readPixels` take measurable time, and why is timing `drawElements` with `performance.now()` not a measurement of GPU work? What would you use instead?
+
+## Where this shows up later
+
+- **Engines:** vertex layouts, uniform data, and pipeline state become Vulkan vertex input descriptions, descriptor sets or push constants, and pipeline objects. Readback is reserved for screenshots, GPU timing, and debugging, because it stalls the CPU.
+- **Compositors:** each window is a textured quad drawn by exactly this kind of draw call. A compositor never reads frames back; it samples client buffers directly on the GPU.
 
 ## Next
 

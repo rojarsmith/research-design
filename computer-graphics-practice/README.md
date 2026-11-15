@@ -35,17 +35,21 @@ The RTX 5070 Ti supports Vulkan 1.4 and OpenGL 4.6 according to NVIDIA's [GeForc
 
 Suggested pace: 2–4 hours per stage. Spend most of each session changing code and inspecting output; use the concept notes to explain what you observe.
 
+Conventions such as handedness, matrix storage, the NDC y direction, the depth range, front-face winding, and where color math happens are listed once in [`CONVENTIONS.md`](CONVENTIONS.md), with the changes each one needs in Vulkan and Direct3D 12.
+
 ## Working loop
 
 For every lab: **predict → implement → inspect → explain**. Change one thing at a time. Record a concrete observation (for example, which side of a triangle is included at a shared edge) and connect it to the rule in your implementation. Do not move on until you can explain the pixels, not just run the demo.
 
 ## Files
 
-- [`index.html`](index.html) — bilingual course overview and interactive labs; choose a lab from the lab bar.
+- [`index.html`](index.html) — bilingual course overview and interactive labs; choose a lab from the lab bar. It works when opened directly from disk.
+- [`CONVENTIONS.md`](CONVENTIONS.md) — the course's coordinate, matrix, depth, winding, and color conventions, and how each changes in Vulkan and Direct3D 12.
+- [`labs/common/math.js`](labs/common/math.js), [`labs/common/color.js`](labs/common/color.js) — shared vector/matrix/camera/projection helpers and sRGB conversions for Labs 02–06, loaded as classic scripts on `window.cg` so no server is needed.
 - [`labs/01-triangle/app.js`](labs/01-triangle/app.js) — deliberately readable CPU triangle rasterizer to extend.
 - [`labs/01-triangle/README.md`](labs/01-triangle/README.md) — experiment brief and implementation checkpoints.
 - [`labs/02-transforms/app.js`](labs/02-transforms/app.js) — 3×3 homogeneous transforms, a viewport matrix, and a wireframe debug overlay on top of the Lab 01 rasterizer.
-- [`labs/02-transforms/README.md`](labs/02-transforms/README.md) — transform-order experiments, exercises A–G, and checkpoints.
+- [`labs/02-transforms/README.md`](labs/02-transforms/README.md) — transform-order and color-mixing experiments, exercises A–H, and checkpoints.
 - [`labs/03-first-3d/app.js`](labs/03-first-3d/app.js) — 4×4 matrices, an orbit camera, perspective and orthographic projection, a vertex trace, and an observer view, still on the CPU.
 - [`labs/03-first-3d/README.md`](labs/03-first-3d/README.md) — coordinate conventions, exercises A–G, and checkpoints.
 - [`labs/04-visibility/app.js`](labs/04-visibility/app.js) — near-plane clipping, back-face culling, a depth buffer with selectable precision, painter's sort for comparison, and depth / overdraw debug views.

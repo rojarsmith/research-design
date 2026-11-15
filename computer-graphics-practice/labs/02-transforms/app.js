@@ -1,5 +1,6 @@
 // Lab 02: 2D transforms with homogeneous coordinates, plus a wireframe debug overlay.
-// Lab 01's rasterizer is reused unchanged. Everything new happens before it:
+// Lab 01's rasterizer is reused; the only change inside it is that colors are now mixed
+// in linear light (switchable on the page). Everything else new happens before it:
 //
 //   object space --(model matrix M)--> world space --(viewport matrix V)--> pixel space
 //
@@ -14,6 +15,7 @@
   const sliders = ['tx', 'ty', 'rot', 'sx', 'sy'].map((name) => byId(`l2-${name}`));
   const DEFAULTS = ['-1', '-1.5', '0', '1', '1'];
   const orderSelect = byId('l2-order');
+  const colorSelect = byId('l2-color');
   const show = { fill: true, wire: true, verts: true, axes: true, ghost: true, grid: true };
   let mouse = null; // last mouse position in pixel coordinates
 
@@ -73,11 +75,26 @@
   const PINK = [255, 103, 128];
   const TEAL = [86, 225, 192];
   const BLUE = [105, 155, 255];
+
+  // Colors are written as 8-bit sRGB, the way a color picker shows them. In "linear" mode
+  // (the course rule, see ../../CONVENTIONS.md) they are decoded to linear light, every mix
+  // happens there, and each written sample is encoded once. In "srgb" mode the encoded
+  // numbers are mixed directly, as Lab 01 did. ../common/color.js holds the formulas.
+  const { srgbToLinear, linearToSrgb } = window.cg.color;
+  const mixInLinearLight = () => colorSelect.value === 'linear';
+  const decode = (rgb) => rgb.map((c) => (mixInLinearLight() ? srgbToLinear(c / 255) : c / 255));
+  function encode(value) {
+    const v = Math.min(1, Math.max(0, value));
+    return Math.round((mixInLinearLight() ? linearToSrgb(v) : v) * 255);
+  }
+
   // Color comes from object-space position, so it travels with the object.
+  // Returns values in [0, 1] in the current mixing space.
   function objectColor([x, y]) {
     const u = x / 2;
     const v = y / 3;
-    return [0, 1, 2].map((i) => PINK[i] * (1 - u) * (1 - v) + TEAL[i] * u * (1 - v) + BLUE[i] * v);
+    const [pink, teal, blue] = [PINK, TEAL, BLUE].map(decode);
+    return [0, 1, 2].map((i) => pink[i] * (1 - u) * (1 - v) + teal[i] * u * (1 - v) + blue[i] * v);
   }
 
   // The composed model matrix. "TRS" means M = T · R · S: read right to left,
@@ -151,7 +168,7 @@
         if (w0 >= -1e-8 && w1 >= -1e-8 && w2 >= -1e-8) {
           const index = (y * W + x) * 4;
           for (let c = 0; c < 3; c++) {
-            image.data[index + c] = Math.round(w0 * colors[0][c] + w1 * colors[1][c] + w2 * colors[2][c]);
+            image.data[index + c] = encode(w0 * colors[0][c] + w1 * colors[1][c] + w2 * colors[2][c]);
           }
           covered++;
         }
@@ -257,6 +274,7 @@
   canvas.addEventListener('mouseleave', () => { mouse = null; updateMouse(); });
   sliders.forEach((el) => el.addEventListener('input', draw));
   orderSelect.addEventListener('change', draw);
+  colorSelect.addEventListener('change', draw);
   document.querySelectorAll('[data-l2-toggle]').forEach((button) => {
     const key = button.dataset.l2Toggle;
     button.setAttribute('aria-pressed', String(show[key]));
@@ -269,6 +287,7 @@
   byId('l2-reset').addEventListener('click', () => {
     DEFAULTS.forEach((value, i) => { sliders[i].value = value; });
     orderSelect.value = 'TRS';
+    colorSelect.value = 'linear';
     draw();
   });
 

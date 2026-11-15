@@ -35,17 +35,21 @@
 
 建議每階段投入 2–4 小時。每次以修改程式和觀察結果為主，再用概念筆記解釋觀察到的現象。
 
+座標系手性、矩陣儲存順序、NDC 的 y 方向、深度範圍、正面繞序，以及色彩計算在哪個空間進行等慣例，統一列在 [`CONVENTIONS.zh-TW.md`](CONVENTIONS.zh-TW.md)，並說明換到 Vulkan 與 Direct3D 12 時各自要怎麼改。
+
 ## 每次實驗的流程
 
 依序進行：**預測 → 實作 → 觀察 → 解釋**。一次只改一個因素，記下具體觀察（例如共用邊上的像素究竟由哪個三角形涵蓋），再把觀察連回程式中的規則。能解釋像素為何出現，再進入下一項。
 
 ## 檔案
 
-- [`index.html`](index.html) — 雙語課程總覽與互動實驗；從實驗列選擇要進行的實驗。
+- [`index.html`](index.html) — 雙語課程總覽與互動實驗；從實驗列選擇要進行的實驗。直接從磁碟開啟即可執行。
+- [`CONVENTIONS.zh-TW.md`](CONVENTIONS.zh-TW.md) — 課程採用的座標、矩陣、深度、繞序與色彩慣例，以及換到 Vulkan 與 Direct3D 12 時的變化。
+- [`labs/common/math.js`](labs/common/math.js)、[`labs/common/color.js`](labs/common/color.js) — 實驗 02–06 共用的向量／矩陣／攝影機／投影函式與 sRGB 轉換；以傳統 script 掛在 `window.cg` 上，不需要伺服器。
 - [`labs/01-triangle/app.js`](labs/01-triangle/app.js) — 可閱讀、可擴充的 CPU 三角形光柵器。
 - [`labs/01-triangle/README.md`](labs/01-triangle/README.md) — 實驗說明與實作檢核點。
 - [`labs/02-transforms/app.js`](labs/02-transforms/app.js) — 3×3 齊次變換、視口矩陣，以及疊在實驗 01 光柵器上的線框除錯覆層。
-- [`labs/02-transforms/README.md`](labs/02-transforms/README.md) — 變換順序實驗、A–G 練習與檢核問題。
+- [`labs/02-transforms/README.md`](labs/02-transforms/README.md) — 變換順序與混色實驗、A–H 練習與檢核問題。
 - [`labs/03-first-3d/app.js`](labs/03-first-3d/app.js) — 4×4 矩陣、環繞攝影機、透視與正交投影、頂點追蹤與旁觀者檢視，仍在 CPU 上執行。
 - [`labs/03-first-3d/README.md`](labs/03-first-3d/README.md) — 座標慣例、A–G 練習與檢核問題。
 - [`labs/04-visibility/app.js`](labs/04-visibility/app.js) — 近裁切面裁切、背面剔除、可切換精度的深度緩衝區、作為對照的畫家演算法，以及深度與過度繪製除錯檢視。

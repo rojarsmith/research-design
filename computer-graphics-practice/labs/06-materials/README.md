@@ -23,6 +23,8 @@ Open `../../index.html` and choose **06 · Light & texture**. Turn Spin off when
 5. **Texture.** `makeTextureImage` draws a 256 × 256 checkerboard on a 2D canvas, with a red cell marking the first row and column, so no image file is needed. It is uploaded twice: as `SRGB8_ALPHA8`, which the GPU decodes to linear values before filtering and mipmapping, and as plain `RGBA8`, whose encoded numbers reach the shader unchanged. Both get a full mip chain from `generateMipmap`. "UV repeat" multiplies the UVs, so the checkerboard gets smaller on screen and minification filtering matters.
 6. **Color space.** In "Linear light, sRGB output" mode, the constant base color is decoded from sRGB with `srgbToLinear`, the sRGB texture is decoded by the hardware, light is added in linear units, and `linearToSrgb` encodes the result for the display. In "Directly on sRGB numbers" mode, every step uses the encoded numbers as if they were linear, which is what many early renderers did.
 
+The coordinate and color conventions are the course-wide ones in [`../../CONVENTIONS.md`](../../CONVENTIONS.md), and the matrix and normal-matrix helpers come from `../common/math.js`.
+
 Deliberately left for you: the light is directional only, the specular term has no Fresnel factor and no energy normalization, mipmaps come from `generateMipmap`, and there is no normal mapping. `TODO(exercise …)` comments mark where they go.
 
 ## Exercises
@@ -45,6 +47,11 @@ Answer these in your lab notebook:
 3. Why does per-vertex lighting lose the cube's highlight, while the sphere only becomes blocky?
 4. A black-and-white checkerboard viewed from far away should look like a 50 % mix. What 8-bit value does each color-math mode produce for that mix, and which one matches what your eye expects? Use the `srgbToLinear` and `linearToSrgb` formulas.
 5. Where exactly does sRGB decoding happen in the correct mode, and why must it happen before filtering, blending, and lighting?
+
+## Where this shows up later
+
+- **Engines:** physically based shading (Part II) replaces Blinn–Phong but keeps the same skeleton: world-space normals, linear-light math, sRGB textures decoded before filtering, and mipmaps.
+- **Compositors:** blending windows and text in linear light, sRGB and HDR output encoding, and color management are the same decode → math → encode rule applied to whole surfaces.
 
 ## Next
 

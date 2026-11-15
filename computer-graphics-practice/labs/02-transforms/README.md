@@ -2,7 +2,7 @@
 
 ## Goal
 
-Move shapes with matrices instead of editing vertex coordinates, and keep three coordinate spaces apart: **object** space (where the shape is authored), **world** space (where the scene lives), and **pixel** space (where the rasterizer works). The rasterizer from Lab 01 does not change. Everything new happens before it.
+Move shapes with matrices instead of editing vertex coordinates, and keep three coordinate spaces apart: **object** space (where the shape is authored), **world** space (where the scene lives), and **pixel** space (where the rasterizer works). The rasterizer from Lab 01 stays the same, except that it now mixes colors in linear light. Everything else new happens before it.
 
 ```
 object --(model matrix M)--> world --(viewport matrix V)--> pixel --(Lab 01 rasterizer)--> samples
@@ -26,7 +26,13 @@ Open `../../index.html` and choose **02 · 2D transforms**. Move the sliders, ch
    - **World grid** — one-unit grid lines and the world axes.
 6. The readout shows the composed matrix, its determinant, and the F's total signed area in each space. Signed area is positive for counter-clockwise vertex order in a +y-up frame.
 
+7. **Color mixing.** The F's colors are written as 8-bit sRGB values, like a color picker shows them. With "Color mixing → Linear light" (the default and the course rule), `decode` turns them into linear light with `../common/color.js`, every mix happens there, and `encode` converts each written sample back to sRGB once. "On sRGB numbers" mixes the encoded values directly, as Lab 01 did. Compare the middle of the gradient in both modes.
+
 Two things are deliberately not done for you. `invert()` returns `null`, so the mouse readout shows `TODO (C)` for object coordinates. `drawLine()` uses a floating-point DDA rather than Bresenham's algorithm.
+
+## Conventions
+
+The course-wide list is in [`../../CONVENTIONS.md`](../../CONVENTIONS.md). This lab uses column vectors (`p' = M · p`), world +y up, pixel +y down, and counter-clockwise as positive signed area in a +y-up frame. Unlike later labs, it stores 3×3 matrices as nested rows, `m[row][col]`, so the code reads like the math on paper and you write the matrix code yourself. From Lab 03 on, matrices are flat column-major arrays shared through `../common/math.js`.
 
 ## Exercises
 
@@ -37,6 +43,7 @@ Two things are deliberately not done for you. `invert()` returns `null`, so the 
 - **E — Row vectors:** rewrite `apply` and the matrix builders for the row-vector convention `p' = p · M`. What happens to each matrix, and how must the multiplication order change so the picture stays identical? Keep a note of which convention each later API uses.
 - **F — Winding test:** skip triangles whose pixel-space signed area is positive. Which slider settings make the F disappear? Explain using the signs of `det(M)` and `det(V)`. This is the 2D version of back-face culling in Lab 04.
 - **G — Parent and child:** add a small flag triangle to the top bar of the F. Give it its own matrix `C` and draw it with `M · C`, so it follows the F when you move the sliders but can also rotate on its own. This is a two-node scene graph.
+- **H — Color space by hand:** pick a pixel halfway between the pink and blue ends of the F. Compute its color with the sRGB formulas in `../common/color.js` for both mixing modes, then check your numbers against the canvas (for example with `getImageData` in the browser console). Which mode makes the middle of the gradient darker, and why?
 
 ## Checkpoints
 
@@ -47,6 +54,11 @@ Answer these in your lab notebook:
 3. Why does a negative determinant flip the signed area? Why does the viewport matrix have a negative determinant here, and why does the F still look correct on screen?
 4. The barycentric weights `fillTriangle` computes in pixel space are the same weights the sample has in object space. Which property of affine transforms makes this true? (Lab 03's perspective divide breaks it.)
 5. If the canvas changed to 960 × 648 pixels, which values in this program would change and which would not? Answer in terms of object, world, and pixel space.
+
+## Where this shows up later
+
+- **Engines:** every scene graph composes local translate–rotate–scale matrices exactly like `T · R · S`, parent times child, before anything reaches the GPU.
+- **Compositors:** each window or layer is placed with a 2D affine transform (position, HiDPI scale, display rotation) before its pixels are sampled, and its colors are blended in linear light.
 
 ## Next
 

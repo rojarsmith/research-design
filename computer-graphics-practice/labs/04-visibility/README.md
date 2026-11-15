@@ -12,6 +12,10 @@ clip space --(near-plane clipping)--> ÷ w --(back-face culling)--> rasterize --
 
 Open `../../index.html` and choose **04 · Visibility**. Pick a scene, then switch Visibility, Culling, Near plane, and Depth format one at a time. Hover the canvas to read the depth buffer. The page works without a server or network connection.
 
+## Conventions
+
+This lab relies on the course conventions in [`../../CONVENTIONS.md`](../../CONVENTIONS.md): the OpenGL / WebGL clip volume, window depth `d = (z_ndc + 1) / 2` with the near plane at 0, a depth buffer cleared to 1 with a "less than" test, and counter-clockwise front faces measured in NDC with +y up. Vulkan and Direct3D 12 clip depth to `0 ≤ z ≤ w`, and Vulkan's NDC +y points down. Both change these tests, so read the notes there before you port this lab. The faces have flat colors, so no color mixing happens here. Shared math comes from `../common/math.js`.
+
 ## Scenes
 
 - **Cube + slicing plane** — a single-sided square cuts diagonally through the spinning cube. No order of whole triangles draws this correctly, because the square is in front of some cube faces at some pixels and behind them at others.
@@ -50,6 +54,11 @@ Answer these in your lab notebook:
 4. Where does a perspective projection spend its depth precision? Use the depth-step readout at two distances, and explain why raising Near helps much more than lowering Far.
 5. Describe one setup that still z-fights with a 24-bit or float depth buffer, and two different fixes.
 6. Back-face culling depends on winding. Which convention from Lab 03 does it rely on? What happens to a mirrored object (negative determinant in the model matrix, as in Lab 02), and how do real renderers handle it?
+
+## Where this shows up later
+
+- **Engines:** depth pre-passes, hierarchical-Z occlusion culling, reversed-Z depth buffers, and clipping all extend this lab. GPU-driven culling in Part II tests whole objects before any triangle reaches the rasterizer.
+- **Compositors:** windows are drawn back to front like painter's sort, because transparent layers must blend in order. Fully covered opaque windows are skipped (occlusion culling), and only changed regions are redrawn (damage tracking).
 
 ## Next
 

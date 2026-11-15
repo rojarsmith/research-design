@@ -3,11 +3,16 @@
 //
 //   object --M--> world --V--> view --P--> clip --(÷ w)--> NDC --(viewport)--> pixel
 //
-// Conventions used here (every renderer has to choose; write yours down):
-//   - column vectors, p' = M · p, stored column-major: m[col * 4 + row].
-//     That is the layout WebGL expects, so Lab 05 can upload these arrays unchanged.
+// Conventions (all of them, plus how each changes in Vulkan and Direct3D 12, are in
+// ../../CONVENTIONS.md):
+//   - column vectors, p' = M · p, stored column-major: m[col * 4 + row]. That is the
+//     layout WebGL expects, so Lab 05 uploads these arrays unchanged.
 //   - right-handed world with +y up; the camera looks down its own −z axis.
-//   - OpenGL / WebGL clip volume: −w ≤ x, y, z ≤ w, so NDC is the cube [−1, 1]³.
+//   - OpenGL / WebGL clip volume: −w ≤ x, y, z ≤ w, so NDC is the cube [−1, 1]³ with +y up.
+//
+// The vector and matrix helpers (multiply, transform, cameraBasis, viewMatrix,
+// perspective, orthographic, ...) live in ../common/math.js, shared with Labs 04–06.
+// Read that file alongside this one: it is part of this lab.
 //
 // Work through README.md in this folder. TODO(exercise X) comments mark code you write.
 (function () {
@@ -32,86 +37,13 @@
   let frameMs = 0;
 
   // ---------------------------------------------------------------------------
-  // Small vector helpers for 3D points and directions.
+  // Shared math from ../common/math.js (loaded before this file by index.html).
   // ---------------------------------------------------------------------------
-  const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
-  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-  const scale = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
-  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-  const normalize = (a) => scale(a, 1 / Math.hypot(a[0], a[1], a[2]));
-  const radians = (degrees) => (degrees * Math.PI) / 180;
-
-  // ---------------------------------------------------------------------------
-  // 4×4 matrices. fromRows lets you *write* a matrix row by row, as on paper,
-  // and stores it column-major. at(m, row, col) reads one entry back.
-  // ---------------------------------------------------------------------------
-  const fromRows = (r) => [0, 1, 2, 3].flatMap((c) => [r[c], r[4 + c], r[8 + c], r[12 + c]]);
-  const at = (m, row, col) => m[col * 4 + row];
-
-  function multiply(a, b) {
-    const out = new Array(16).fill(0);
-    for (let c = 0; c < 4; c++) {
-      for (let r = 0; r < 4; r++) {
-        let sum = 0;
-        for (let k = 0; k < 4; k++) sum += at(a, r, k) * at(b, k, c);
-        out[c * 4 + r] = sum;
-      }
-    }
-    return out;
-  }
-
-  // v = [x, y, z, w]; w = 1 for points, 0 for directions (as in Lab 02).
-  function transform(m, v) {
-    return [0, 1, 2, 3].map((r) => at(m, r, 0) * v[0] + at(m, r, 1) * v[1] + at(m, r, 2) * v[2] + at(m, r, 3) * v[3]);
-  }
-
-  function rotationY(a) {
-    const c = Math.cos(a);
-    const s = Math.sin(a);
-    return fromRows([c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0, 0, 0, 0, 1]);
-  }
-
-  // A camera is placed in the world like any object. The view matrix undoes that
-  // placement: its first three rows are the camera's right, up and back axes, written
-  // in world coordinates, and its last column moves the eye to the origin.
-  function lookAt(eye, target, worldUp) {
-    const forward = normalize(sub(target, eye));
-    const right = normalize(cross(forward, worldUp));
-    const up = cross(right, forward);
-    const view = fromRows([
-      ...right, -dot(right, eye),
-      ...up, -dot(up, eye),
-      ...scale(forward, -1), dot(forward, eye),
-      0, 0, 0, 1,
-    ]);
-    return { view, eye, right, up, forward };
-  }
-
-  // Perspective: squeezes the view frustum into the clip volume and copies −z_view
-  // into w, so the later divide by w shrinks distant points.
-  function perspective(fovY, aspect, near, far) {
-    const f = 1 / Math.tan(fovY / 2);
-    return fromRows([
-      f / aspect, 0, 0, 0,
-      0, f, 0, 0,
-      0, 0, (far + near) / (near - far), (2 * far * near) / (near - far),
-      0, 0, -1, 0,
-    ]);
-  }
-
-  // Orthographic: a box instead of a frustum. w stays 1, so the divide changes nothing.
-  function orthographic(halfHeight, aspect, near, far) {
-    return fromRows([
-      1 / (halfHeight * aspect), 0, 0, 0,
-      0, 1 / halfHeight, 0, 0,
-      0, 0, -2 / (far - near), -(far + near) / (far - near),
-      0, 0, 0, 1,
-    ]);
-  }
-
-  // NDC -> pixel. NDC +y points up and pixel rows grow down, as in Lab 02.
-  const ndcToPixel = (ndc) => [((ndc[0] + 1) / 2) * W, ((1 - ndc[1]) / 2) * H];
+  const {
+    add, sub, scale, radians, at, multiply, transform, rotationY,
+    orbitEye, cameraBasis, viewMatrix, perspective, orthographic,
+  } = window.cg.math;
+  const ndcToPixel = (ndc) => window.cg.math.ndcToPixel(ndc, W, H);
 
   // ---------------------------------------------------------------------------
   // The mesh: a cube from (−1, −1, −1) to (1, 1, 1), built from 12 triangles that
@@ -145,16 +77,13 @@
   // ---------------------------------------------------------------------------
   // Cameras.
   // ---------------------------------------------------------------------------
+  // A camera is placed in the world like any object: cameraBasis gives its right, up and
+  // forward axes, and viewMatrix builds the matrix that undoes that placement.
   function mainCamera() {
-    const yaw = radians(Number(sliders.yaw.value));
-    const pitch = radians(Number(sliders.pitch.value));
     const dist = Number(sliders.dist.value);
-    const eye = [
-      dist * Math.cos(pitch) * Math.sin(yaw),
-      dist * Math.sin(pitch),
-      dist * Math.cos(pitch) * Math.cos(yaw),
-    ];
-    const camera = lookAt(eye, [0, 0, 0], [0, 1, 0]);
+    const eye = orbitEye(Number(sliders.yaw.value), Number(sliders.pitch.value), dist);
+    const camera = cameraBasis(eye, [0, 0, 0], [0, 1, 0]);
+    camera.view = viewMatrix(camera);
     camera.fovY = radians(Number(sliders.fov.value));
     camera.aspect = W / H;
     camera.near = Number(sliders.near.value);
@@ -170,12 +99,10 @@
   // A second camera beside and above the main one, aimed between the cube and the
   // main camera, so you can see both the scene and the camera that renders it.
   function observerCamera(main) {
-    const yaw = radians(Number(sliders.yaw.value) + 75);
-    const pitch = radians(35);
-    const dist = Number(sliders.dist.value) + 9;
     const target = scale(main.eye, 0.5);
-    const offset = [dist * Math.cos(pitch) * Math.sin(yaw), dist * Math.sin(pitch), dist * Math.cos(pitch) * Math.cos(yaw)];
-    const camera = lookAt(add(target, offset), target, [0, 1, 0]);
+    const eye = orbitEye(Number(sliders.yaw.value) + 75, 35, Number(sliders.dist.value) + 9, target);
+    const camera = cameraBasis(eye, target, [0, 1, 0]);
+    camera.view = viewMatrix(camera);
     camera.projection = perspective(radians(50), W / H, 0.5, 200);
     return camera;
   }
