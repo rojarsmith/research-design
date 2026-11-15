@@ -36,17 +36,17 @@
 | Blender 研發歷程 | 起步、開源轉型、架構、製作回饋、經費與商業成熟度 | [English overview](blender-development-research/README.md) | [完整研究](blender-development-research/README.zh-TW.md) |
 | PC 故障分析與解法 | Windows 事件判讀、依症狀排查、證據蒐集及離線雙語查閱頁 | [Main report](pc-troubleshooting/README.md) | [完整攻略](pc-troubleshooting/README.zh-TW.md) |
 | 桌機螢幕喚醒研究 | RTX 5070 Ti、Acer ET322QK、ASUS VG289 與 Philips HDMI 切換；Windows 睡眠、驅動、型號設定及 20 項官方來源 | [English report](display-wake-research/README.md) | [繁體中文研究](display-wake-research/README.zh-TW.md) |
+| LOXJIE A40 USB 爆音與斷聲 | 本機驅動與 USB 拓撲、網路案例、對照測試及唯讀採集工具 | [English overview](loxjie-a40-usb-research/README.md) | [完整研究](loxjie-a40-usb-research/README.zh-TW.md) |
 | 電腦圖形學實作課程 | 從向量與軟體光柵化開始，逐步打造小型即時渲染器；提供可離線使用的雙語互動課程 | [English course](computer-graphics-practice/README.md) | [繁體中文課程](computer-graphics-practice/README.zh-TW.md) |
 | Claude Startups 申請 | 最新資格與福利、HMI Studio 申請主體評估、Max API 額度與英文詢問草稿 | [English overview](claude-startups-research/README.md) | [完整研究](claude-startups-research/README.zh-TW.md) |
 | 網路交友與婚育規劃 | 高雄與跨國認識管道、平台限制、自介與30天行動、來源與研究紀錄 | [English overview](marriage-and-dating/README.md) | [完整研究](marriage-and-dating/README.zh-TW.md) |
 | 機車事故證據與求償 | 對向機車左轉、閃避摔車個案的證據保全、警方資料、醫療、機車修復與求償程序 | [研究目錄](motorcycle-accident-research/README.zh-TW.md) | [個案行動指南](motorcycle-accident-research/README.zh-TW.md) |
 | C 語言、編譯器與處理器 | C 的起源、編譯器的建構與自舉、一天內的處理器 C 支援評估流程、契約堆疊學習路線、具 RV32 與 x86-64 後端的可執行 C 子集編譯器，以及 19 種 clang 目標的實測比較 | [English overview](c-compiler-foundations/README.md) | [完整研究](c-compiler-foundations/README.zh-TW.md) |
 | 作業系統：從核心到合成器（草稿） | 待審閱的課綱草稿：以 xv6-riscv 動手學作業系統基礎並對照 Linux 與 Windows NT，再進入顯示與視窗系統（DRM/KMS、平面與 vblank、dma-buf 與顯式同步、輸入、座位、隔離），最後完成最小 Wayland 合成器專題 | [English course](os-foundations/README.md) | [繁體中文課程](os-foundations/README.zh-TW.md) |
+| MCU 跨平台學習課程 | 給有軟體開發經驗者從零學微控制器：共通架構與軟體堆疊、以同一個資料採集器逐關推進並移植到第二平台的實作路線、選型與文件閱讀，以及學習紀錄 | [僅繁體中文](mcu-foundations/README.md) | [繁體中文課程](mcu-foundations/README.md) |
 | 歐洲 OTA Server 銷售與 CRA | OTA 服務市場進入、CRA 產品邊界與自我評估、ETSI EN 303 645 測試層級、成本模型及客戶信任證據 | [English overview](eu-ota-cra-sales-research/README.md) | [完整研究](eu-ota-cra-sales-research/README.zh-TW.md) |
 
 ## 主要文件
-
-新增主題：[LOXJIE A40 USB 爆音與斷聲研究](loxjie-a40-usb-research/README.zh-TW.md)，包含本機驅動與 USB 拓撲、網路案例、對照測試及唯讀採集工具。
 
 | 文件 | 用途 |
 | --- | --- |
@@ -61,11 +61,22 @@
 
 | 目錄 | 內容 |
 | --- | --- |
+| `senior-interview-beyond-dsa-research/` | 面試研究報告與 `ai-round-practice/` VS Code 練習包：三階段 AI 輔助回合情境、共用測試框架與練習命令列工具 |
+| `coding-interview-practice-research/` | 刷題研究報告與 `cpp-practice/` VS Code C++ 練習專案：題目、範本、測試框架、練習流程命令列工具與說明文件 |
+| `orderbook-dex-launchpad-research/` | 僅主報告，無延伸文件 |
+| `hyperliquid-dex-research/` | 僅主報告，無延伸文件 |
+| `paid-software-opportunity-research/` | 僅主報告，無延伸文件 |
+| `markdown-editor-market-research/` | 僅主報告，無延伸文件 |
+| `desktop-licensing-research/` | 僅主報告，無延伸文件 |
+| `job-search-ai-research/` | 工具比較報告、求職流程設計，以及 `prototype/` Node.js session broker 與檢查腳本 |
+| `codex-claude-api-research/` | Codex 與 Claude API key 報告，以及運用既有 API 額度的替代工具 |
+| `computex-ai-product-video-research/` | 工具、Claude MCP、來源與成本研究；分鏡、素材與宣稱、交付及專案計畫；製作提示、清單範例與發布檢查表 |
 | `winstar-smart-display-research/` | 智慧顯示器系列、代表型號、GUI Builder 限制、整合與來源差異 |
 | `msix-research/` | MSIX 封裝、簽章、部署、更新與教學校正 |
 | `webassembly-research/` | Wasm 原理、C/C++ 建置指南、部署與採用評估、文章導讀與查證限制 |
 | `rad-tools-research/` | RAD 工具領域與產品規模比較、研發資源與預算模型、架構、驗收路線及官方來源 |
 | `dynamic-language-design-research/` | 動態語言誕生史、移植性評估、自製語言路線圖、來源與 minilang 單檔直譯器範例 |
+| `ai-team-development-research/` | 團隊交付主報告、分支生命週期、AI 治理與平台、來源及工作流程範本 |
 | `save-load-compatibility-research/` | 存讀檔架構、公開實作、遷移範例、相容性情境與官方來源 |
 | `iam-research/` | IAM 比較、Keycloak 整合與營運、來源索引、現況盤點及獨立本地實驗環境 |
 | `mcu-embedded-hmi-research/` | MCU HMI 生態、產品能力、系統架構、評測方法與官方來源 |
@@ -75,15 +86,21 @@
 | `multi-asset-trading-platform/architecture/` | 架構提案、評估與建議設計 |
 | `multi-asset-trading-platform/docs/adr/` | 架構決策紀錄 |
 | `openrouter-vps-token-platform/research/` | 可行性、部署、帳務與來源資料 |
+| `code-signing-research/` | OV 驗證指南、價格與供應商比較、附來源清單的公司登記與上市資料，以及產生上傳 PDF 的腳本與驗證輸出 |
 | `us-company-from-taiwan/research/` | 台灣居民經營美國公司的通用研究；私人個案資料保存在 Git 之外 |
 | `blender-development-research/research/` | Blender 工程、製作流程、參考來源與證據範圍 |
 | `pc-troubleshooting/` | PC 故障研究、截圖事件表、排查流程、個案範本與本機工具 |
 | `display-wake-research/` | RTX 5070 Ti 桌機 HDMI/DP 雙螢幕喚醒問題與證據來源 |
+| `loxjie-a40-usb-research/` | USB 音訊故障報告、來源索引、觀察紀錄範本及唯讀 PowerShell 採集工具；原始證據不納入 Git |
 | `computer-graphics-practice/` | 雙語電腦圖形學實作課程與可執行瀏覽器實驗 |
+| `claude-startups-research/` | 計畫研究、申請資料包、申請主體專案評估，以及來源與待確認事項 |
+| `marriage-and-dating/` | 平台研究、自介與行動計畫、跨國交友與安全、來源、研究紀錄、付費方案評估及每週檢討範本 |
 | `motorcycle-accident-research/` | 機車事故個案行動指南、六篇參考文章摘要與查核、官方程序與證據清單 |
 | `c-compiler-foundations/` | C 語言與編譯器起源、處理器 C 支援評估、tinyc 編譯器、RV32IM 模擬器與探針實作 |
 | `os-foundations/` | 作業系統課程草稿：xv6-riscv 實驗、Linux 與 NT 對照、DRM/KMS 與 Wayland 合成器課綱 |
+| `mcu-foundations/` | 繁體中文 MCU 課程：共通架構、實作路線、選型與文件閱讀、第一課、學習紀錄及官方參考資料 |
 | `eu-ota-cra-sales-research/` | 歐洲 OTA 服務銷售、CRA 範圍與評估路徑、ETSI 基線和測試成本、供應商信任方案 |
+| `national-industrial-innovation-award-10/` | 僅限本機的申請工作區；Git 只納入其繁體中文說明、作業規則與 `.gitignore`，所有輸入資料與草稿均不納入 Git |
 
 ## 閱讀與語言慣例
 
@@ -91,6 +108,6 @@
 2. 再依延伸研究與決策紀錄查看證據及實作細節。
 3. 解讀版本、價格與條款時，以報告標示的研究日期為準；實作前重新查核可能變動的資訊。
 
-文件通常提供英文與對應的 `*.zh-TW.md` 繁體中文版，各語言導覽連至同語言文件。美國公司經營攻略與 Blender 研究以繁體中文為完整版本，英文入口明示為概要。
+文件通常提供英文與對應的 `*.zh-TW.md` 繁體中文版，各語言導覽連至同語言文件。美國公司經營攻略與 Blender 研究以繁體中文為完整版本，英文入口明示為概要。機車事故個案行動指南與 MCU 跨平台學習課程僅提供繁體中文版。
 
 研究以證據與使用者需求為中心，對廠商採用相同查證標準，並區分已記載的功能、估算與建議設計。閱讀建議、工期及成本估算時，應一併考量其假設與限制。
