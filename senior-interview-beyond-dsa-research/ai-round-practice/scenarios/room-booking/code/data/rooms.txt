@@ -1,0 +1,7 @@
+# Floor plan, building A
+room A101 cap=4  features=tv
+room A102 cap=6  features=tv,whiteboard
+room A201 cap=10 features=vc,tv
+room A202 cap=8  features=vc,accessible
+room A301 cap=20 features=vc,tv,whiteboard,accessible
+room A005 cap=2  features=-

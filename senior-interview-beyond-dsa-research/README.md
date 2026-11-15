@@ -51,8 +51,22 @@ This topic follows [HackerRank and LeetCode practice for senior engineers](../co
 | 3 | System design: expectations by level and why candidates get down-leveled, a reusable framework, capacity estimation (powers of two, latency, availability, a worked example), a trigger-to-pattern table, a 14-problem set, practice without memorizing (review card, variant drills, mocks), Meta's Product Architecture vs System Design, resources |
 | 4 | Behavioral and leadership: Meta's eight focus areas and scope by level, Amazon's 16 Leadership Principles, Google's reported change, STAR/STAR(R)/CARL, steps to prepare 6 to 8 stories, story slots and a matrix, follow-up probes and common mistakes |
 | 5 | LLD/OOD: who asks it and in what format, a five-step framework, grading by level, problems mapped to what they test, patterns and principles, practice |
-| 6 | AI-assisted coding: comparison of Meta, Canva, Google and HackerRank Chakra; a shared workflow; anti-patterns; a weekly three-phase drill |
+| 6 | AI-assisted coding: comparison of Meta, Canva, Google and HackerRank Chakra; a shared workflow; anti-patterns; a weekly three-phase drill and the practice kit (see below) |
 | 7 | Time split in hours per week, a 12-week plan next to the DSA plan, a 3-to-4-week short version, readiness criteria |
 | 8–9 | Verification gaps and references |
+
+## Practice kit for AI-assisted rounds
+
+[ai-round-practice/](ai-round-practice/README.md) is a VS Code workspace for the weekly drill. It needs only VS Code, the C/C++ extension and WinLibs GCC, the same as the coding report's cpp-practice.
+
+- **Scenarios:** 3 original multi-file C++ codebases. Each runs in three phases: fix a bug, implement a feature, then optimize against large generated data.
+- **The `drill` CLI:**
+  - reveals one phase at a time and times each phase
+  - opens each session in its own folder and window, so the AI assistant sees only that codebase
+  - supports `chat`, `open` and `none` modes
+  - records a session only after you fill in a review that covers the report's replay checks
+- **Verified** on Windows 11 with g++ 16.2.0:
+  - Reference solutions use under a third of each time limit.
+  - Every slower approach that was tried fails at least one large test.
 
 Web sources were checked on 2026-11-15, and GitHub star counts come from the GitHub API on that date. Claims that rest only on secondary or vendor sources are marked unverified in the full report. That includes most details of Meta's AI-enabled round, the scope of Google's pilot beyond what Google confirmed, HackerRank's own figures for Chakra, and which companies run LLD rounds.

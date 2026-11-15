@@ -1,0 +1,10 @@
+# Manual bookings entered by the front desk
+booking A101 09:00-10:00 standup
+booking A101 10:00-11:00 design-review
+booking A101 10:30-11:30 interview
+booking A201 13:00-14:00 planning
+booking A201 14:00-14:30 sync
+booking A201 14:30-15:00 retro
+booking A301 09:00-12:00 workshop
+booking A301 11:59-12:30 all-hands
+booking A005 16:00-16:30 1on1

@@ -1,0 +1,8 @@
+# Build output (drill.exe and its precompiled pieces)
+build/*
+!build/.gitkeep
+
+# Your practice folders and session log: personal, not under version control.
+# To keep them, delete these lines and commit them to your own branch.
+work/
+progress/

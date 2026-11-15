@@ -1,0 +1,4 @@
+# Alert rules for the on-call rotation
+rule timeouts  service=*       level=ERROR code=E5003 threshold=3 window=10s cooldown=1m
+rule declines  service=billing level=ERROR code=*     threshold=2 window=5s  cooldown=30s
+rule fatal     service=*       level=FATAL code=*     threshold=1 window=1s  cooldown=5m

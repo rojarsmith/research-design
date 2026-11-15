@@ -1,0 +1,6 @@
+# Scenarios in the recommended order. Columns are tab-separated.
+# budgets: suggested minutes for phases 1, 2 and 3 (plus about 5 minutes to wrap up).
+id	title	blurb	budgets
+build-planner	建置排程器	CI 用的建置清單工具：解析清單、排出建置順序，接著要模擬多台機器平行建置。	15,25,15
+log-alerts	日誌告警	值班用的日誌工具：合併多個服務的日誌、產生摘要，接著要依規則發出告警。	15,25,15
+room-booking	會議室分配	辦公室的會議室工具：檢查人工預約的衝突，接著要自動分配會議室。	15,25,15

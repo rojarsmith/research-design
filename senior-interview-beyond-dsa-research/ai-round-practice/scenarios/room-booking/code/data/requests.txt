@@ -1,0 +1,5 @@
+request r1 09:00-10:00 size=3 needs=tv
+request r2 09:00-09:30 size=3 needs=tv
+request r3 09:30-10:30 size=8 needs=vc
+request r4 10:00-11:00 size=2 needs=-
+request r5 09:15-09:45 size=25 needs=-
