@@ -29,6 +29,8 @@
 
 逐階段的建置計畫請見 [`SYLLABUS.zh-TW.md`](SYLLABUS.zh-TW.md)。目前目錄已實作第 01–06 個實驗；後續階段是隨學習逐步完成的課程路線。
 
+**第二部（草稿，待審閱）：** [`SYLLABUS-PART2.zh-TW.md`](SYLLABUS-PART2.zh-TW.md) 規劃瀏覽器之後的內容：在 RTX 5070 Ti 上使用原生 Vulkan 或 Direct3D 12，先修共同核心，再選遊戲引擎渲染器，或 2D、文字與合成渲染其中一條路線。這只是提案，尚未實作任何部分。第一部與第二部都能在 Windows 上完成。
+
 課程也會穿插硬體知識：渲染管線各階段、GPU 平行執行、記憶體與 CPU/GPU 資料搬運，以及以證據診斷效能。瀏覽器實驗方便起步；NVIDIA 實作路線會加入原生 OpenGL 渲染器，並用 Nsight Graphics 擷取和分析 RTX 5070 Ti 上的影格。CUDA 影像處理與 Vulkan 光線追蹤是選修延伸，不會把 CUDA 當成圖形管線本身。
 
 依 NVIDIA 的 [GeForce RTX 5070 系列規格](https://www.nvidia.com/zh-tw/geforce/graphics-cards/50-series/rtx-5070-family/)，RTX 5070 Ti 支援 Vulkan 1.4 和 OpenGL 4.6。NVIDIA 的 [Nsight Graphics 支援清單](https://developer.nvidia.com/nsight-graphics/get-started)列出 RTX 50 系列與 OpenGL／Vulkan；安裝前請查看最新系統需求。
@@ -46,6 +48,7 @@
 - [`index.html`](index.html) — 雙語課程總覽與互動實驗；從實驗列選擇要進行的實驗。直接從磁碟開啟即可執行。
 - [`CONVENTIONS.zh-TW.md`](CONVENTIONS.zh-TW.md) — 課程採用的座標、矩陣、深度、繞序與色彩慣例，以及換到 Vulkan 與 Direct3D 12 時的變化。
 - [`labs/common/math.js`](labs/common/math.js)、[`labs/common/color.js`](labs/common/color.js) — 實驗 02–06 共用的向量／矩陣／攝影機／投影函式與 sRGB 轉換；以傳統 script 掛在 `window.cg` 上，不需要伺服器。
+- [`SYLLABUS-PART2.zh-TW.md`](SYLLABUS-PART2.zh-TW.md) — 第二部計畫**草稿**（原生 GPU 渲染、引擎路線、2D／文字／合成路線），待審閱。
 - [`labs/01-triangle/app.js`](labs/01-triangle/app.js) — 可閱讀、可擴充的 CPU 三角形光柵器。
 - [`labs/01-triangle/README.md`](labs/01-triangle/README.md) — 實驗說明與實作檢核點。
 - [`labs/02-transforms/app.js`](labs/02-transforms/app.js) — 3×3 齊次變換、視口矩陣，以及疊在實驗 01 光柵器上的線框除錯覆層。

@@ -29,6 +29,8 @@ No graphics card setup, engine, package manager, or prior graphics course is req
 
 The detailed milestone-by-milestone build plan is in [`SYLLABUS.md`](SYLLABUS.md). Labs 01–06 are implemented in this directory; later milestones are the planned course sequence to build as you progress.
 
+**Part II (draft, awaiting review):** [`SYLLABUS-PART2.md`](SYLLABUS-PART2.md) outlines what comes after the browser: native Vulkan or Direct3D 12 on the RTX 5070 Ti, a shared core, and two tracks, a game-engine renderer or 2D, text and compositing rendering. It is a proposal only; none of it is implemented. Parts I and II can both be completed on Windows.
+
 Hardware is part of the course too: a thread woven through the labs covers pipeline stages, GPU parallel execution, memory and CPU/GPU data movement, and evidence-based performance diagnosis. The browser labs provide a low-friction start. The NVIDIA path adds a native OpenGL renderer and Nsight Graphics frame analysis on your RTX 5070 Ti; CUDA image processing and Vulkan ray tracing are optional extensions. It stays at the level useful for graphics programming; circuit design is out of scope.
 
 The RTX 5070 Ti supports Vulkan 1.4 and OpenGL 4.6 according to NVIDIA's [GeForce RTX 5070 family specifications](https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5070-family/). NVIDIA lists RTX 50-series cards and OpenGL / Vulkan among [Nsight Graphics' supported hardware and APIs](https://developer.nvidia.com/nsight-graphics/get-started); consult the current page for installation requirements.
@@ -46,6 +48,7 @@ For every lab: **predict → implement → inspect → explain**. Change one thi
 - [`index.html`](index.html) — bilingual course overview and interactive labs; choose a lab from the lab bar. It works when opened directly from disk.
 - [`CONVENTIONS.md`](CONVENTIONS.md) — the course's coordinate, matrix, depth, winding, and color conventions, and how each changes in Vulkan and Direct3D 12.
 - [`labs/common/math.js`](labs/common/math.js), [`labs/common/color.js`](labs/common/color.js) — shared vector/matrix/camera/projection helpers and sRGB conversions for Labs 02–06, loaded as classic scripts on `window.cg` so no server is needed.
+- [`SYLLABUS-PART2.md`](SYLLABUS-PART2.md) — **draft** Part II plan (native GPU rendering, engine track, 2D/text/compositing track), awaiting review.
 - [`labs/01-triangle/app.js`](labs/01-triangle/app.js) — deliberately readable CPU triangle rasterizer to extend.
 - [`labs/01-triangle/README.md`](labs/01-triangle/README.md) — experiment brief and implementation checkpoints.
 - [`labs/02-transforms/app.js`](labs/02-transforms/app.js) — 3×3 homogeneous transforms, a viewport matrix, and a wireframe debug overlay on top of the Lab 01 rasterizer.
