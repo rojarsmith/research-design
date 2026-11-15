@@ -36,17 +36,17 @@ Engineering research, feasibility studies, architecture proposals for software p
 | Blender development history | Origins, open-source transition, architecture, production feedback, funding, and commercial readiness | [English overview](blender-development-research/README.md) | [完整研究](blender-development-research/README.zh-TW.md) |
 | PC troubleshooting and solutions | Windows event analysis, symptom-based diagnostics, evidence collection, and an offline bilingual guide | [Main report](pc-troubleshooting/README.md) | [完整攻略](pc-troubleshooting/README.zh-TW.md) |
 | Desktop display wake research | RTX 5070 Ti, Acer ET322QK, ASUS VG289, Philips HDMI switching, Windows sleep, driver recovery and 20 official references | [English report](display-wake-research/README.md) | [繁體中文研究](display-wake-research/README.zh-TW.md) |
+| LOXJIE A40 USB audio faults | Local drivers and USB topology, online reports, controlled comparisons, and a read-only evidence collector | [English overview](loxjie-a40-usb-research/README.md) | [完整研究](loxjie-a40-usb-research/README.zh-TW.md) |
 | Computer graphics practice course | A hands-on path from vectors and software rasterization to a small real-time renderer, with an offline bilingual interactive lesson | [English course](computer-graphics-practice/README.md) | [繁體中文課程](computer-graphics-practice/README.zh-TW.md) |
 | Claude Startups applications | Current eligibility and benefits, HMI Studio applicant assessment, Max API credits and English inquiry drafts | [English overview](claude-startups-research/README.md) | [完整研究](claude-startups-research/README.zh-TW.md) |
 | Online dating and family planning | Kaohsiung and international dating channels, platform limits, profiles, a 30-day plan, sources and research log | [English overview](marriage-and-dating/README.md) | [完整研究](marriage-and-dating/README.zh-TW.md) |
 | Motorcycle accident evidence and claims | Evidence preservation, police records, medical documentation, motorcycle repair and insurance for a two-motorcycle avoidance-crash case | [Case guide](motorcycle-accident-research/README.zh-TW.md) | [繁體中文行動指南](motorcycle-accident-research/README.zh-TW.md) |
 | C, compilers and processors | Origins of C, how compilers are built and bootstrapped, a one-day processor C-readiness protocol, a contract-stack learning path, a runnable C-subset compiler with RV32 and x86-64 backends, and a measured comparison across 19 clang targets | [English overview](c-compiler-foundations/README.md) | [完整研究](c-compiler-foundations/README.zh-TW.md) |
 | Operating systems from kernel to compositor (draft) | Draft syllabus for review. Hands-on OS foundations on xv6-riscv with Linux and Windows NT comparisons, then the display and window system: DRM/KMS, planes and vblank, dma-buf and explicit sync, input, seats and isolation. Ends with a minimal Wayland compositor capstone | [English course](os-foundations/README.md) | [繁體中文課程](os-foundations/README.zh-TW.md) |
+| MCU foundations course | Microcontrollers from zero for software developers: a shared architecture and software-stack model, a staged path built around one data logger later ported to a second platform, board selection and document reading, and a learning log | [Traditional Chinese only](mcu-foundations/README.md) | [繁體中文課程](mcu-foundations/README.md) |
 | European OTA sales and CRA | OTA service market entry, CRA scope and self-assessment, ETSI EN 303 645 testing levels, cost model, and customer trust evidence | [English overview](eu-ota-cra-sales-research/README.md) | [完整研究](eu-ota-cra-sales-research/README.zh-TW.md) |
 
 ## Key Documents
-
-New topic: [LOXJIE A40 USB audio fault research](loxjie-a40-usb-research/README.md), covering local drivers and USB topology, online reports, controlled comparisons, and a read-only evidence collector.
 
 | Document | Purpose |
 | --- | --- |
@@ -61,11 +61,22 @@ New topic: [LOXJIE A40 USB audio fault research](loxjie-a40-usb-research/README.
 
 | Directory | Contents |
 | --- | --- |
+| `senior-interview-beyond-dsa-research/` | Interview research report and `ai-round-practice/`, a VS Code kit with three-phase AI-assisted round scenarios, a shared test harness and a practice CLI |
+| `coding-interview-practice-research/` | Practice research report and `cpp-practice/`, a VS Code C++ project with problems, templates, a test harness, a practice-loop CLI and docs |
+| `orderbook-dex-launchpad-research/` | Main report only; no supporting files |
+| `hyperliquid-dex-research/` | Main report only; no supporting files |
+| `paid-software-opportunity-research/` | Main report only; no supporting files |
+| `markdown-editor-market-research/` | Main report only; no supporting files |
+| `desktop-licensing-research/` | Main report only; no supporting files |
+| `job-search-ai-research/` | Tool comparison report, job-search loop design, and the `prototype/` Node.js session broker with its checks |
+| `codex-claude-api-research/` | Codex and Claude API key report, and alternative tools for using existing API credits |
+| `computex-ai-product-video-research/` | Tool, Claude MCP, source and cost research; storyboard, assets and claims, delivery and project plan; production prompts, manifest example and release checklist |
 | `winstar-smart-display-research/` | Smart display portfolio, representative modules, GUI Builder limits, integration and source discrepancies |
 | `msix-research/` | MSIX packaging, signing, distribution, updates and tutorial review |
 | `webassembly-research/` | Wasm fundamentals, C/C++ build guide, deployment and adoption evaluation, annotated articles and verification limits |
 | `rad-tools-research/` | RAD tool domains, product maturity, development resource models, architecture, validation gates and primary sources |
 | `dynamic-language-design-research/` | Dynamic language origins, portability evaluation, language design roadmap, sources, and the minilang single-file interpreter example |
+| `ai-team-development-research/` | Team delivery report, branch lifecycle, AI governance and platforms, sources, and workflow templates |
 | `save-load-compatibility-research/` | Save/load architecture, public implementations, migration examples, compatibility scenarios and primary sources |
 | `iam-research/` | IAM comparison, Keycloak integration and operations, source index, deployment inventory, and an isolated local lab |
 | `mcu-embedded-hmi-research/` | MCU HMI ecosystem comparison, product capabilities, architecture, evaluation protocol and official sources |
@@ -75,15 +86,21 @@ New topic: [LOXJIE A40 USB audio fault research](loxjie-a40-usb-research/README.
 | `multi-asset-trading-platform/architecture/` | Architecture proposals, evaluation, and recommended design |
 | `multi-asset-trading-platform/docs/adr/` | Architecture decision records |
 | `openrouter-vps-token-platform/research/` | Feasibility, deployment, billing, and source material |
+| `code-signing-research/` | OV validation guide, pricing and provider comparison, company registration and listing records with a source manifest, and the script that builds the upload PDFs with its verification output |
 | `us-company-from-taiwan/research/` | General research on operating U.S. companies from Taiwan; private case records remain outside Git |
 | `blender-development-research/research/` | Blender engineering, production workflows, references, and evidence boundaries |
 | `pc-troubleshooting/` | PC failure research, screenshot event catalog, diagnostic workflow, case templates and local tools |
 | `display-wake-research/` | RTX 5070 Ti desktop HDMI/DP dual-monitor wake issue and supporting sources |
+| `loxjie-a40-usb-research/` | USB audio fault report, source index, observation template, and the read-only PowerShell evidence collector; raw evidence stays outside Git |
 | `computer-graphics-practice/` | Bilingual, hands-on computer graphics course and runnable browser labs |
+| `claude-startups-research/` | Program research, application kit, applicant project assessment, and sources and open questions |
+| `marriage-and-dating/` | Platform research, profile and action plan, international dating and safety, sources, research logs, a paid-plan assessment and a weekly review template |
 | `motorcycle-accident-research/` | Motorcycle accident case guide, source checks, official procedures and evidence checklist |
 | `c-compiler-foundations/` | C language and compiler origins, processor C-readiness evaluation, and the tinyc compiler, RV32IM simulator and probe labs |
 | `os-foundations/` | Draft OS course: xv6-riscv labs, Linux and NT comparisons, and a DRM/KMS and Wayland compositor syllabus |
+| `mcu-foundations/` | Traditional Chinese MCU course: architecture model, learning path, selection and document reading, first lesson, learning log and official references |
 | `eu-ota-cra-sales-research/` | European OTA sales, CRA scope and conformity paths, ETSI baseline and testing costs, and supplier trust plan |
+| `national-industrial-innovation-award-10/` | Local-only application workspace; only its Traditional Chinese README, working rules and `.gitignore` are tracked, and all inputs and drafts stay outside Git |
 
 ## Reading and Language Conventions
 
@@ -91,6 +108,6 @@ New topic: [LOXJIE A40 USB audio fault research](loxjie-a40-usb-research/README.
 2. Follow the supporting research and decision records for evidence and implementation details.
 3. Use the report's stated research date when interpreting versions, prices, and terms. Recheck time-sensitive inputs before implementation.
 
-Most topics provide English documents and matching `*.zh-TW.md` Traditional Chinese versions, with navigation within each language leading to that language's documents. The U.S. company operating guide and Blender research are complete in Traditional Chinese; their English entries are explicitly overviews.
+Most topics provide English documents and matching `*.zh-TW.md` Traditional Chinese versions, with navigation within each language leading to that language's documents. The U.S. company operating guide and Blender research are complete in Traditional Chinese; their English entries are explicitly overviews. The motorcycle accident case guide and the MCU foundations course are available only in Traditional Chinese.
 
 Research follows evidence and the user's requirements, applies the same verification standards to vendors, and distinguishes documented capabilities from estimates and proposed designs. Recommendations and effort or cost estimates should be read together with their assumptions and limitations.
