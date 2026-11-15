@@ -1,6 +1,8 @@
 # Build plan
 
-This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Lab 01 is the working starting point; later milestones are planned exercises.
+This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Labs 01–06 are implemented and run from `index.html`; later milestones are planned exercises.
+
+The coordinate, depth, winding, and color conventions every milestone relies on are collected in [`CONVENTIONS.md`](CONVENTIONS.md).
 
 ## 00 — Set up a pixel workspace
 
@@ -18,45 +20,45 @@ This is a practical sequence, not a list of topics to memorize. Each milestone a
 
 **Checkpoint:** explain winding, degenerate triangles, and why a shared edge needs a consistent fill rule. Complete exercises A–F in `labs/01-triangle/README.md`.
 
-## 02 — Add 2D transforms and wireframe debugging
+## 02 — Add 2D transforms and wireframe debugging (implemented)
 
 **Build:** a small scene of transformed triangles. Add translation, rotation, and scale controls; draw vertex markers and edges as a debug overlay.
 
 **Learn as needed:** column versus row vectors, matrix multiplication order, homogeneous coordinates, coordinate handedness.
 
-**Checkpoint:** predict the result of two transforms applied in opposite orders. Keep world coordinates separate from pixel coordinates.
+**Checkpoint:** predict the result of two transforms applied in opposite orders. Keep world coordinates separate from pixel coordinates. Complete exercises A–H in `labs/02-transforms/README.md`.
 
-## 03 — Make the first 3D image
+## 03 — Make the first 3D image (implemented)
 
 **Build:** a rotating cube made from triangles, an orbit camera, and a perspective projection. First draw wireframe, then filled faces.
 
 **Learn as needed:** model / world / view / clip spaces, camera basis, field of view, near/far planes, perspective divide, viewport mapping.
 
-**Checkpoint:** trace one vertex through each space and explain why points farther away appear smaller. Draw the camera frustum and label the clip-volume convention used in your code.
+**Checkpoint:** trace one vertex through each space and explain why points farther away appear smaller. Draw the camera frustum and label the clip-volume convention used in your code. Complete exercises A–G in `labs/03-first-3d/README.md`.
 
-## 04 — Decide what is visible
+## 04 — Decide what is visible (implemented)
 
 **Build:** a depth buffer, back-face culling, and clipping against the near plane. Add a toggle to compare each feature on and off.
 
 **Learn as needed:** depth test, triangle winding, homogeneous clipping, z-fighting, depth precision.
 
-**Checkpoint:** show two intersecting or overlapping meshes and explain why painter's sorting fails while per-sample depth succeeds. Explain a case that still causes z-fighting.
+**Checkpoint:** show two intersecting or overlapping meshes and explain why painter's sorting fails while per-sample depth succeeds. Explain a case that still causes z-fighting. Complete exercises A–G in `labs/04-visibility/README.md`.
 
-## 05 — Move geometry to the GPU
+## 05 — Move geometry to the GPU (implemented)
 
 **Build:** port the same cube to WebGL 2 first. Upload positions and indices; write a vertex shader and fragment shader; animate a matrix. Then use the optional NVIDIA path below to run a native OpenGL 4.6 version on the GeForce GPU.
 
 **Learn as needed:** graphics context, vertex buffers, vertex attributes, uniforms, shader compilation, interpolation between vertices.
 
-**Checkpoint:** explain which calculations run once per vertex and which run for covered samples. Compare CPU and GPU outputs using the same vertex data and transforms.
+**Checkpoint:** explain which calculations run once per vertex and which run for covered samples. Compare CPU and GPU outputs using the same vertex data and transforms. Complete exercises A–G in `labs/05-webgl/README.md`; exercise H is the native OpenGL step of the NVIDIA path.
 
-## 06 — Add materials, light, and texture
+## 06 — Add materials, light, and texture (implemented)
 
 **Build:** per-vertex or per-fragment Lambert diffuse lighting, then Blinn–Phong highlights, normals, and a sampled texture.
 
 **Learn as needed:** normal transforms, dot product, light direction, UV coordinates, texture filtering, sRGB display versus linear-light calculation.
 
-**Checkpoint:** rotate the object and light independently. Explain why normals need a different transform from positions under non-uniform scale, and why blending colors in the wrong color space looks dark.
+**Checkpoint:** rotate the object and light independently. Explain why normals need a different transform from positions under non-uniform scale, and why blending colors in the wrong color space looks dark. Complete exercises A–H in `labs/06-materials/README.md`.
 
 ## 07 — Shadows and image quality
 
