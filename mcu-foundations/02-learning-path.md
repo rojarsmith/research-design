@@ -18,6 +18,8 @@
 
 階段時間是安排參考，部分練習可合併。進階的 cache 與 DMA 一致性、無線、安全開機和更新流程，等實際平台需要時再展開。
 
+階段 0 到 4 已有課文：[第一課](lessons/00-first-principles.md)、[第二課](lessons/01-reset-to-main.md)、[第三課](lessons/02-gpio-and-clocks.md)、[第四課](lessons/03-timer-and-interrupts.md)、[第五課](lessons/04-uart-ring-buffer.md)。第二課起每課附有 [桌機實驗](labs/README.md)，沒有開發板也能先驗證邏輯；電氣訊號與真實時序仍以上板量測為準。
+
 ## 同一專案逐步演進
 
 第一版每 10 ms 產生一筆序號與模擬數值，採二進位封包經 UART 送給電腦。電腦檢查序號是否連續，並統計每秒收到的筆數。
