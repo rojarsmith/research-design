@@ -40,6 +40,7 @@ Engineering research, feasibility studies, architecture proposals for software p
 | Online dating and family planning | Kaohsiung and international dating channels, platform limits, profiles, a 30-day plan, sources and research log | [English overview](marriage-and-dating/README.md) | [完整研究](marriage-and-dating/README.zh-TW.md) |
 | Motorcycle accident evidence and claims | Evidence preservation, police records, medical documentation, motorcycle repair and insurance for a two-motorcycle avoidance-crash case | [Case guide](motorcycle-accident-research/README.zh-TW.md) | [繁體中文行動指南](motorcycle-accident-research/README.zh-TW.md) |
 | C, compilers and processors | Origins of C, how compilers are built and bootstrapped, a one-day processor C-readiness protocol, a contract-stack learning path, a runnable C-subset compiler with RV32 and x86-64 backends, and a measured comparison across 19 clang targets | [English overview](c-compiler-foundations/README.md) | [完整研究](c-compiler-foundations/README.zh-TW.md) |
+| Operating systems from kernel to compositor (draft) | Draft syllabus for review. Hands-on OS foundations on xv6-riscv with Linux and Windows NT comparisons, then the display and window system: DRM/KMS, planes and vblank, dma-buf and explicit sync, input, seats and isolation. Ends with a minimal Wayland compositor capstone | [English course](os-foundations/README.md) | [繁體中文課程](os-foundations/README.zh-TW.md) |
 | European OTA sales and CRA | OTA service market entry, CRA scope and self-assessment, ETSI EN 303 645 testing levels, cost model, and customer trust evidence | [English overview](eu-ota-cra-sales-research/README.md) | [完整研究](eu-ota-cra-sales-research/README.zh-TW.md) |
 
 ## Key Documents
@@ -80,6 +81,7 @@ New topic: [LOXJIE A40 USB audio fault research](loxjie-a40-usb-research/README.
 | `computer-graphics-practice/` | Bilingual, hands-on computer graphics course and runnable browser labs |
 | `motorcycle-accident-research/` | Motorcycle accident case guide, source checks, official procedures and evidence checklist |
 | `c-compiler-foundations/` | C language and compiler origins, processor C-readiness evaluation, and the tinyc compiler, RV32IM simulator and probe labs |
+| `os-foundations/` | Draft OS course: xv6-riscv labs, Linux and NT comparisons, and a DRM/KMS and Wayland compositor syllabus |
 | `eu-ota-cra-sales-research/` | European OTA sales, CRA scope and conformity paths, ETSI baseline and testing costs, and supplier trust plan |
 
 ## Reading and Language Conventions
