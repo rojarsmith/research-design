@@ -1,6 +1,6 @@
 # Build plan
 
-This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Labs 01–05 are implemented and run from `index.html`; later milestones are planned exercises.
+This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Labs 01–06 are implemented and run from `index.html`; later milestones are planned exercises.
 
 ## 00 — Set up a pixel workspace
 
@@ -50,13 +50,13 @@ This is a practical sequence, not a list of topics to memorize. Each milestone a
 
 **Checkpoint:** explain which calculations run once per vertex and which run for covered samples. Compare CPU and GPU outputs using the same vertex data and transforms. Complete exercises A–G in `labs/05-webgl/README.md`; exercise H is the native OpenGL step of the NVIDIA path.
 
-## 06 — Add materials, light, and texture
+## 06 — Add materials, light, and texture (implemented)
 
 **Build:** per-vertex or per-fragment Lambert diffuse lighting, then Blinn–Phong highlights, normals, and a sampled texture.
 
 **Learn as needed:** normal transforms, dot product, light direction, UV coordinates, texture filtering, sRGB display versus linear-light calculation.
 
-**Checkpoint:** rotate the object and light independently. Explain why normals need a different transform from positions under non-uniform scale, and why blending colors in the wrong color space looks dark.
+**Checkpoint:** rotate the object and light independently. Explain why normals need a different transform from positions under non-uniform scale, and why blending colors in the wrong color space looks dark. Complete exercises A–H in `labs/06-materials/README.md`.
 
 ## 07 — Shadows and image quality
 
