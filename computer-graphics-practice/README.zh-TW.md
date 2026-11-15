@@ -27,7 +27,7 @@
 | 6. 陰影與品質 | 加入陰影貼圖並實驗抗鋸齒 | 多重繪製階段、偏移、混疊與取捨 |
 | 7. 期末專題 | 製作精簡互動場景並說明渲染流程 | 效能分析、除錯、設計選擇、可重現展示 |
 
-逐階段的建置計畫請見 [`SYLLABUS.zh-TW.md`](SYLLABUS.zh-TW.md)。目前目錄已實作第 01–04 個實驗；後續階段是隨學習逐步完成的課程路線。
+逐階段的建置計畫請見 [`SYLLABUS.zh-TW.md`](SYLLABUS.zh-TW.md)。目前目錄已實作第 01–05 個實驗；後續階段是隨學習逐步完成的課程路線。
 
 課程也會穿插硬體知識：渲染管線各階段、GPU 平行執行、記憶體與 CPU/GPU 資料搬運，以及以證據診斷效能。瀏覽器實驗方便起步；NVIDIA 實作路線會加入原生 OpenGL 渲染器，並用 Nsight Graphics 擷取和分析 RTX 5070 Ti 上的影格。CUDA 影像處理與 Vulkan 光線追蹤是選修延伸，不會把 CUDA 當成圖形管線本身。
 
@@ -50,6 +50,8 @@
 - [`labs/03-first-3d/README.md`](labs/03-first-3d/README.md) — 座標慣例、A–G 練習與檢核問題。
 - [`labs/04-visibility/app.js`](labs/04-visibility/app.js) — 近裁切面裁切、背面剔除、可切換精度的深度緩衝區、作為對照的畫家演算法，以及深度與過度繪製除錯檢視。
 - [`labs/04-visibility/README.md`](labs/04-visibility/README.md) — 可見性場景、A–G 練習與檢核問題。
+- [`labs/05-webgl/app.js`](labs/05-webgl/app.js) — 以 WebGL 2 繪製同一個立方體（緩衝區、頂點陣列、著色器、uniform），附 JavaScript 版著色器的 CPU 對照版、像素差異檢視與即時片段著色器編輯器。
+- [`labs/05-webgl/README.md`](labs/05-webgl/README.md) — CPU／GPU 比較、A–H 練習（含選修的原生 OpenGL／Nsight 路線）與檢核問題。
 
 ## 完成目標
 

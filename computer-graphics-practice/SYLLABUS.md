@@ -1,6 +1,6 @@
 # Build plan
 
-This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Labs 01–04 are implemented and run from `index.html`; later milestones are planned exercises.
+This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Labs 01–05 are implemented and run from `index.html`; later milestones are planned exercises.
 
 ## 00 — Set up a pixel workspace
 
@@ -42,13 +42,13 @@ This is a practical sequence, not a list of topics to memorize. Each milestone a
 
 **Checkpoint:** show two intersecting or overlapping meshes and explain why painter's sorting fails while per-sample depth succeeds. Explain a case that still causes z-fighting. Complete exercises A–G in `labs/04-visibility/README.md`.
 
-## 05 — Move geometry to the GPU
+## 05 — Move geometry to the GPU (implemented)
 
 **Build:** port the same cube to WebGL 2 first. Upload positions and indices; write a vertex shader and fragment shader; animate a matrix. Then use the optional NVIDIA path below to run a native OpenGL 4.6 version on the GeForce GPU.
 
 **Learn as needed:** graphics context, vertex buffers, vertex attributes, uniforms, shader compilation, interpolation between vertices.
 
-**Checkpoint:** explain which calculations run once per vertex and which run for covered samples. Compare CPU and GPU outputs using the same vertex data and transforms.
+**Checkpoint:** explain which calculations run once per vertex and which run for covered samples. Compare CPU and GPU outputs using the same vertex data and transforms. Complete exercises A–G in `labs/05-webgl/README.md`; exercise H is the native OpenGL step of the NVIDIA path.
 
 ## 06 — Add materials, light, and texture
 
