@@ -35,4 +35,6 @@ C++-specific points are in [docs/cpp-points.zh-TW.md](docs/cpp-points.zh-TW.md).
 | Hint | Task `pp: 提示` | `.\build\pp.exe hint 739` |
 | Record the result | Task `pp: 記錄結果` | `.\build\pp.exe done 739 pass` |
 
-Verified on Windows 11 with WinLibs g++ 16.2.0: all 74 stubs fail their tests, and reference solutions (not shipped) pass every test, including the timing tests.
+The F5 debug build (`-O0 -g -D_GLIBCXX_DEBUG`) skips the timing tests (names starting with `perf`) and shows them as `[ SKIP ]`. It does not enforce time limits anyway, and `_GLIBCXX_DEBUG` checks the whole heap on every `priority_queue` push and pop, so a large input can run for minutes. To step through a timing test in the debugger, set `args` to `["perf"]` in `.vscode/launch.json`.
+
+Verified on Windows 11 with WinLibs g++ 16.2.0: all 74 stubs fail their tests, and reference solutions (not shipped) pass every test, including the timing tests. In the F5 debug build, the reference solutions to all 70 function-style problems pass with the timing tests skipped, each in under a second.

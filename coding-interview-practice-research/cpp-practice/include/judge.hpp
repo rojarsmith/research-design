@@ -6,6 +6,9 @@
 //   double ms = judge::time_ms([&] { ... });             timing
 //   EXPECT_UNDER_MS(ms, limit);                          enforced only in optimized builds
 //
+// Tests whose name starts with "perf" are skipped in unoptimized (F5) builds unless the
+// filter argument selects them, because their large inputs can run for minutes there.
+//
 // A failing stress check prints the smallest input it could find. Trace that
 // input by hand before you change any code.
 #pragma once
@@ -277,9 +280,19 @@ inline int run_all(int argc, char** argv) {
         else filter = a;
     }
     start_watchdog(timeout_s);
-    int passed = 0, failed = 0;
+    int passed = 0, failed = 0, skipped = 0;
     for (auto& t : registry()) {
         if (!filter.empty() && t.name.find(filter) == std::string::npos) continue;
+#ifndef __OPTIMIZE__
+        // Unoptimized builds do not enforce time limits, and _GLIBCXX_DEBUG checks the whole heap
+        // on every priority_queue push and pop, which turns a large perf input into minutes of
+        // O(n^2) work. Skip perf tests here unless the filter asked for them by name.
+        if (filter.empty() && t.name.rfind("perf", 0) == 0) {
+            ++skipped;
+            std::cout << "[ SKIP ] " << t.name << " (unoptimized build; pass \"perf\" to run it)\n";
+            continue;
+        }
+#endif
         failures() = 0;
         iteration() = -1;
         std::cout << "[ RUN  ] " << t.name << std::endl;  // flushed, so a crash shows which test was running
@@ -304,7 +317,9 @@ inline int run_all(int argc, char** argv) {
             std::cout << "[ FAIL ] " << t.name << "\n";
         }
     }
-    std::cout << "\n" << passed << "/" << (passed + failed) << " passed\n";
+    std::cout << "\n" << passed << "/" << (passed + failed) << " passed";
+    if (skipped > 0) std::cout << ", " << skipped << " perf skipped (unoptimized build)";
+    std::cout << "\n";
     return failed == 0 ? 0 : 1;
 }
 

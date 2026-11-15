@@ -8,6 +8,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/${fileDirnameBasename}-debug.exe",
             // 只跑某些測試：填測試名稱的一部分，例如 ["random"] 或 ["perf"]。
+            // 效能測試（perf 開頭）在除錯版預設跳過，因為大型輸入在 -O0 加 _GLIBCXX_DEBUG 下可能跑好幾分鐘；要跑就填 ["perf"]。
             // 重現對拍失敗：加上失敗訊息裡的 seed，例如 ["random", "--seed=20261115"]。
             "args": [],
             "cwd": "${workspaceFolder}",
