@@ -1,6 +1,6 @@
 # Build plan
 
-This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Lab 01 is the working starting point; later milestones are planned exercises.
+This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Labs 01–02 are implemented and run from `index.html`; later milestones are planned exercises.
 
 ## 00 — Set up a pixel workspace
 
@@ -18,13 +18,13 @@ This is a practical sequence, not a list of topics to memorize. Each milestone a
 
 **Checkpoint:** explain winding, degenerate triangles, and why a shared edge needs a consistent fill rule. Complete exercises A–F in `labs/01-triangle/README.md`.
 
-## 02 — Add 2D transforms and wireframe debugging
+## 02 — Add 2D transforms and wireframe debugging (implemented)
 
 **Build:** a small scene of transformed triangles. Add translation, rotation, and scale controls; draw vertex markers and edges as a debug overlay.
 
 **Learn as needed:** column versus row vectors, matrix multiplication order, homogeneous coordinates, coordinate handedness.
 
-**Checkpoint:** predict the result of two transforms applied in opposite orders. Keep world coordinates separate from pixel coordinates.
+**Checkpoint:** predict the result of two transforms applied in opposite orders. Keep world coordinates separate from pixel coordinates. Complete exercises A–G in `labs/02-transforms/README.md`.
 
 ## 03 — Make the first 3D image
 
