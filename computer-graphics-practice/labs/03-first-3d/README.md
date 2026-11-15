@@ -18,7 +18,7 @@ Every renderer has to choose these. The course-wide list, with how each item cha
 
 - **Column vectors:** `p' = M · p`, so `P · V · M · p` applies M first.
 - **Column-major storage:** a matrix is a flat array of 16 numbers, `m[col * 4 + row]`. `fromRows` lets you *write* a matrix row by row and stores it column-major. WebGL expects this layout, so Lab 05 uploads these arrays unchanged.
-- **Shared math:** the vector and matrix helpers live in [`../common/math.js`](../common/math.js), a classic script that puts them on `window.cg.math` (ES modules would not load when `index.html` is opened from disk). Labs 03–06 share it, so a change there affects all of them; copy a function into this lab's `app.js` if you want to experiment locally.
+- **Shared math:** the vector and matrix helpers live in [`../common/math.js`](../common/math.js), a classic script that puts them on `window.cg.math` (ES modules would not load when `index.html` is opened from disk). Labs 03–08 share it, so a change there affects all of them; copy a function into this lab's `app.js` if you want to experiment locally.
 - **Right-handed world, +y up.** The camera looks down its own **−z** axis.
 - **OpenGL / WebGL clip volume:** a point is inside when `−w ≤ x, y, z ≤ w`. After dividing by `w`, NDC is the cube `[−1, 1]³`. (Direct3D, Metal, and Vulkan use `0 ≤ z ≤ w` instead.)
 - **Viewport:** NDC x maps to `[0, 480]`; NDC y is flipped into pixel rows, as in Lab 02.

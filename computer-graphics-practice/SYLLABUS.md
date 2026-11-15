@@ -1,6 +1,6 @@
 # Build plan
 
-This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Labs 01–06 are implemented and run from `index.html`; later milestones are planned exercises.
+This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Labs 01–08 are implemented and run from `index.html`; Lab 08 is the final project, with a reference demo to compare your own renderer against. The NVIDIA GPU path below is an optional native extension that you build yourself.
 
 The coordinate, depth, winding, and color conventions every milestone relies on are collected in [`CONVENTIONS.md`](CONVENTIONS.md).
 
@@ -60,21 +60,21 @@ The coordinate, depth, winding, and color conventions every milestone relies on 
 
 **Checkpoint:** rotate the object and light independently. Explain why normals need a different transform from positions under non-uniform scale, and why blending colors in the wrong color space looks dark. Complete exercises A–H in `labs/06-materials/README.md`.
 
-## 07 — Shadows and image quality
+## 07 — Shadows and image quality (implemented)
 
 **Build:** a two-pass shadow map and a small anti-aliasing comparison. Keep controls for shadow bias and resolution.
 
 **Learn as needed:** render-to-texture, light-space transforms, aliasing, PCF filtering, bias artifacts, cost versus quality.
 
-**Checkpoint:** capture one shadow acne artifact and one detached-shadow artifact; adjust the bias and describe the trade-off. Compare aliased and filtered edges at the same zoom.
+**Checkpoint:** capture one shadow acne artifact and one detached-shadow artifact; adjust the bias and describe the trade-off. Compare aliased and filtered edges at the same zoom. Complete exercises A–H in `labs/07-shadows/README.md`.
 
-## 08 — Final project: a tiny renderer demo
+## 08 — Final project: a tiny renderer demo (implemented)
 
 **Build:** a navigable scene with at least two meshes, a movable camera, depth, one textured lit material, and shadows or a documented substitute. Include a feature toggle or debug view.
 
 **Deliver:** source code, a short screen recording or screenshots, and a 1–2 page design note. The note traces a vertex to a displayed fragment, states coordinate and depth conventions, describes one bug you diagnosed, and justifies one quality/performance trade-off.
 
-**Self-review:** a classmate should be able to run the scene, change a control, and understand your pipeline diagram without reading every source file.
+**Self-review:** a classmate should be able to run the scene, change a control, and understand your pipeline diagram without reading every source file. The brief, a reference demo that meets it, the design-note outline, exercises A–H and checkpoints are in `labs/08-tiny-renderer/README.md`.
 
 ## NVIDIA GPU path — RTX 5070 Ti
 
