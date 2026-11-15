@@ -27,7 +27,7 @@
 | 6. 陰影與品質 | 加入陰影貼圖並實驗抗鋸齒 | 多重繪製階段、偏移、混疊與取捨 |
 | 7. 期末專題 | 製作精簡互動場景並說明渲染流程 | 效能分析、除錯、設計選擇、可重現展示 |
 
-逐階段的建置計畫請見 [`SYLLABUS.zh-TW.md`](SYLLABUS.zh-TW.md)。目前目錄已實作第 01–06 個實驗；後續階段是隨學習逐步完成的課程路線。
+逐階段的建置計畫請見 [`SYLLABUS.zh-TW.md`](SYLLABUS.zh-TW.md)。目前目錄已實作第 01–07 個實驗；後續階段是隨學習逐步完成的課程路線。
 
 **第二部（草稿，待審閱）：** [`SYLLABUS-PART2.zh-TW.md`](SYLLABUS-PART2.zh-TW.md) 規劃瀏覽器之後的內容：在 RTX 5070 Ti 上使用原生 Vulkan 或 Direct3D 12，先修共同核心，再選遊戲引擎渲染器，或 2D、文字與合成渲染其中一條路線。這只是提案，尚未實作任何部分。第一部與第二部都能在 Windows 上完成。
 
@@ -47,7 +47,8 @@
 
 - [`index.html`](index.html) — 雙語課程總覽與互動實驗；從實驗列選擇要進行的實驗。直接從磁碟開啟即可執行。
 - [`CONVENTIONS.zh-TW.md`](CONVENTIONS.zh-TW.md) — 課程採用的座標、矩陣、深度、繞序與色彩慣例，以及換到 Vulkan 與 Direct3D 12 時的變化。
-- [`labs/common/math.js`](labs/common/math.js)、[`labs/common/color.js`](labs/common/color.js) — 實驗 02–06 共用的向量／矩陣／攝影機／投影函式與 sRGB 轉換；以傳統 script 掛在 `window.cg` 上，不需要伺服器。
+- [`labs/common/math.js`](labs/common/math.js)、[`labs/common/color.js`](labs/common/color.js) — 實驗 02–07 共用的向量／矩陣／攝影機／投影函式與 sRGB 轉換；以傳統 script 掛在 `window.cg` 上，不需要伺服器。
+- [`labs/common/mesh.js`](labs/common/mesh.js)、[`labs/common/webgl.js`](labs/common/webgl.js) — 實驗 07 起使用：依實驗 06 頂點格式建立的球體、方塊與平面網格，以及 WebGL 2 輔助函式（程式、網格、貼圖、陰影貼圖與色彩渲染目標、GPU 計時查詢）。
 - [`SYLLABUS-PART2.zh-TW.md`](SYLLABUS-PART2.zh-TW.md) — 第二部計畫**草稿**（原生 GPU 渲染、引擎路線、2D／文字／合成路線），待審閱。
 - [`labs/01-triangle/app.js`](labs/01-triangle/app.js) — 可閱讀、可擴充的 CPU 三角形光柵器。
 - [`labs/01-triangle/README.md`](labs/01-triangle/README.md) — 實驗說明與實作檢核點。
@@ -61,6 +62,8 @@
 - [`labs/05-webgl/README.md`](labs/05-webgl/README.md) — CPU／GPU 比較、A–H 練習（含選修的原生 OpenGL／Nsight 路線）與檢核問題。
 - [`labs/06-materials/app.js`](labs/06-materials/app.js) — 以 WebGL 2 實作法線與法線矩陣、逐頂點或逐片段的 Lambert 與 Blinn–Phong 光照、含 mipmap 的貼圖濾波，以及線性光與 sRGB 色彩計算的比較。
 - [`labs/06-materials/README.md`](labs/06-materials/README.md) — 光照與色彩空間實驗、A–H 練習與檢核問題。
+- [`labs/07-shadows/app.js`](labs/07-shadows/app.js) — 繪製至深度貼圖的雙階段陰影貼圖、固定與斜率偏移、PCF，以及用並排放大鏡和有鋸齒的對照版比較 MSAA 與 SSAA，另有除錯檢視與 GPU 計時。
+- [`labs/07-shadows/README.zh-TW.md`](labs/07-shadows/README.zh-TW.md) — 陰影痤瘡、陰影分離與抗鋸齒實驗、A–H 練習與檢核問題。
 
 ## 完成目標
 

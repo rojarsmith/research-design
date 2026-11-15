@@ -55,4 +55,4 @@ Answer these in your lab notebook:
 
 ## Next
 
-Lab 07 in the syllabus adds a shadow map and anti-aliasing experiments. It is not implemented yet. It builds directly on this lab's light direction and texture sampling, and on the depth testing and precision experiments from Lab 04.
+[Lab 07](../07-shadows/README.md) adds a shadow map and anti-aliasing experiments. It builds directly on this lab's light direction and lighting, on render targets and texture sampling, and on the depth testing and precision experiments from Lab 04.

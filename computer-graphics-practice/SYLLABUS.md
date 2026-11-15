@@ -1,6 +1,6 @@
 # Build plan
 
-This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Labs 01–06 are implemented and run from `index.html`; later milestones are planned exercises.
+This is a practical sequence, not a list of topics to memorize. Each milestone adds one renderer capability and ends with something visible and a short explanation in your lab notebook. Labs 01–07 are implemented and run from `index.html`; later milestones are planned exercises.
 
 The coordinate, depth, winding, and color conventions every milestone relies on are collected in [`CONVENTIONS.md`](CONVENTIONS.md).
 
@@ -60,13 +60,13 @@ The coordinate, depth, winding, and color conventions every milestone relies on 
 
 **Checkpoint:** rotate the object and light independently. Explain why normals need a different transform from positions under non-uniform scale, and why blending colors in the wrong color space looks dark. Complete exercises A–H in `labs/06-materials/README.md`.
 
-## 07 — Shadows and image quality
+## 07 — Shadows and image quality (implemented)
 
 **Build:** a two-pass shadow map and a small anti-aliasing comparison. Keep controls for shadow bias and resolution.
 
 **Learn as needed:** render-to-texture, light-space transforms, aliasing, PCF filtering, bias artifacts, cost versus quality.
 
-**Checkpoint:** capture one shadow acne artifact and one detached-shadow artifact; adjust the bias and describe the trade-off. Compare aliased and filtered edges at the same zoom.
+**Checkpoint:** capture one shadow acne artifact and one detached-shadow artifact; adjust the bias and describe the trade-off. Compare aliased and filtered edges at the same zoom. Complete exercises A–H in `labs/07-shadows/README.md`.
 
 ## 08 — Final project: a tiny renderer demo
 

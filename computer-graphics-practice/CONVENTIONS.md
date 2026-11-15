@@ -8,18 +8,19 @@ Every renderer has to choose a handful of conventions. Most bugs in a port from 
 
 | Convention | Part I (CPU labs, WebGL 2) | Labs | Vulkan | Direct3D 12 |
 | --- | --- | --- | --- | --- |
-| Handedness | Right-handed world and view space, +y up; the camera looks down its own −z | 03–06 | Not fixed by the API; your matrices decide | Not fixed by the API; DirectXMath has both left- and right-handed helpers |
-| Vectors | Column vectors, `p' = M · p`, so `P · V · M · p` applies M first | 02–06 | GLSL: same (`M * v`) | HLSL: `mul(M, v)` for column vectors; DirectXMath uses row vectors (`v · M`) |
-| Matrix storage | Lab 02: 3×3 nested rows `m[row][col]`. Labs 03+: flat column-major `m[col * 4 + row]`, uploaded with `transpose = false` | 02–06 | GLSL defaults to column-major | HLSL constant buffers default to column-major packing; DirectXMath matrices are row-major in memory |
-| NDC y | +y up | 03–06 | **+y down** | +y up |
-| Framebuffer origin | CPU labs: pixel row 0 at the top. WebGL window coordinates (`gl_FragCoord`, `readPixels`): bottom-left | 01–06 | Top-left | Top-left |
-| Clip-space depth | `−w ≤ z ≤ w`, NDC z in [−1, 1], window depth `d = (z_ndc + 1) / 2` | 03–06 | **`0 ≤ z ≤ w`**, NDC z in [0, 1] (an extension allows [−1, 1]) | **`0 ≤ z ≤ w`** |
-| Depth test | Clear to 1, pass if less; reversed-Z is Lab 04 exercise B | 04–06 | Any compare op; reversed-Z is common | Same as Vulkan |
-| Front face | Counter-clockwise in NDC with +y up; back faces culled | 01–02 (signed area), 04–06 | `frontFace` pipeline state, decided from framebuffer coordinates | `FrontCounterClockwise` is FALSE by default: **clockwise is front** |
-| Pixel centers | Sample point of pixel (x, y) is (x + 0.5, y + 0.5) | 01–06 | Same | Same |
+| Handedness | Right-handed world and view space, +y up; the camera looks down its own −z | 03–07 | Not fixed by the API; your matrices decide | Not fixed by the API; DirectXMath has both left- and right-handed helpers |
+| Vectors | Column vectors, `p' = M · p`, so `P · V · M · p` applies M first | 02–07 | GLSL: same (`M * v`) | HLSL: `mul(M, v)` for column vectors; DirectXMath uses row vectors (`v · M`) |
+| Matrix storage | Lab 02: 3×3 nested rows `m[row][col]`. Labs 03+: flat column-major `m[col * 4 + row]`, uploaded with `transpose = false` | 02–07 | GLSL defaults to column-major | HLSL constant buffers default to column-major packing; DirectXMath matrices are row-major in memory |
+| NDC y | +y up | 03–07 | **+y down** | +y up |
+| Framebuffer origin | CPU labs: pixel row 0 at the top. WebGL window coordinates (`gl_FragCoord`, `readPixels`): bottom-left | 01–07 | Top-left | Top-left |
+| Clip-space depth | `−w ≤ z ≤ w`, NDC z in [−1, 1], window depth `d = (z_ndc + 1) / 2` | 03–07 | **`0 ≤ z ≤ w`**, NDC z in [0, 1] (an extension allows [−1, 1]) | **`0 ≤ z ≤ w`** |
+| Depth test | Clear to 1, pass if less; reversed-Z is Lab 04 exercise B | 04–07 | Any compare op; reversed-Z is common | Same as Vulkan |
+| Front face | Counter-clockwise in NDC with +y up; back faces culled | 01–02 (signed area), 04–07 | `frontFace` pipeline state, decided from framebuffer coordinates | `FrontCounterClockwise` is FALSE by default: **clockwise is front** |
+| Pixel centers | Sample point of pixel (x, y) is (x + 0.5, y + 0.5) | 01–07 | Same | Same |
 | Texture rows | Image row 0 is the top; in WebGL it becomes v = 0 unless you set `UNPACK_FLIP_Y_WEBGL` | 06 | Row 0 in memory is v = 0 | Row 0 in memory is v = 0 |
-| Color | 8-bit colors are sRGB-encoded; mix, light, filter, and blend in linear light; encode once on output | 02, 05, 06 | `*_SRGB` formats decode on sampling and encode on writing; HDR via swapchain color spaces | `*_UNORM_SRGB` formats do the same; HDR via scRGB or HDR10 swap chains |
-| Angles and units | Radians in code, degrees on sliders; world units are unspecified (think meters) | 02–06 | — | — |
+| Shadow-map lookup | `(u, v, d) = 0.5 · ndc + 0.5` from the light's clip space, no y flip: rendering into a texture writes window row 0 to v = 0 | 07 | `d = z_ndc`; `v = 0.5 + 0.5 · y_ndc` without a y flip in the shadow pass, `0.5 − 0.5 · y_ndc` with a negative-height viewport | `d = z_ndc`; `v = 0.5 − 0.5 · y_ndc` |
+| Color | 8-bit colors are sRGB-encoded; mix, light, filter, and blend in linear light; encode once on output | 02, 05–07 | `*_SRGB` formats decode on sampling and encode on writing; HDR via swapchain color spaces | `*_UNORM_SRGB` formats do the same; HDR via scRGB or HDR10 swap chains |
+| Angles and units | Radians in code, degrees on sliders; world units are unspecified (think meters) | 02–07 | — | — |
 
 ## Details and Part II notes
 
@@ -47,6 +48,10 @@ Part I meshes are counter-clockwise when seen from outside, and front faces are 
 
 All three APIs sample pixel (x, y) at its center (x + 0.5, y + 0.5), as Lab 01 does. Image files and canvases store their top row first. WebGL uploads that first row as texture row v = 0 unless `UNPACK_FLIP_Y_WEBGL` is set (Lab 06 exercise F); Vulkan and Direct3D 12 also treat the first row in memory as v = 0, with texture coordinate (0, 0) at the top-left of the image.
 
+### Rendering into a texture and shadow-map lookups
+
+When WebGL renders into a texture, window coordinates keep their bottom-left origin: window row 0 is written into texture row v = 0. A pass that reads the result back with `v = 0.5 · y_ndc + 0.5` therefore finds the texel that was written, with no flip. Rows only need flipping when an image leaves the GPU for a top-row-first format, as with `readPixels` in Lab 05. Lab 07's shadow lookup uses `(u, v, d) = 0.5 · ndc + 0.5` from the light's clip space, where d repeats the window-depth mapping `(z_ndc + 1) / 2` so it is comparable with the stored depth. In Direct3D 12, NDC y = +1 lands in row 0, so `v = 0.5 − 0.5 · y_ndc`, and `d = z_ndc`. In Vulkan, `d = z_ndc` as well; v follows whatever the shadow pass did with y: `0.5 + 0.5 · y_ndc` without a flip, `0.5 − 0.5 · y_ndc` with the negative-height viewport. Write the map and read it with the same rule.
+
 ### Color: linear light inside, sRGB at the edges
 
 8-bit colors in this course are sRGB-encoded: color pickers, images, canvases and the default WebGL framebuffer all use the sRGB transfer function. Any arithmetic that adds or averages light must happen in linear light: interpolation between vertices, lighting, texture filtering and mipmapping, and blending. Decode on the way in, compute, and encode **once** on the way out. `labs/common/color.js` holds the formulas.
@@ -55,6 +60,7 @@ All three APIs sample pixel (x, y) at its center (x + 0.5, y + 0.5), as Lab 01 d
 - Labs 03 and 04 use flat colors with no mixing, so the question does not arise.
 - Lab 05 decodes vertex colors in the vertex shader and encodes in the fragment shader (switchable).
 - Lab 06 decodes textures with an `SRGB8_ALPHA8` texture, which the GPU decodes before filtering, and encodes the lit result in the shader.
+- Lab 07 renders into `SRGB8_ALPHA8` targets: shaders write linear light, the GPU encodes on write and decodes on sampling, anti-aliasing samples are averaged in linear light, and the last pass encodes once for the canvas.
 - Debug views (depth, normals, UVs) write their values directly: they are measurements, not light.
 
 In Part II, `*_SRGB` image formats make the hardware decode on sampling and encode on writing (including blending), and an sRGB swapchain format replaces the manual encode. HDR output uses an extended-range linear format (scRGB) or a PQ-encoded format (HDR10). Part II's color-science stage covers both.
@@ -69,6 +75,7 @@ When you move any lab to a new API, write down and test each of these with a del
 4. Does a non-symmetric matrix arrive in the shader unchanged? (storage order, transpose flag, `row_major` / `column_major`)
 5. Is the red texture cell in the expected corner? (texture row order)
 6. Does a 50 % gray ramp look right, and does a black/white checkerboard average to the right gray far away? (sRGB decode and encode happen exactly once)
+7. Does each shadow fall on the side away from the light, touching its caster? (shadow-map row order and depth range)
 
 ## Sources
 
