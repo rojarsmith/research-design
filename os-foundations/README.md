@@ -12,7 +12,7 @@ The desktop-graphics topic is split by layer:
 
 | Layer | Question | Where |
 | --- | --- | --- |
-| Pixels | How each pixel of a window or of the final frame is computed: 2D drawing, text, blending, color | [`computer-graphics-practice/`](../computer-graphics-practice/README.md), in its planned Part II track "2D、文字與合成渲染" (2D, text and compositing). Doable on Windows. |
+| Pixels | How each pixel of a window or of the final frame is computed: 2D drawing, text, blending, color | [`computer-graphics-practice/`](../computer-graphics-practice/README.md), in the 2D, text and compositing rendering track of its [Part II draft](../computer-graphics-practice/SYLLABUS-PART2.md). Doable on Windows. |
 | Buffers and time | Who owns a buffer, how it reaches another process and the screen, and when it is shown | This course, Part II. Runs in a Linux VM; a final set of hardware checks needs a Linux PC. |
 | Mechanisms | Processes, memory, traps, IPC, synchronization, scheduling, drivers | This course, Part I. Runs on Windows 11 through WSL 2 and QEMU. |
 
@@ -51,7 +51,7 @@ The capstone joins the two: surfaces in, composited frame out. This course suppl
 
 Plan on roughly 270–480 focused hours. Part I takes about 110–190 and Part II about 160–290. Part II's share includes the 60–120 hour capstone and 15–30 hours of hardware validation. At 6–8 hours a week that is eight months to a year and a half. These are planning estimates for someone who already writes C, not promises. Progress is measured by passed checkpoints, not by weeks.
 
-You start with C (pointers, structs, bit operations, linking), a Linux shell, git and make, and enough RISC-V assembly to read compiler output. That level is stage 1 of the [`c-compiler-foundations` learning path](../c-compiler-foundations/research/04-integration-path.zh-TW.md). Part II also needs the graphics course through stage 05 (GPU pipeline), plus the compositing modules of its planned 2D, text and compositing track.
+You start with C (pointers, structs, bit operations, linking), a Linux shell, git and make, and enough RISC-V assembly to read compiler output. That level is stage 1 of the [`c-compiler-foundations` learning path](../c-compiler-foundations/research/04-integration-path.zh-TW.md). Part II also needs the graphics course's Part I through lab 05 (GPU pipeline). The capstone additionally needs stage T4 (compositing) of the graphics course's Part II 2D, text and compositing track. T4 builds on T1, T3 and the shared core, which adds up to several hundred hours on its own. That track can run in parallel with this course's Part I.
 
 ## Lab vehicle: why xv6-riscv
 
@@ -131,7 +131,7 @@ This is the graphics course's loop with one addition from `mcu-foundations`: **p
 
 ## Related folders
 
-- [`computer-graphics-practice/`](../computer-graphics-practice/README.md) is the prerequisite for Part II. Its stages 00–05 cover framebuffers, pixel formats and the GPU pipeline. Its planned Part II track "2D、文字與合成渲染" supplies the composition module that stages 09 and 18 call. That Part II is still being drafted on another branch, so stage names may change.
+- [`computer-graphics-practice/`](../computer-graphics-practice/README.md) is the prerequisite for Part II. Its stages 00–05 cover framebuffers, pixel formats and the GPU pipeline. Its [Part II draft](../computer-graphics-practice/SYLLABUS-PART2.md) has a 2D, text and compositing rendering track, whose T3 (text) and T4 (compositing) supply the modules that stages 09 and 18 call. That Part II is still a draft for review, so stage names may change.
 - [`c-compiler-foundations/`](../c-compiler-foundations/README.md) has the contract stack (language, ABI, ISA). Stages 01–02 extend it downward: trap frames and `swtch` only make sense with the RISC-V calling convention in mind. Its `rv32sim` is the starting point for the optional privileged-mode side quest.
 - [`mcu-foundations/`](../mcu-foundations/README.md) (Traditional Chinese only) covers reset to `main`, interrupts, DMA buffer ownership and ISR rules in one address space. This course asks the same questions with memory protection and many processes.
 - [`mcu-embedded-hmi-research/`](../mcu-embedded-hmi-research/README.md) covers embedded graphics where one application owns the display and there is no compositor (LVGL, TouchGFX, smart displays). Part II is the multi-client case.
@@ -171,3 +171,4 @@ Part I alone ends when you can explain, with traces, what happens from a system 
 2. Which VM host: QEMU on Windows with WHPX, or QEMU inside WSL 2? Both are documented routes, and neither documents 3D acceleration for the guest. QEMU on Windows is the suggested start, because its window is native rather than forwarded through WSLg.
 3. Distribution and kernel: Ubuntu 24.04 matches MIT's tools page. NVIDIA explicit sync needs kernel 6.8+, and nvidia-drm's KMS color pipeline needs 6.19+. Should WSL 2, the VM and the Linux PC all run the same distribution?
 4. Does the Acer ET322QK support VRR? This only matters for the hardware validation.
+5. Graphics API for the reused modules: the graphics course's Part II lets you choose Vulkan or Direct3D 12 and keep it. Only Vulkan, or a CPU path, can run inside this course's Linux compositor. Should the graphics course choose Vulkan for that reason?

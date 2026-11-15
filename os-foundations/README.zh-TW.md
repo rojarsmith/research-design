@@ -12,7 +12,7 @@
 
 | 層次 | 要回答的問題 | 放在哪裡 |
 | --- | --- | --- |
-| 像素 | 視窗或最終影格的每個像素怎麼算出來：2D 繪圖、文字、混色、色彩 | [`computer-graphics-practice/`](../computer-graphics-practice/README.zh-TW.md) 規劃中的第二部分「2D、文字與合成渲染」主線。可在 Windows 上完成。 |
+| 像素 | 視窗或最終影格的每個像素怎麼算出來：2D 繪圖、文字、混色、色彩 | [`computer-graphics-practice/`](../computer-graphics-practice/README.zh-TW.md) [第二部草稿](../computer-graphics-practice/SYLLABUS-PART2.zh-TW.md)中的「2D、文字與合成渲染路線」。可在 Windows 上完成。 |
 | 緩衝區與時間 | 緩衝區歸誰所有、如何送到另一個行程與螢幕、何時顯示 | 本課程第二部分。在 Linux 虛擬機器中進行，最後一組硬體檢核需要 Linux 實體機。 |
 | 機制 | 行程、記憶體、陷阱（trap）、行程間通訊、同步、排程、驅動程式 | 本課程第一部分。在 Windows 11 上透過 WSL 2 與 QEMU 完成。 |
 
@@ -51,7 +51,7 @@
 
 估計約需 270 至 480 小時的專注時間：第一部分約 110 至 190 小時，第二部分約 160 至 290 小時，其中包含 60 至 120 小時的總結專題，以及 15 至 30 小時的硬體驗證。每週投入 6 至 8 小時，大約需要八個月到一年半。這是給已會寫 C 的人的規劃估算，不是保證；進度以通過的檢核計算，不以週數計算。
 
-起點條件：C 語言（指標、結構、位元操作、連結）、Linux shell、git 與 make，以及讀懂編譯器輸出所需的 RISC-V 組合語言，程度相當於 [`c-compiler-foundations` 學習路線](../c-compiler-foundations/research/04-integration-path.zh-TW.md)第 1 關。第二部分另需完成圖學課程到階段 05（GPU 管線），以及其規劃中「2D、文字與合成渲染」主線的合成模組。
+起點條件：C 語言（指標、結構、位元操作、連結）、Linux shell、git 與 make，以及讀懂編譯器輸出所需的 RISC-V 組合語言，程度相當於 [`c-compiler-foundations` 學習路線](../c-compiler-foundations/research/04-integration-path.zh-TW.md)第 1 關。第二部分另需完成圖學課程第一部到實驗 05（GPU 管線）。總結專題還需要圖學課程第二部「2D、文字與合成渲染路線」的 T4（合成）。T4 建立在 T1、T3 與共同核心之上，這部分本身就有數百小時，可以和本課程第一部分同時進行。
 
 ## 實驗載具：為什麼選 xv6-riscv
 
@@ -131,7 +131,7 @@ QEMU 的執行方式：QEMU 提供 Windows 版本（Stefan Weil 的安裝檔或 
 
 ## 相關目錄
 
-- [`computer-graphics-practice/`](../computer-graphics-practice/README.zh-TW.md) 是第二部分的先修課。它的階段 00–05 涵蓋影格緩衝區、像素格式與 GPU 管線，規劃中的第二部分「2D、文字與合成渲染」主線則提供階段 09 與 18 呼叫的合成模組。該第二部分仍在另一個分支撰寫中，階段名稱可能變動。
+- [`computer-graphics-practice/`](../computer-graphics-practice/README.zh-TW.md) 是第二部分的先修課。它的階段 00–05 涵蓋影格緩衝區、像素格式與 GPU 管線，它的[第二部草稿](../computer-graphics-practice/SYLLABUS-PART2.zh-TW.md)有一條「2D、文字與合成渲染路線」，其中 T3（文字）與 T4（合成）提供階段 09 與 18 呼叫的模組。該第二部仍是待審閱的草稿，階段名稱可能變動。
 - [`c-compiler-foundations/`](../c-compiler-foundations/README.zh-TW.md) 整理了契約堆疊（語言、ABI、ISA），階段 01–02 把它往下延伸：trap frame 與 `swtch` 要搭配 RISC-V 呼叫慣例才看得懂。其中的 `rv32sim` 是選修特權模式支線的起點。
 - [`mcu-foundations/`](../mcu-foundations/README.md) 談單一位址空間中的 reset 到 `main`、中斷、DMA 緩衝區所有權與 ISR 規則。本課程在有記憶體保護、多個行程的環境下問同樣的問題。
 - [`mcu-embedded-hmi-research/`](../mcu-embedded-hmi-research/README.zh-TW.md) 研究由單一應用程式獨占顯示器、沒有合成器的嵌入式圖形（LVGL、TouchGFX、智慧顯示器）。第二部分處理的是多用戶端的情況。
@@ -171,3 +171,4 @@ QEMU 的執行方式：QEMU 提供 Windows 版本（Stefan Weil 的安裝檔或 
 2. 虛擬機器的主機端：在 Windows 上以 WHPX 執行 QEMU，還是在 WSL 2 內執行 QEMU？兩者都有官方文件支持，但都沒有記載客體的 3D 加速。建議先用 Windows 上的 QEMU，因為它的視窗是原生的，不必經過 WSLg 轉送。
 3. 發行版與核心：Ubuntu 24.04 與 MIT 工具頁一致。NVIDIA 顯式同步需要 6.8 以上核心，nvidia-drm 的 KMS 色彩管線需要 6.19 以上。WSL 2、虛擬機器與 Linux 實體機要不要都用同一個發行版？
 4. Acer ET322QK 是否支援 VRR？只影響硬體驗證。
+5. 重用模組的圖形 API：圖學課程第二部讓你在 Vulkan 與 Direct3D 12 之間選一個並沿用到底，但只有 Vulkan 或 CPU 路徑能在本課程的 Linux 合成器中執行。圖學課程是否因此選 Vulkan？

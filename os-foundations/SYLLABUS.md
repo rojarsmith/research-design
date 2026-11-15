@@ -177,7 +177,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 
 ### 09: Part I project, a headless display server
 
-**Prerequisites:** 06 and 08. Also the graphics course's compositing module if it exists; otherwise a stub. **Hours:** 20–35. **Runs on:** WSL 2.
+**Prerequisites:** 06 and 08. Also the graphics course's T4 compositing module if it exists; otherwise a stub. **Hours:** 20–35. **Runs on:** WSL 2.
 
 **Build:** a server and at least two clients that speak a small protocol you design over a Unix socket. Each client creates a sealed memfd buffer, sends it with `SCM_RIGHTS`, and then sends attach, damage and commit messages. The server:
 - composes the client buffers into an offscreen framebuffer, using the graphics course's compositing module or a stub that blends premultiplied ARGB8888;
@@ -196,7 +196,7 @@ Then feed it bad clients: one crashes mid-frame, one never reads its socket, one
 
 ## Part II: Window and display system
 
-Before starting Part II, finish the graphics course through stage 05. Its planned 2D, text and compositing track should also be far enough along to provide a composition module.
+Before starting Part II, finish the graphics course's Part I through lab 05. By stage 18, the 2D, text and compositing rendering track in its [Part II draft](../computer-graphics-practice/SYLLABUS-PART2.md) should have reached T4 (compositing). Until then, the stage 09 stub stands in.
 
 **Where Part II runs.** Stages 10 and 11 run on Windows. Stages 12–18 run in a Linux VM, with QEMU's virtio-gpu as the display, and VKMS when you need overlay planes or writeback. Rendering in the guest is software-only. Each stage marks what a VM cannot show as a **Hardware check**. Those items are collected in [Hardware validation](#hardware-validation-linux-pc) after stage 18. The README compares the VM display drivers.
 
@@ -425,7 +425,7 @@ Run the compositor and the stage programs on real hardware, and collect what the
 
 ## Interface with the graphics course
 
-The compositor calls the graphics course's composition module once per output frame. The planned track is named "2D、文字與合成渲染" and is still being drafted, so treat this as a proposal for both sides to agree on.
+The compositor calls the graphics course's composition module once per output frame. That module is T4 (compositing) of the 2D, text and compositing rendering track in the graphics course's [Part II draft](../computer-graphics-practice/SYLLABUS-PART2.md). Text comes from T3, and color handling from C5 and T5. Both documents are drafts, so treat this as a proposal for both sides to agree on. T4 already takes surfaces with position, size, opacity, transform and a rounded clip. This interface adds what a system compositor needs.
 
 **In:** a list of surfaces. Each surface has:
 - a buffer: CPU memory for `wl_shm`, or a GPU image for dma-buf;
@@ -438,19 +438,20 @@ The compositor calls the graphics course's composition module once per output fr
 **Out:** a frame written into a target buffer (a KMS framebuffer or a GBM buffer), the region that changed, and a release fence.
 
 **Rules both sides must agree on:**
-- Wayland buffers carry alpha premultiplied on the encoded values. Blending them as-is in encoded space matches the protocol. Blending in linear light means un-premultiply, decode, blend, encode and premultiply again. Pick one and state it in the design note.
+- Wayland buffers carry alpha premultiplied on the encoded values, while T4 blends premultiplied colors in linear light. So each Wayland surface must be un-premultiplied, decoded and premultiplied again in linear light before blending, and the result encoded for the output. Decide whether the compositor or T4 does this conversion, and state it in the design note. T4's checkpoint already shows where encoded and linear blending differ.
+- The module needs a backend that runs on Linux. The graphics course's Part II lets you choose Vulkan or Direct3D 12, and only Vulkan, or a CPU path, can run here. In the VM, Vulkan means a software driver unless the guest has 3D acceleration. A CPU compositing path, in the spirit of T1's CPU rasterizer, keeps the VM route usable.
 - ARGB8888 and XRGB8888 must work. Every other format and modifier pair is optional and must be negotiated.
 - KMS's plane "pixel blend mode" property distinguishes premultiplied and coverage blending. When the compositor hands a surface straight to a hardware plane, the plane must match what the module would have computed.
-- Text (window titles, debug overlays) comes from the graphics course's text module.
+- Text (window titles, debug overlays) comes from T3.
 - The module must not block. It receives a deadline (the next vblank minus a margin) and reports how long it took.
 
-Until that track exists, stage 09 uses a stub with the same interface.
+Until T4 exists, stage 09 uses a stub with the same interface.
 
 ## Optional side quests
 
 - **rv32sim privileged mode.** Add machine-code decoding, CSRs, trap entry and return, and Sv32 paging to the [`c-compiler-foundations`](../c-compiler-foundations/README.md) simulator. Then boot a tiny kernel of your own on it. This ties the two folders together and takes roughly 30–60 hours.
 - **NT driver in a VM.** A KMDF driver in a Windows VM with test signing.
-- **HDR and color.** Current kernel docs document the KMS per-plane color pipeline ([colorop](https://docs.kernel.org/gpu/drm-kms.html#colorop-abstraction)), and NVIDIA lists support for it from Linux 6.19. Combine it with Wayland's `color-management-v1` (staging) and the graphics course's color-science core.
+- **HDR and color.** Current kernel docs document the KMS per-plane color pipeline ([colorop](https://docs.kernel.org/gpu/drm-kms.html#colorop-abstraction)), and NVIDIA lists support for it from Linux 6.19. Combine it with Wayland's `color-management-v1` (staging) and the graphics course's C5 and T5 stages.
 - **Xwayland** for X11 applications.
 - **NVK.** On the same card, compare Mesa's [NVK](https://docs.mesa3d.org/drivers/nvk.html), which lists consumer Blackwell support, with NVIDIA's driver.
 
