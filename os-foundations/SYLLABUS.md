@@ -121,7 +121,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 
 ### 06: Scheduling and latency
 
-**Prerequisites:** 05. **Hours:** 10–16. **Runs on:** WSL 2 and Windows. Stage 13 repeats the measurement on the Linux PC.
+**Prerequisites:** 05. **Hours:** 10–16. **Runs on:** WSL 2 and Windows. The hardware validation repeats the measurement on the Linux PC.
 
 **Build:** replace xv6's round-robin loop with a priority or lottery scheduler. Test it with one CPU-bound and one interactive workload. On Linux, write a thread that wakes 60 times a second via `timerfd` while the machine is under load. Plot how late each wakeup is, first under the default policy and then under `SCHED_FIFO`. Repeat on Windows at different thread priorities, and record one run with WPR for inspection in WPA ([WPT](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/)).
 
@@ -198,6 +198,8 @@ Then feed it bad clients: one crashes mid-frame, one never reads its socket, one
 
 Before starting Part II, finish the graphics course through stage 05. Its planned 2D, text and compositing track should also be far enough along to provide a composition module.
 
+**Where Part II runs.** Stages 10 and 11 run on Windows. Stages 12–18 run in a Linux VM, with QEMU's virtio-gpu as the display, and VKMS when you need overlay planes or writeback. Rendering in the guest is software-only. Each stage marks what a VM cannot show as a **Hardware check**. Those items are collected in [Hardware validation](#hardware-validation-linux-pc) after stage 18. The README compares the VM display drivers.
+
 ### 10: Window system architecture, measured on Windows
 
 **Prerequisites:** Part I. **Hours:** 8–12. **Runs on:** Windows 11 on the RTX 5070 Ti desktop.
@@ -248,7 +250,7 @@ Run it with `WAYLAND_DEBUG=1` and read the wire log.
 
 ### 12: DRM/KMS and atomic modesetting
 
-**Prerequisites:** 04, 11. **Hours:** 14–24. **Runs on:** a Linux VM first, then the Linux PC. For the VM, use QEMU's [virtio-gpu](https://www.qemu.org/docs/master/system/devices/virtio/virtio-gpu.html), which needs a guest kernel with `CONFIG_DRM_VIRTIO_GPU`, or VKMS.
+**Prerequisites:** 04, 11. **Hours:** 14–24. **Runs on:** a Linux VM. Use QEMU's [virtio-gpu](https://www.qemu.org/docs/master/system/devices/virtio/virtio-gpu.html), which needs a guest kernel with `CONFIG_DRM_VIRTIO_GPU`, or VKMS. virtio-gpu is an atomic driver with a render node, and gives each output one primary and one cursor plane ([virtgpu_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_drv.c), [virtgpu_display.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_display.c)).
 
 **Build:** inspect the device with `drm_info` and with `modetest` from libdrm's test tools. Then write a C program that:
 - opens the primary node as DRM master;
@@ -256,7 +258,7 @@ Run it with `WAYLAND_DEBUG=1` and read the wire log.
 - allocates dumb buffers;
 - lights up the screen with one atomic commit.
 
-Use test-only commits to probe which configurations the driver accepts, and double-buffer with page-flip events. Run `kmscube` as a reference for KMS with GBM and EGL.
+Use test-only commits to probe which configurations the driver accepts, and double-buffer with page-flip events. Read `kmscube` as a reference for KMS with GBM and EGL. Run it wherever the guest's Mesa can render it.
 
 **Learn as needed:**
 - The KMS pipeline: framebuffer → plane → CRTC → encoder → connector ([KMS overview](https://docs.kernel.org/gpu/drm-kms.html#overview)).
@@ -272,13 +274,13 @@ VKMS is a software-only model of a KMS driver. Through configfs you can create i
 
 ### 13: Planes, page flips, vblank, VRR and hotplug
 
-**Prerequisites:** 06, 12. **Hours:** 14–24. **Runs on:** the Linux PC with direct display control.
+**Prerequisites:** 06, 12. **Hours:** 12–20. **Runs on:** a Linux VM, using virtio-gpu for flips and hotplug and VKMS for overlay planes.
 
 **Build:**
-1. **Flip timing.** Log each flip-completion event's sequence number and timestamp against your submit time, then miss a vblank on purpose. DRM has used monotonic timestamps in these events since Linux 4.15 ([drm_vblank.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/drm_vblank.c)).
-2. **Planes.** Try cursor and overlay planes with test-only commits, and record what the hardware accepts. NVIDIA's driver registers only primary and cursor planes ([README](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/kms.html)), so overlay work needs an Intel or AMD GPU, or VKMS.
-3. **VRR.** If the connector reports `vrr_capable`, set `VRR_ENABLED` on the CRTC and vary your frame times. The ASUS VG289Q lists a 40–60 Hz range ([spec](https://www.asus.com/displays-desktops/monitors/tuf-gaming/tuf-gaming-vg289q/techspec/)).
-4. **Hotplug.** Listen for DRM uevents. They carry `HOTPLUG=1`, plus `CONNECTOR=<id>` for per-connector events ([drm_sysfs.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/drm_sysfs.c)). Re-probe the connectors. When `link-status` turns `BAD`, choose a valid mode and commit it again.
+1. **Flip events.** Log each flip-completion event's sequence number and timestamp against your submit time, then miss a vblank on purpose. DRM has used monotonic timestamps in these events since Linux 4.15 ([drm_vblank.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/drm_vblank.c)). In a VM the numbers follow the host's timers. Learn the API here and read real timing in the hardware validation.
+2. **Planes.** Configure a VKMS instance with an overlay plane through configfs. Place a surface on it with test-only commits and capture the composed result through the writeback connector ([VKMS](https://docs.kernel.org/gpu/vkms.html#configuring-with-configfs)). Record which configurations VKMS rejects.
+3. **Hotplug.** Listen for DRM uevents. They carry `HOTPLUG=1`, plus `CONNECTOR=<id>` for per-connector events ([drm_sysfs.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/drm_sysfs.c)). virtio-gpu turns display changes on the host, such as resizing or enabling a QEMU output, into hotplug events ([virtgpu_kms.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_kms.c)). Re-probe the connectors and pick a new mode.
+4. **VRR and link status.** Read the properties and write the code paths. Set `VRR_ENABLED` on the CRTC only when the connector reports `vrr_capable`. When `link-status` turns `BAD`, choose a valid mode and commit it again. The VM has no VRR monitor and no cable to fail, so these paths are exercised in the hardware validation.
 
 **Learn as needed:**
 - Scanout and blanking, vblank counters, and page-flip events.
@@ -286,13 +288,19 @@ VKMS is a software-only model of a KMS driver. Through configfs you can create i
 - Link status ([connector properties](https://docs.kernel.org/gpu/drm-kms.html#standard-connector-properties)).
 - Cursor size limits.
 
-**Checkpoint:** plot frame intervals with and without VRR. Unplug and replug a monitor while the program runs, and recover without restarting it. Compare with `display-wake-research`, where Windows may treat a sleeping DisplayPort monitor as disconnected. Which KMS events would that produce on Linux?
+**Hardware check:**
+- Real flip intervals.
+- The planes the real GPU accepts. NVIDIA registers only primary and cursor planes ([README](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/kms.html)), so overlay planes need an Intel or AMD GPU.
+- VRR on a capable monitor. The ASUS VG289Q lists 40–60 Hz ([spec](https://www.asus.com/displays-desktops/monitors/tuf-gaming/tuf-gaming-vg289q/techspec/)).
+- Pulling a real cable, including recovery from `link-status` `BAD`.
+
+**Checkpoint:** while the program runs, disable and re-enable the QEMU output, and recover without restarting. Show an overlay-plane composition captured from VKMS writeback. Compare with `display-wake-research`, where Windows may treat a sleeping DisplayPort monitor as disconnected. Which KMS events would that produce on Linux?
 
 ### 14: Buffer sharing and synchronization
 
-**Prerequisites:** 08 and 13, plus the graphics course's GPU stages. **Hours:** 16–26. **Runs on:** the Linux PC, plus Windows for the D3D comparison.
+**Prerequisites:** 08 and 13, plus the graphics course's GPU stages. **Hours:** 16–26. **Runs on:** a Linux VM, plus Windows for the D3D comparison.
 
-**Build:** allocate a buffer with GBM and render into it with OpenGL ES or Vulkan. Export it as a dma-buf and send it to a second process over `SCM_RIGHTS`. There, import it as a KMS framebuffer with its modifier and scan it out. Run it three ways:
+**Build:** allocate a buffer with GBM (or a dumb buffer) and render into it. In the VM the rendering is software-only, but virtio-gpu supports DRM syncobj with timelines ([virtgpu_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_drv.c)), so all three runs below work there. Export it as a dma-buf and send it to a second process over `SCM_RIGHTS`. There, import it as a KMS framebuffer with its modifier and scan it out. Run it three ways:
 1. With implicit sync.
 2. With explicit sync: attach a sync_file through the plane's `IN_FENCE_FD` and receive one back from `OUT_FENCE_PTR`.
 3. With DRM syncobj timelines.
@@ -307,13 +315,13 @@ Remove a fence on purpose and capture the corrupted frame. On Windows, share a D
 - The KMS explicit fencing properties ([KMS](https://docs.kernel.org/gpu/drm-kms.html#explicit-fencing-properties)).
 - DRM sync objects, binary and timeline ([syncobj](https://docs.kernel.org/gpu/drm-mm.html#drm-sync-objects)).
 - Wayland's `linux-dmabuf-v1` (stable) and `linux-drm-syncobj-v1` (staging).
-- On NVIDIA, explicit sync uses syncobj timeline points and needs kernel 6.8+ ([README](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/wayland-issues.html)).
+**Hardware check:** repeat with GPU rendering and real modifiers. On NVIDIA, explicit sync uses syncobj timeline points and needs kernel 6.8+ ([README](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/wayland-issues.html)).
 
 **Checkpoint:** draw one buffer's life: client render, fence, compositor import, scanout, release, reuse. Draw the same for the Windows shared handle and fence. Explain what breaks if a compositor releases a buffer before scanout has finished.
 
 ### 15: The input stack
 
-**Prerequisites:** 08, 12. **Hours:** 10–16. **Runs on:** the Linux PC. A VM with virtual devices works for most of it.
+**Prerequisites:** 08, 12. **Hours:** 10–16. **Runs on:** a Linux VM. The VM's virtual keyboard and mouse appear as evdev devices, and uinput covers the rest.
 
 **Build:** read `/dev/input/eventX` directly and print the `EV_KEY`, `EV_REL` and `EV_ABS` events grouped into `SYN_REPORT` packets. Replace that with libinput, then add xkbcommon for keymaps and modifiers. Create a virtual device with uinput to script repeatable tests. Add pointer and keyboard focus to your stage 09 server, so that events reach only the focused client.
 
@@ -327,11 +335,11 @@ Remove a fence on purpose and capture the corrupted frame. On Windows, share a D
 
 **Linux / NT:** with Raw Input, a Windows app registers for devices, receives `WM_INPUT`, and can tell two mice apart ([Learn](https://learn.microsoft.com/en-us/windows/win32/inputdev/about-raw-input)). Ordinary input arrives as window messages in a thread's queue.
 
-**Checkpoint:** measure input-to-scanout latency from your logs, from the event timestamp to the flip that shows its effect. Explain why the compositor, not each client, must own the input devices.
+**Checkpoint:** measure input-to-scanout latency from your logs, from the event timestamp to the flip that shows its effect. The VM number is only relative, and the hardware validation repeats it. Explain why the compositor, not each client, must own the input devices.
 
 ### 16: Seats and session management
 
-**Prerequisites:** 12, 15. **Hours:** 6–10. **Runs on:** the Linux PC.
+**Prerequisites:** 12, 15. **Hours:** 6–10. **Runs on:** a Linux VM. If the host captures the Ctrl+Alt+F keys, switch VTs with `chvt`.
 
 **Build:** run the stage 12 program as a normal user through libseat, with either the logind or the seatd backend. Handle VT switches. On pause, stop committing and release DRM master. On resume, take the new fds and restore state. Confirm that no input arrives while the session is inactive.
 
@@ -347,7 +355,7 @@ Remove a fence on purpose and capture the corrupted frame. On Windows, share a D
 
 ### 17: Isolation and security for client buffers
 
-**Prerequisites:** 09, 14, 16. **Hours:** 8–14. **Runs on:** the Linux PC, WSL 2 for the shared-memory parts, Windows for comparison.
+**Prerequisites:** 09, 14, 16. **Hours:** 8–14. **Runs on:** a Linux VM, WSL 2 for the shared-memory parts, Windows for comparison.
 
 **Build:** attack your own server, then fix it. Write clients that:
 - shrink their shm pool;
@@ -355,7 +363,7 @@ Remove a fence on purpose and capture the corrupted frame. On Windows, share a D
 - flood requests;
 - send a dma-buf with the wrong size or modifier;
 - ask for another client's buffer;
-- submit a GPU job that never ends. Watch the GPU reset, and on Windows watch TDR.
+- submit a GPU job that never ends. Watch TDR on Windows now, and the Linux GPU reset in the hardware validation.
 
 Then add proper screen capture through xdg-desktop-portal ScreenCast. There, `Start` typically asks the user and returns PipeWire streams ([portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.ScreenCast.html)). Learn what the privileged capture protocol `ext-image-copy-capture-v1` (staging) is for.
 
@@ -373,21 +381,21 @@ Then add proper screen capture through xdg-desktop-portal ScreenCast. There, `St
 
 ### 18: Capstone, a minimal Wayland compositor on DRM/KMS
 
-**Prerequisites:** 10–17. **Hours:** 60–120. **Runs on:** the Linux PC.
+**Prerequisites:** 10–17. **Hours:** 60–120. **Runs on:** a Linux VM (QEMU with virtio-gpu) with software rendering. The hardware validation then runs it on a real display.
 
-**Recommended route:** build your own backend from the stage 12–16 code (DRM/KMS, libinput, libseat, GBM) on top of libwayland-server. First read [tinywl](https://gitlab.freedesktop.org/wlroots/wlroots/-/tree/master/tinywl), wlroots' minimal example compositor, as a map but not as a base. Using [wlroots](https://gitlab.freedesktop.org/wlroots/wlroots) for the backend is the alternative route (open question 3 in the README).
+**Route (decided in review):** build your own backend from the stage 12–16 code (DRM/KMS, libinput, libseat, GBM) on top of libwayland-server. Write kernel-facing code in C; the compositor itself may be C++ to match the graphics course's core. First read [tinywl](https://gitlab.freedesktop.org/wlroots/wlroots/-/tree/master/tinywl), wlroots' minimal example compositor, as a map but not as a base. [wlroots](https://gitlab.freedesktop.org/wlroots/wlroots) is not used as the backend.
 
 **Build, in milestones:**
 1. **One client.** `wl_compositor`, `wl_shm` and `xdg_wm_base`. A full-screen toplevel is composed by the graphics module into a KMS framebuffer, and page-flip events drive the frame callbacks.
 2. **Several windows.** Stacking, focus, and move and raise with a key binding. Keyboard and pointer through `wl_seat`, and a cursor on the cursor plane.
-3. **GPU clients.** `linux-dmabuf-v1` import, GPU composition, damage tracking, and explicit sync with `linux-drm-syncobj-v1` where the driver supports it.
+3. **dma-buf clients.** `linux-dmabuf-v1` import, damage tracking, and explicit sync with `linux-drm-syncobj-v1` where the driver supports it. In the VM, test with the buffer-sharing client from stage 14. GPU-rendered clients and GPU composition come with the hardware validation.
 4. **Timing.** `presentation-time` feedback, and direct scanout of a full-screen client buffer when its format and modifier allow.
 5. **Robustness.** Client crashes, hotplug, VT switches, GPU resets, and the stage 17 attack clients.
 
 Real apps to reach, in order:
 1. [Weston](https://wayland.pages.freedesktop.org/weston/)'s demo clients.
 2. [`foot`](https://packages.debian.org/sid/foot), a minimal Wayland terminal.
-3. A Vulkan demo such as `vkcube`.
+3. A Vulkan demo such as `vkcube`. In the VM this needs a software Vulkan driver from the guest's Mesa; otherwise it moves to the hardware validation.
 4. A GTK 4 or Qt 6 application. Toolkits use more of xdg-shell (popups, configure sequences) and more protocols, so expect to keep adding globals until the app starts.
 
 Xwayland is optional.
@@ -395,9 +403,25 @@ Xwayland is optional.
 **Checkpoint:** record a session:
 - boot to a text console and start the compositor as a normal user;
 - open a terminal, a toolkit app and a Vulkan demo;
-- move windows, switch VT and back, hotplug a monitor, kill a client.
+- move windows, switch VT and back, disable and re-enable an output, kill a client.
 
-Write the design note. It traces one client frame from `wl_surface.commit` to scanout and back to the frame callback, with measured timestamps, and includes the threat model from stage 17.
+Write the design note. It traces one client frame from `wl_surface.commit` to scanout and back to the frame callback, with measured timestamps, and includes the threat model from stage 17. In the VM the timestamps are relative.
+
+## Hardware validation (Linux PC)
+
+**Prerequisites:** stage 18 working in the VM. **Hours:** 15–30. **Runs on:** Linux with direct control of a real display. That is a dual-boot install on the RTX 5070 Ti desktop or a separate PC (README open question 1).
+
+Run the compositor and the stage programs on real hardware, and collect what the VM could not show:
+
+1. **Flip timing:** frame intervals against vblank, missed deadlines, and how the stage 06 scheduling choices affect them.
+2. **Planes:** which planes the real GPU accepts. NVIDIA registers only primary and cursor planes ([README](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/kms.html)), so overlay planes need an Intel or AMD GPU.
+3. **VRR:** on a VRR-capable monitor (the ASUS VG289Q lists 40–60 Hz), frame intervals with and without `VRR_ENABLED`.
+4. **Hotplug:** pull a real cable, recover, and handle `link-status` going `BAD`.
+5. **GPU buffers:** stage 14 and capstone milestone 3 with GPU rendering, GPU composition and real modifiers. On NVIDIA, this needs the open kernel modules, and explicit sync needs kernel 6.8+ ([README](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/wayland-issues.html)).
+6. **Latency and resets:** input-to-photon latency from stage 15, and a GPU reset from stage 17.
+7. **Capstone again:** the stage 18 checkpoint, with timestamps that now mean something.
+
+**Checkpoint:** the design note gains a table comparing VM and hardware numbers for the same runs, with an explanation of each difference.
 
 ## Interface with the graphics course
 
@@ -483,6 +507,13 @@ Checked on 2026-11-15. Versions, statuses and page contents change, so recheck b
 - IPC, messages and services: [DuplicateHandle](https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-duplicatehandle), [I/O completion ports](https://learn.microsoft.com/en-us/windows/win32/fileio/i-o-completion-ports), [messages and message queues](https://learn.microsoft.com/en-us/windows/win32/winmsg/about-messages-and-message-queues), [MsgWaitForMultipleObjectsEx](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-msgwaitformultipleobjectsex), [interactive services and session 0](https://learn.microsoft.com/en-us/windows/win32/services/interactive-services).
 - Synchronization: [spin locks](https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/introduction-to-spin-locks), [dispatcher objects](https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/introduction-to-kernel-dispatcher-objects), [SRW locks](https://learn.microsoft.com/en-us/windows/win32/sync/slim-reader-writer--srw--locks), [WaitOnAddress](https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitonaddress).
 - Tools: [Windows Performance Toolkit](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/), [Process Explorer](https://learn.microsoft.com/en-us/sysinternals/downloads/process-explorer).
+
+**Virtual machines**
+- Hyper-V: [Discrete Device Assignment](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/plan/plan-for-deploying-devices-using-discrete-device-assignment) (Windows Server framing, server-class hardware, Windows guests listed) and [enabling Hyper-V](https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/quick-start/enable-hyper-v) (Windows 11 Pro or Enterprise; the warning about other hypervisors).
+- virtio-gpu guest driver: [virtgpu_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_drv.c) (atomic, render node, syncobj with timelines), [virtgpu_display.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_display.c) (primary and cursor planes), [virtgpu_kms.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_kms.c) (host display events become hotplug).
+- vmwgfx: [vmwgfx_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/vmwgfx/vmwgfx_drv.c) and [vmwgfx_stdu.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/vmwgfx/vmwgfx_stdu.c) (atomic, render node, primary and cursor planes, no syncobj). The driver-features line and plane list came from a summarized part of each file.
+- hyperv_drm: [hyperv_drm_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/hyperv/hyperv_drm_drv.c) and [hyperv_drm_modeset.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/hyperv/hyperv_drm_modeset.c) (one primary plane, no render node).
+- [VMware Fusion and Workstation free for all users](https://blogs.vmware.com/cloud-foundation/2024/11/11/vmware-fusion-and-workstation-are-now-free-for-all-users/) (2024-11-11).
 
 **NVIDIA, Mesa and monitors**
 - NVIDIA Linux driver 620.70.06 README: [KMS](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/kms.html) (on by default; primary and cursor planes only; known issues), [open kernel modules](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/kernel_open.html) (Blackwell only on open modules), [GBM](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/gbm.html), [Wayland known issues](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/wayland-issues.html) (explicit sync on kernel 6.8+, COLOR_PIPELINE on 6.19+, the simpledrm and `fbdev=1` note). The KMS chapter also says GBM submission to KMS is unsupported, which contradicts the GBM chapter, so verify it on the machine.

@@ -13,7 +13,7 @@
 | 層次 | 要回答的問題 | 放在哪裡 |
 | --- | --- | --- |
 | 像素 | 視窗或最終影格的每個像素怎麼算出來：2D 繪圖、文字、混色、色彩 | [`computer-graphics-practice/`](../computer-graphics-practice/README.zh-TW.md) 規劃中的第二部分「2D、文字與合成渲染」主線。可在 Windows 上完成。 |
-| 緩衝區與時間 | 緩衝區歸誰所有、如何送到另一個行程與螢幕、何時顯示 | 本課程第二部分。從階段 13 起需要在實體機器上執行 Linux。 |
+| 緩衝區與時間 | 緩衝區歸誰所有、如何送到另一個行程與螢幕、何時顯示 | 本課程第二部分。在 Linux 虛擬機器中進行，最後一組硬體檢核需要 Linux 實體機。 |
 | 機制 | 行程、記憶體、陷阱（trap）、行程間通訊、同步、排程、驅動程式 | 本課程第一部分。在 Windows 11 上透過 WSL 2 與 QEMU 完成。 |
 
 總結專題把兩邊接起來：輸入是各個 surface，輸出是合成後的影格。本課程提供用戶端緩衝區、fence 與顯示時序，圖學課程提供把 surface 合成為影格的模組。兩者的[介面](SYLLABUS.zh-TW.md#與圖學課程的介面)也列在規劃中。
@@ -36,19 +36,20 @@
 | **第二部分：視窗與顯示系統** | | | |
 | 10 視窗系統架構 | 用 PresentMon 量測 DWM 呈現路徑 | X11、Wayland、DWM/WDDM；為何 DWM 無法取代 | Windows |
 | 11 Wayland 用戶端 | 不用工具套件的 Wayland 用戶端 | 物件、全域物件、雙重緩衝狀態、影格回呼 | WSL 2（WSLg） |
-| 12 DRM/KMS | 用 atomic commit 點亮螢幕 | KMS 物件、屬性、DRM master、render node | Linux 虛擬機器，之後 Linux 實體機 |
-| 13 平面與時序 | 翻頁時序、平面、VRR、熱插拔復原 | vblank、page flip、前廊、uevent、連結狀態 | Linux 實體機 |
-| 14 緩衝區共享與同步 | GPU 緩衝區跨兩個行程送到掃描輸出 | dma-buf、modifier、dma-fence、sync_file、syncobj | Linux 實體機、Windows |
-| 15 輸入 | evdev → libinput → xkbcommon，加上焦點分派 | 事件封包、裝置特性修正、鍵盤配置 | Linux 實體機 |
-| 16 座位與工作階段 | 以一般權限執行並撐過 VT 切換 | logind/libseat、DRM master 交接、權限撤銷 | Linux 實體機 |
-| 17 隔離與安全 | 攻擊並防禦自己的伺服器 | 不可信緩衝區、擷取政策、GPU 重置 | Linux 實體機、Windows |
-| 18 總結專題 | 能執行真實應用程式的最小 Wayland 合成器 | 以上全部，端到端 | Linux 實體機 |
+| 12 DRM/KMS | 用 atomic commit 點亮螢幕 | KMS 物件、屬性、DRM master、render node | Linux 虛擬機器 |
+| 13 平面與時序 | 翻頁事件、平面、熱插拔復原 | vblank、page flip、前廊、uevent、連結狀態 | Linux 虛擬機器 |
+| 14 緩衝區共享與同步 | 緩衝區跨兩個行程送到掃描輸出 | dma-buf、modifier、dma-fence、sync_file、syncobj | Linux 虛擬機器、Windows |
+| 15 輸入 | evdev → libinput → xkbcommon，加上焦點分派 | 事件封包、裝置特性修正、鍵盤配置 | Linux 虛擬機器 |
+| 16 座位與工作階段 | 以一般權限執行並撐過 VT 切換 | logind/libseat、DRM master 交接、權限撤銷 | Linux 虛擬機器 |
+| 17 隔離與安全 | 攻擊並防禦自己的伺服器 | 不可信緩衝區、擷取政策、GPU 重置 | Linux 虛擬機器、Windows |
+| 18 總結專題 | 能執行真實應用程式的最小 Wayland 合成器 | 以上全部，端到端 | Linux 虛擬機器 |
+| 硬體驗證 | 在真實螢幕上重做時序、平面、VRR、熱插拔與 GPU 檢核 | 虛擬機器看不到的部分 | Linux 實體機 |
 
 各階段的里程碑、先備條件與檢核請見 [`SYLLABUS.zh-TW.md`](SYLLABUS.zh-TW.md)。
 
 ## 時數與先備條件
 
-估計約需 260 至 450 小時的專注時間：第一部分約 110 至 190 小時，第二部分約 150 至 260 小時，其中總結專題占 60 至 120 小時。每週投入 6 至 8 小時，大約需要八個月到一年半。這是給已會寫 C 的人的規劃估算，不是保證；進度以通過的檢核計算，不以週數計算。
+估計約需 270 至 480 小時的專注時間：第一部分約 110 至 190 小時，第二部分約 160 至 290 小時，其中包含 60 至 120 小時的總結專題，以及 15 至 30 小時的硬體驗證。每週投入 6 至 8 小時，大約需要八個月到一年半。這是給已會寫 C 的人的規劃估算，不是保證；進度以通過的檢核計算，不以週數計算。
 
 起點條件：C 語言（指標、結構、位元操作、連結）、Linux shell、git 與 make，以及讀懂編譯器輸出所需的 RISC-V 組合語言，程度相當於 [`c-compiler-foundations` 學習路線](../c-compiler-foundations/research/04-integration-path.zh-TW.md)第 1 關。第二部分另需完成圖學課程到階段 05（GPU 管線），以及其規劃中「2D、文字與合成渲染」主線的合成模組。
 
@@ -79,17 +80,38 @@
 | 自己的 Linux 核心模組 | 不適用 | 不採用 | 可以 | 可以 |
 | NT 對照（Win32、ETW 追蹤、Process Explorer） | 可以 | 不適用 | 不適用 | 不適用 |
 | Wayland 用戶端程式 | 不適用 | 可以，透過 WSLg | 可以 | 可以 |
-| DRM/KMS API 基礎 | 不適用 | 不行 | 可以，用 virtio-gpu 或 VKMS | 可以 |
-| 真實平面、vblank 時序、VRR、熱插拔、GPU 緩衝區共享、輸入裝置、座位 | 不適用 | 不行 | 不行，沒有真實時序與硬體平面 | 可以 |
-| 總結專題合成器 | 不適用 | 不行 | 只能對 VKMS 開發 | 可以 |
+| KMS atomic commit、翻頁事件、overlay 平面（VKMS）、由主機顯示變更觸發的熱插拔（virtio-gpu） | 不適用 | 不行 | 可以 | 可以 |
+| 緩衝區共享、顯式同步、輸入裝置、座位與 VT 切換 | 不適用 | 不行 | 可以，以軟體繪製 | 可以 |
+| 能執行真實應用程式的總結專題合成器 | 不適用 | 不行 | 可以，以軟體繪製 | 可以 |
+| 真實翻頁時序、VRR、真實 GPU 的平面、拔插纜線與連結狀態、GPU 加速合成、輸入到畫面的延遲 | 不適用 | 不行 | 不行 | 可以 |
 
-**第二部分從階段 13 起，需要能直接控制顯示器的 Linux。** 也就是在 RTX 5070 Ti 桌機上安裝雙系統開機，或另備一台電腦。WSL 2 無法替代：它的 GPU 存取是供繪圖用的半虛擬化（para-virtualization），WSLg 則透過 Weston 合成器，以 RDP 把 Linux 視窗轉送到 Windows。WSL 裡沒有任何東西能透過 KMS 驅動你的螢幕。階段 11 與 12 可以先在 Windows 上開始（先用 WSLg，再用 QEMU 虛擬機器），階段 10 本身就是研究 Windows。
+**Linux 虛擬機器可以撐起整個第二部分，包括總結專題。只有最後的硬體驗證，才需要能直接控制真實顯示器的 Linux。** 硬體驗證仍需要在 RTX 5070 Ti 桌機上雙系統開機，或另備一台電腦，但可以留到最後再處理。
 
-虛擬機器方面：QEMU 提供 Windows 版本（Stefan Weil 的安裝檔或 MSYS2 套件），並可使用 Windows Hypervisor Platform（WHPX）加速器。Windows 11 也預設為 WSL 2 開啟巢狀虛擬化（`.wslconfig` 的 `nestedVirtualization`），這是取得 Linux 虛擬機器的另一條路。
+虛擬機器能提供的功能（2026-11-15 對照客體驅動原始碼查核）：
 
-## Linux 實體機
+- **建議的虛擬機器顯示是 QEMU 的 virtio-gpu。** 它是 atomic KMS 驅動，具備 render node 與含 timeline 的 DRM syncobj（[virtgpu_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_drv.c)）。每個輸出有一個主平面與一個游標平面（[virtgpu_display.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_display.c)）。主機端的顯示變更會以熱插拔事件傳給客體（[virtgpu_kms.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_kms.c)）。
+- **VKMS 補上 virtio-gpu 缺少的部分。** 它可透過 configfs 提供 overlay 平面與 writeback connector，但目前還不能在執行中熱插拔（[VKMS](https://docs.kernel.org/gpu/vkms.html)）。
+- **VMware Workstation 可作為備案。** 它自 2024 年 11 月起對所有使用者免費（[VMware](https://blogs.vmware.com/cloud-foundation/2024/11/11/vmware-fusion-and-workstation-are-now-free-for-all-users/)）。它的客體驅動 vmwgfx 是 atomic 驅動，具備 render node，有主平面與游標平面，但沒有 syncobj（[vmwgfx_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/vmwgfx/vmwgfx_drv.c)）。
+- **Hyper-V 的功能太少。** 它的 hyperv_drm 只有一個主平面，也沒有 render node，不夠本課程使用（[hyperv_drm_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/hyperv/hyperv_drm_drv.c)）。
+- **客體預計以軟體繪製。** Windows 主機上的 QEMU 客體能否使用 3D 加速，官方文件沒有記載：QEMU 對 virgl 與 Venus 的需求說明只涵蓋 Linux 主機（[virtio-gpu](https://www.qemu.org/docs/master/system/devices/virtio/virtio-gpu.html)）。
 
-RTX 5070 Ti 可以在 Linux 上完成本課程，但有限制。以下取自 NVIDIA 驅動程式 README（620.70.06，2026-11-15 查核）：
+虛擬機器做不到的事：
+
+- 真實的掃描輸出時序與 VRR；
+- 真實 GPU 的平面；
+- 實際拔插纜線與連結訓練；
+- 在 RTX 5070 Ti 上做 GPU 加速合成；
+- 輸入到畫面的延遲。
+
+GPU 也無法直接交給 Linux 虛擬機器：Hyper-V 的 Discrete Device Assignment 文件只針對 Windows Server 與伺服器等級硬體，列出的客體也只有 Windows（[Learn](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/plan/plan-for-deploying-devices-using-discrete-device-assignment)）。
+
+WSL 2 不適合第二部分的顯示實驗：它的 GPU 存取是供繪圖用的半虛擬化（para-virtualization），WSLg 則透過 Weston 合成器，以 RDP 把 Linux 視窗轉送到 Windows。階段 10 本身就是研究 Windows，階段 11 在 WSLg 中進行。
+
+QEMU 的執行方式：QEMU 提供 Windows 版本（Stefan Weil 的安裝檔或 MSYS2 套件），並可使用 Windows Hypervisor Platform（WHPX）加速器。Windows 11 也預設為 WSL 2 開啟巢狀虛擬化（`.wslconfig` 的 `nestedVirtualization`），這是取得 Linux 虛擬機器的另一條路。Learn 提醒，Hyper-V hypervisor 執行時，VMware Workstation 與 VirtualBox 可能不穩定（[Learn](https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/quick-start/enable-hyper-v)）；若持續啟用 WSL 2，請留意這一點。
+
+## 最後硬體驗證用的實體機
+
+進行硬體驗證時，RTX 5070 Ti 可以在 Linux 上完成，但有限制。以下取自 NVIDIA 驅動程式 README（620.70.06，2026-11-15 查核）：
 
 - Blackwell GPU 只由 NVIDIA 的開放核心模組支援。
 - nvidia-drm 的 KMS 預設開啟。
@@ -99,9 +121,9 @@ RTX 5070 Ti 可以在 Linux 上完成本課程，但有限制。以下取自 NVI
 - 已知問題還包括 VRR 行為，以及未設定 `fbdev=1` 時與 simpledrm 互相干擾造成的黑畫面。進行階段 13 前請先讀過。
 - Mesa 的 NVK Vulkan 驅動列出支援消費級 Blackwell（RTX 5000 系列），可作為日後比較的上游方案。
 
-因此階段 13 的 overlay 平面實驗需要 VKMS（練習 API 用）或另一張 GPU。Intel 或 AMD GPU 都可以，內顯就夠，但要先用 `drm_info` 確認它有提供 overlay 平面。另備一台這類小電腦，也能讓主力桌機免於雙系統開機。這是下方的待決問題 1。
+因此在實體機上，overlay 平面需要另一張 GPU。Intel 或 AMD GPU 都可以，內顯就夠，但要先用 `drm_info` 確認它有提供 overlay 平面。走虛擬機器路線時，VKMS 可用來練習 overlay 平面的 API。另備一台這類小電腦，也能讓主力桌機免於雙系統開機。要用哪台機器是下方的待決問題 1，可以等總結專題在虛擬機器中跑起來後再決定。
 
-螢幕：ASUS VG289Q 規格列出 Adaptive-Sync，垂直頻率 40–60 Hz，可用於 VRR 實驗。Acer ET322QK 是否支援 VRR 尚未查證。
+螢幕：ASUS VG289Q 規格列出 Adaptive-Sync，垂直頻率 40–60 Hz，可用於 VRR 檢核。Acer ET322QK 是否支援 VRR 尚未查證。
 
 ## 每次實驗的流程
 
@@ -124,22 +146,28 @@ RTX 5070 Ti 可以在 Linux 上完成本課程，但有限制。以下取自 NVI
 
 你會完成一個自己寫的合成器。它能以一般使用者身分從文字主控台啟動，同時執行終端機、一個 GTK 或 Qt 應用程式與一個 Vulkan 示範程式，並撐過 VT 切換、螢幕熱插拔與用戶端當掉。你還要寫一份設計說明，附實測時間戳記，追蹤一個用戶端影格從 `wl_surface.commit` 到掃描輸出、再回到影格回呼的過程。
 
+以上都能在虛擬機器中完成。硬體驗證再到真實螢幕上重做一次；在那裡，時間戳記才有意義，也才有 VRR 與真實平面。只有後者能證明影格時序。
+
 只完成第一部分的標準是：能附上追蹤紀錄，說明從系統呼叫、情境切換到分頁錯誤的完整過程，並分別以 xv6、Linux 與 NT 的術語解釋。
 
 ## 範圍與限制
 
 - 不在範圍內：GPU 核心驅動、Mesa 驅動、UI 工具套件、Xwayland 內部、Windows 核心驅動（選修，限虛擬機器）、HDR 與色彩管理（選修延伸）。
 - 在 Windows 上只能研究與量測 DWM，無法取代它。原因見建置計畫的階段 10。
-- WSL 2 在虛擬機器內執行，在那裡量到的延遲只能相對比較，階段 13 會在實體機上重新量測。
+- WSL 2 與 Linux 虛擬機器都在 hypervisor 下執行，在那裡量到的延遲只能相對比較；硬體驗證會在真實螢幕上重新量測。
 - 來源於 2026-11-15 查核。查核期間 gitlab.freedesktop.org 與 git.sr.ht 拒絕自動化請求，因此 wlroots、tinywl 與 seatd 只附連結，未重新閱讀頁面。Wayland 協定的狀態取自 wayland.app 索引，該索引由相同的 XML 檔產生。
 - 時數為估算。
 
+## 審閱決定（2026-11-15）
+
+- **第二部分的執行環境：** 預設使用 Linux 虛擬機器（QEMU 搭配 virtio-gpu，另加 VKMS），實體機只用於最後的硬體驗證。
+- **總結專題的路線：** 把階段 12–16 的程式組成自己的後端，建立在 libwayland-server 之上。tinywl 只當地圖閱讀，後端不使用 wlroots。
+- **語言：** 第一部分與面向核心的程式用 C；合成器可用 C++，以配合圖學課程第二部分的核心。
+- **選修支線：** 全部保留，包括 rv32sim 特權模式、Windows 虛擬機器中的 KMDF 驅動、HDR 與色彩、Xwayland 與 NVK。
+
 ## 待決問題
 
-1. 階段 13–18 用哪台 Linux 機器：在 RTX 5070 Ti 桌機上雙系統開機，還是另備一台使用 Intel 或 AMD 顯示晶片的電腦？桌機的 CPU 有內顯嗎？
-2. 發行版與核心：Ubuntu 24.04 與 MIT 工具頁一致。NVIDIA 顯式同步需要 6.8 以上核心，nvidia-drm 的 KMS 色彩管線需要 6.19 以上。WSL 2 與 Linux 實體機要用同一個發行版，還是可以不同？
-3. 總結專題的路線：用階段 12–16 寫好的程式組成自己的後端（建議，因為那些階段已經寫出來了），還是後端用 wlroots，只自己寫場景與合成？
-4. 語言：第一部分與面向核心的程式用 C。合成器用 C 還是 C++，視圖學課程第二部分的核心（C++/Vulkan）而定？
-5. NT 的深度：只做對照（目前規劃），還是在 Windows 虛擬機器中加入 KMDF 驅動實驗？
-6. 保留還是刪除 `rv32sim` 特權模式支線？
-7. Acer ET322QK 是否支援 VRR？只影響階段 13。
+1. 最後硬體驗證用哪台機器：在 RTX 5070 Ti 桌機上雙系統開機，還是另備一台使用 Intel 或 AMD 顯示晶片的電腦？桌機的 CPU 有內顯嗎？這可以等總結專題在虛擬機器中跑起來再決定。
+2. 虛擬機器的主機端：在 Windows 上以 WHPX 執行 QEMU，還是在 WSL 2 內執行 QEMU？兩者都有官方文件支持，但都沒有記載客體的 3D 加速。建議先用 Windows 上的 QEMU，因為它的視窗是原生的，不必經過 WSLg 轉送。
+3. 發行版與核心：Ubuntu 24.04 與 MIT 工具頁一致。NVIDIA 顯式同步需要 6.8 以上核心，nvidia-drm 的 KMS 色彩管線需要 6.19 以上。WSL 2、虛擬機器與 Linux 實體機要不要都用同一個發行版？
+4. Acer ET322QK 是否支援 VRR？只影響硬體驗證。

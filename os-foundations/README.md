@@ -13,7 +13,7 @@ The desktop-graphics topic is split by layer:
 | Layer | Question | Where |
 | --- | --- | --- |
 | Pixels | How each pixel of a window or of the final frame is computed: 2D drawing, text, blending, color | [`computer-graphics-practice/`](../computer-graphics-practice/README.md), in its planned Part II track "2D、文字與合成渲染" (2D, text and compositing). Doable on Windows. |
-| Buffers and time | Who owns a buffer, how it reaches another process and the screen, and when it is shown | This course, Part II. Needs Linux on real hardware from stage 13. |
+| Buffers and time | Who owns a buffer, how it reaches another process and the screen, and when it is shown | This course, Part II. Runs in a Linux VM; a final set of hardware checks needs a Linux PC. |
 | Mechanisms | Processes, memory, traps, IPC, synchronization, scheduling, drivers | This course, Part I. Runs on Windows 11 through WSL 2 and QEMU. |
 
 The capstone joins the two: surfaces in, composited frame out. This course supplies client buffers, fences and display timing. The graphics course supplies the module that turns surfaces into a frame. The plan includes the [interface between them](SYLLABUS.md#interface-with-the-graphics-course).
@@ -36,19 +36,20 @@ The capstone joins the two: surfaces in, composited frame out. This course suppl
 | **Part II: Window and display system** | | | |
 | 10 Window system architecture | Measure the DWM presentation path with PresentMon | X11, Wayland, DWM/WDDM; why DWM can't be replaced | Windows |
 | 11 Wayland clients | A toolkit-free Wayland client | Objects, globals, double-buffered state, frame callbacks | WSL 2 (WSLg) |
-| 12 DRM/KMS | Light up a screen with an atomic commit | KMS objects, properties, DRM master, render nodes | Linux VM, then Linux PC |
-| 13 Planes and timing | Flip timing, planes, VRR, hotplug recovery | vblank, page flip, front porch, uevents, link status | Linux PC |
-| 14 Buffer sharing and sync | A GPU buffer passed across two processes to scanout | dma-buf, modifiers, dma-fence, sync_file, syncobj | Linux PC, Windows |
-| 15 Input | evdev → libinput → xkbcommon, with focus routing | Event packets, device quirks, keymaps | Linux PC |
-| 16 Seats and sessions | Run unprivileged and survive VT switches | logind/libseat, DRM master hand-off, revocation | Linux PC |
-| 17 Isolation and security | Attack and defend your own server | Untrusted buffers, capture policy, GPU resets | Linux PC, Windows |
-| 18 Capstone | A minimal Wayland compositor running real apps | Everything above, end to end | Linux PC |
+| 12 DRM/KMS | Light up a screen with an atomic commit | KMS objects, properties, DRM master, render nodes | Linux VM |
+| 13 Planes and timing | Flip events, planes, hotplug recovery | vblank, page flip, front porch, uevents, link status | Linux VM |
+| 14 Buffer sharing and sync | A buffer passed across two processes to scanout | dma-buf, modifiers, dma-fence, sync_file, syncobj | Linux VM, Windows |
+| 15 Input | evdev → libinput → xkbcommon, with focus routing | Event packets, device quirks, keymaps | Linux VM |
+| 16 Seats and sessions | Run unprivileged and survive VT switches | logind/libseat, DRM master hand-off, revocation | Linux VM |
+| 17 Isolation and security | Attack and defend your own server | Untrusted buffers, capture policy, GPU resets | Linux VM, Windows |
+| 18 Capstone | A minimal Wayland compositor running real apps | Everything above, end to end | Linux VM |
+| Hardware validation | Rerun the timing, plane, VRR, hotplug and GPU checks on a real display | What a VM cannot show | Linux PC |
 
 [`SYLLABUS.md`](SYLLABUS.md) has the milestones, prerequisites and checkpoints for each stage.
 
 ## Time and prerequisites
 
-Plan on roughly 260–450 focused hours. Part I takes about 110–190 and Part II about 150–260, of which the capstone is 60–120. At 6–8 hours a week that is eight months to a year and a half. These are planning estimates for someone who already writes C, not promises. Progress is measured by passed checkpoints, not by weeks.
+Plan on roughly 270–480 focused hours. Part I takes about 110–190 and Part II about 160–290. Part II's share includes the 60–120 hour capstone and 15–30 hours of hardware validation. At 6–8 hours a week that is eight months to a year and a half. These are planning estimates for someone who already writes C, not promises. Progress is measured by passed checkpoints, not by weeks.
 
 You start with C (pointers, structs, bit operations, linking), a Linux shell, git and make, and enough RISC-V assembly to read compiler output. That level is stage 1 of the [`c-compiler-foundations` learning path](../c-compiler-foundations/research/04-integration-path.zh-TW.md). Part II also needs the graphics course through stage 05 (GPU pipeline), plus the compositing modules of its planned 2D, text and compositing track.
 
@@ -79,17 +80,38 @@ Alternatives considered:
 | Your own Linux kernel module | n/a | Not planned | Yes | Yes |
 | NT comparisons (Win32, ETW traces, Process Explorer) | Yes | n/a | n/a | n/a |
 | Wayland client programming | n/a | Yes, through WSLg | Yes | Yes |
-| DRM/KMS API basics | n/a | No | Yes, with virtio-gpu or VKMS | Yes |
-| Real planes, vblank timing, VRR, hotplug, GPU buffer sharing, input devices, seats | n/a | No | No real timing or hardware planes | Yes |
-| Capstone compositor | n/a | No | Development against VKMS only | Yes |
+| KMS atomic commits, flip events, overlay planes (VKMS), hotplug from host display changes (virtio-gpu) | n/a | No | Yes | Yes |
+| Buffer sharing, explicit sync, input devices, seats and VT switches | n/a | No | Yes, with software rendering | Yes |
+| Capstone compositor running real apps | n/a | No | Yes, with software rendering | Yes |
+| Real flip timing, VRR, planes on a real GPU, cable hotplug and link status, GPU-accelerated composition, input-to-photon latency | n/a | No | No | Yes |
 
-**Part II needs Linux with direct control of a display from stage 13 on.** That means either a dual-boot install on the RTX 5070 Ti desktop or a separate PC. WSL 2 cannot stand in. Its GPU access is para-virtualized for rendering. WSLg shows Linux windows through a Weston compositor that forwards them to Windows over RDP. Nothing inside WSL drives your monitors through KMS. Stages 11 and 12 can start on Windows (WSLg, then a QEMU VM), and stage 10 is about Windows itself.
+**A Linux VM can carry Part II up to and including the capstone. Only the final hardware validation needs Linux with direct control of a real display.** That validation still means a dual-boot install on the RTX 5070 Ti desktop or a separate PC, but it can wait until the end.
 
-For the VM: QEMU publishes Windows builds (installers by Stefan Weil, or MSYS2 packages) and can use the Windows Hypervisor Platform (WHPX) accelerator. Windows 11 also turns on nested virtualization for WSL 2 by default (`nestedVirtualization` in `.wslconfig`), which gives a second route to a Linux VM.
+What a VM gives you, checked against the guest drivers' source on 2026-11-15:
 
-## The Linux PC
+- **virtio-gpu (QEMU) is the recommended VM display.** It is an atomic KMS driver with a render node and DRM syncobj, timelines included ([virtgpu_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_drv.c)). It exposes one primary and one cursor plane per output ([virtgpu_display.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_display.c)). Display changes on the host reach the guest as hotplug events ([virtgpu_kms.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_kms.c)).
+- **VKMS fills virtio-gpu's gaps.** Through configfs it offers overlay planes and a writeback connector. It has no runtime hotplug yet ([VKMS](https://docs.kernel.org/gpu/vkms.html)).
+- **VMware Workstation is a fallback.** It has been free for all users since November 2024 ([VMware](https://blogs.vmware.com/cloud-foundation/2024/11/11/vmware-fusion-and-workstation-are-now-free-for-all-users/)). Its guest driver, vmwgfx, is atomic with a render node and has primary and cursor planes, but no syncobj ([vmwgfx_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/vmwgfx/vmwgfx_drv.c)).
+- **Hyper-V is too thin.** Its hyperv_drm driver has a single primary plane and no render node ([hyperv_drm_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/hyperv/hyperv_drm_drv.c)).
+- **Expect software rendering in the guest.** 3D acceleration for a QEMU guest on a Windows host is not documented: QEMU's virgl and Venus requirements cover Linux hosts only ([virtio-gpu](https://www.qemu.org/docs/master/system/devices/virtio/virtio-gpu.html)).
 
-The RTX 5070 Ti can do this course on Linux, with limits. These come from NVIDIA's driver README (620.70.06, checked 2026-11-15):
+What a VM cannot give you:
+
+- real scanout timing and VRR;
+- the planes of a real GPU;
+- cable hotplug and link training;
+- GPU-accelerated composition on the RTX 5070 Ti;
+- input-to-photon latency.
+
+The GPU can't be handed to a Linux VM either. Hyper-V's Discrete Device Assignment is documented for Windows Server on server-class hardware, with Windows guests only ([Learn](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/plan/plan-for-deploying-devices-using-discrete-device-assignment)).
+
+WSL 2 is not a route for Part II's display work. Its GPU access is para-virtualized for rendering, and WSLg shows Linux windows through a Weston compositor that forwards them to Windows over RDP. Stage 10 is about Windows itself, and stage 11 runs in WSLg.
+
+Running QEMU: it publishes Windows builds (installers by Stefan Weil, or MSYS2 packages) and can use the Windows Hypervisor Platform (WHPX) accelerator. Windows 11 also turns on nested virtualization for WSL 2 by default (`nestedVirtualization` in `.wslconfig`), which gives a second route to a Linux VM. Learn warns that VMware Workstation and VirtualBox can be unreliable while the Hyper-V hypervisor is running ([Learn](https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/quick-start/enable-hyper-v)). Keep that in mind if WSL 2 stays enabled.
+
+## Real hardware for the final validation
+
+When you reach the hardware validation, the RTX 5070 Ti can do it on Linux, with limits. These come from NVIDIA's driver README (620.70.06, checked 2026-11-15):
 
 - Blackwell GPUs are supported only by NVIDIA's open kernel modules.
 - nvidia-drm KMS is on by default.
@@ -99,9 +121,9 @@ The RTX 5070 Ti can do this course on Linux, with limits. These come from NVIDIA
 - The known issues also cover VRR behavior, and a black-screen interaction with simpledrm unless `fbdev=1` is set. Read them before stage 13.
 - Mesa's NVK Vulkan driver lists consumer Blackwell (RTX 5000 series) support. That is an upstream alternative to compare later.
 
-So the overlay-plane experiments in stage 13 need either VKMS (for API practice) or a different GPU. An Intel or AMD GPU works, and integrated graphics is enough. First confirm with `drm_info` that it exposes overlay planes. A small separate PC with such a GPU would also spare the main desktop a dual boot. This is open question 1 below.
+So on real hardware, overlay planes need a different GPU. An Intel or AMD GPU works, and integrated graphics is enough. First confirm with `drm_info` that it exposes overlay planes. In the VM route, VKMS covers overlay planes for API practice. A small separate PC with such a GPU would also spare the main desktop a dual boot. Which machine to use is open question 1 below, and it can wait until the capstone works in the VM.
 
-Monitors: the ASUS VG289Q lists Adaptive-Sync with a 40–60 Hz vertical range, so it can serve the VRR experiment. VRR support on the Acer ET322QK was not verified.
+Monitors: the ASUS VG289Q lists Adaptive-Sync with a 40–60 Hz vertical range, so it can serve the VRR check. VRR support on the Acer ET322QK was not verified.
 
 ## Working loop
 
@@ -124,22 +146,28 @@ This is the graphics course's loop with one addition from `mcu-foundations`: **p
 
 You end with a compositor you wrote yourself. It boots from a text console as a normal user and runs a terminal, a GTK or Qt application and a Vulkan demo side by side. It survives a VT switch, a monitor hotplug and a crashing client. You also write a design note that traces one client frame from `wl_surface.commit` to scanout and back to the frame callback, with measured timestamps.
 
+All of that works in a VM. The hardware validation then repeats it on a real display, where the timestamps mean something and VRR and real planes exist. Only the second proves frame timing.
+
 Part I alone ends when you can explain, with traces, what happens from a system call to a context switch to a page fault. You explain it in xv6 and again in Linux and NT terms.
 
 ## Scope and limits
 
 - Out of scope: GPU kernel drivers, Mesa drivers, UI toolkits, Xwayland internals, Windows kernel drivers (optional, VM only), HDR and color management (an optional extension).
 - On Windows you can study and measure DWM but not replace it. Stage 10 of the syllabus explains why.
-- WSL 2 runs inside a VM, so latency measured there is only relative. Stage 13 measures again on real hardware.
+- WSL 2 and the Linux VM both run under a hypervisor, so latency measured there is only relative. The hardware validation measures again on a real display.
 - The sources were checked on 2026-11-15. gitlab.freedesktop.org and git.sr.ht refused automated requests during the check. wlroots, tinywl and seatd are linked, but their pages were not re-read. Wayland protocol statuses came from the wayland.app index, which is generated from the same XML files.
 - Hours are estimates.
 
+## Review decisions (2026-11-15)
+
+- **Where Part II runs:** a Linux VM by default (QEMU with virtio-gpu, plus VKMS). Real hardware is a final validation step.
+- **Capstone route:** your own backend, built from the stage 12–16 code on libwayland-server. tinywl is read as a map, and wlroots is not used as the backend.
+- **Language:** C for Part I and kernel-facing code. The compositor may use C++ to match the graphics course's Part II core.
+- **Optional side quests:** all stay. That is the rv32sim privileged mode, a KMDF driver in a Windows VM, HDR and color, Xwayland, and NVK.
+
 ## Open questions for review
 
-1. Linux machine for stages 13–18: dual boot on the RTX 5070 Ti desktop, or a separate PC with Intel or AMD graphics? Does the desktop CPU have integrated graphics?
-2. Distribution and kernel: Ubuntu 24.04 matches MIT's tools page. NVIDIA explicit sync needs kernel 6.8+, and nvidia-drm's KMS color pipeline needs 6.19+. Should WSL 2 and the Linux PC run the same distribution, or may they differ?
-3. Capstone route: your own backend built from stages 12–16 (recommended, since those stages already write it), or wlroots for the backend with your own scene and composition?
-4. Language: C for Part I and kernel-facing code. For the compositor, C or C++, depending on the graphics course's Part II core (C++/Vulkan)?
-5. NT depth: comparison only (as planned), or add a KMDF driver lab in a Windows VM?
-6. Keep or drop the `rv32sim` privileged-mode side quest?
-7. Does the Acer ET322QK support VRR? This only matters for stage 13.
+1. Hardware for the final validation: dual boot on the RTX 5070 Ti desktop, or a separate PC with Intel or AMD graphics? Does the desktop CPU have integrated graphics? This can wait until the capstone works in the VM.
+2. Which VM host: QEMU on Windows with WHPX, or QEMU inside WSL 2? Both are documented routes, and neither documents 3D acceleration for the guest. QEMU on Windows is the suggested start, because its window is native rather than forwarded through WSLg.
+3. Distribution and kernel: Ubuntu 24.04 matches MIT's tools page. NVIDIA explicit sync needs kernel 6.8+, and nvidia-drm's KMS color pipeline needs 6.19+. Should WSL 2, the VM and the Linux PC all run the same distribution?
+4. Does the Acer ET322QK support VRR? This only matters for the hardware validation.

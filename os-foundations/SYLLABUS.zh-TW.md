@@ -121,7 +121,7 @@
 
 ### 06 — 排程與延遲
 
-**先備：** 05。**時數：** 10–16。**執行環境：** WSL 2、Windows；階段 13 會在 Linux 實體機上重新量測。
+**先備：** 05。**時數：** 10–16。**執行環境：** WSL 2、Windows；硬體驗證會在 Linux 實體機上重新量測。
 
 **製作：** 把 xv6 的輪轉迴圈換成優先權或彩票排程器，用一個吃 CPU 的工作與一個互動式工作測試。在 Linux 上，寫一個透過 `timerfd` 每秒喚醒 60 次的執行緒，在機器有負載時分別以預設排程策略與 `SCHED_FIFO` 執行，畫出每次喚醒的延遲。在 Windows 上以不同的執行緒優先權重複量測，並用 WPR 錄製一次執行、在 WPA 中檢視（[WPT](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/)）。
 
@@ -198,6 +198,8 @@
 
 進入第二部分前，先完成圖學課程到階段 05；其規劃中的「2D、文字與合成渲染」主線也要進展到能提供合成模組。
 
+**第二部分的執行環境。** 階段 10 與 11 在 Windows 上進行。階段 12–18 在 Linux 虛擬機器中進行：以 QEMU 的 virtio-gpu 作為顯示裝置，需要 overlay 平面或 writeback 時改用 VKMS。客體只能以軟體繪製。每個階段把虛擬機器看不到的部分標為**硬體檢核**，並集中到階段 18 之後的[硬體驗證](#硬體驗證)。各虛擬機器顯示驅動的比較見 README。
+
 ### 10 — 視窗系統架構：在 Windows 上量測
 
 **先備：** 第一部分。**時數：** 8–12。**執行環境：** RTX 5070 Ti 桌機上的 Windows 11。
@@ -248,7 +250,7 @@
 
 ### 12 — DRM/KMS 與 atomic modesetting
 
-**先備：** 04、11。**時數：** 14–24。**執行環境：** 先用 Linux 虛擬機器，再到 Linux 實體機。虛擬機器可使用 QEMU 的 [virtio-gpu](https://www.qemu.org/docs/master/system/devices/virtio/virtio-gpu.html)（客體核心需啟用 `CONFIG_DRM_VIRTIO_GPU`）或 VKMS。
+**先備：** 04、11。**時數：** 14–24。**執行環境：** Linux 虛擬機器。使用 QEMU 的 [virtio-gpu](https://www.qemu.org/docs/master/system/devices/virtio/virtio-gpu.html)（客體核心需啟用 `CONFIG_DRM_VIRTIO_GPU`）或 VKMS。virtio-gpu 是具備 render node 的 atomic 驅動，每個輸出有一個主平面與一個游標平面（[virtgpu_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_drv.c)、[virtgpu_display.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_display.c)）。
 
 **製作：** 先用 `drm_info` 與 libdrm 測試工具中的 `modetest` 檢視裝置。接著寫一個 C 程式：
 - 以 DRM master 身分開啟 primary node；
@@ -256,7 +258,7 @@
 - 配置 dumb buffer；
 - 以一次 atomic commit 點亮螢幕。
 
-用 test-only commit 探測驅動接受哪些設定，並以 page-flip 事件做雙重緩衝。以 `kmscube` 作為 KMS 搭配 GBM 與 EGL 的參考程式。
+用 test-only commit 探測驅動接受哪些設定，並以 page-flip 事件做雙重緩衝。閱讀 `kmscube`，把它當作 KMS 搭配 GBM 與 EGL 的參考程式；客體的 Mesa 能繪製時再實際執行。
 
 **需要時再學：**
 - KMS 管線：framebuffer → 平面 → CRTC → encoder → connector（[KMS overview](https://docs.kernel.org/gpu/drm-kms.html#overview)）。
@@ -272,13 +274,13 @@ VKMS 是純軟體的 KMS 驅動模型，可透過 configfs 建立具有指定平
 
 ### 13 — 平面、翻頁、vblank、VRR 與熱插拔
 
-**先備：** 06、12。**時數：** 14–24。**執行環境：** 能直接控制顯示器的 Linux 實體機。
+**先備：** 06、12。**時數：** 12–20。**執行環境：** Linux 虛擬機器；翻頁與熱插拔用 virtio-gpu，overlay 平面用 VKMS。
 
 **製作：**
-1. **翻頁時序。** 記錄每個翻頁完成事件的序號與時間戳記，和送出的時間比對，再刻意錯過一次 vblank。DRM 從 Linux 4.15 起在這些事件中使用單調時鐘時間戳記（[drm_vblank.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/drm_vblank.c)）。
-2. **平面。** 用 test-only commit 嘗試游標與 overlay 平面，記錄硬體接受哪些設定。NVIDIA 驅動只註冊主平面與游標平面（[README](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/kms.html)），所以 overlay 實驗需要 Intel 或 AMD GPU，或改用 VKMS。
-3. **VRR。** 若 connector 回報 `vrr_capable`，就在 CRTC 上設定 `VRR_ENABLED`，並改變影格間隔。ASUS VG289Q 規格列出 40–60 Hz（[規格](https://www.asus.com/displays-desktops/monitors/tuf-gaming/tuf-gaming-vg289q/techspec/)）。
-4. **熱插拔。** 監聽 DRM uevent：事件帶有 `HOTPLUG=1`，針對單一 connector 的事件另帶 `CONNECTOR=<id>`（[drm_sysfs.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/drm_sysfs.c)）。收到後重新探測 connector；`link-status` 變成 `BAD` 時，選一個有效模式重新 commit。
+1. **翻頁事件。** 記錄每個翻頁完成事件的序號與時間戳記，和送出的時間比對，再刻意錯過一次 vblank。DRM 從 Linux 4.15 起在這些事件中使用單調時鐘時間戳記（[drm_vblank.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/drm_vblank.c)）。虛擬機器中的數字跟著主機計時器走，因此這裡只學 API，真實時序留到硬體驗證再看。
+2. **平面。** 透過 configfs 建立一個含 overlay 平面的 VKMS 實例，以 test-only commit 把 surface 放到 overlay 平面上，再透過 writeback connector 擷取合成結果（[VKMS](https://docs.kernel.org/gpu/vkms.html#configuring-with-configfs)）。記錄 VKMS 拒絕哪些設定。
+3. **熱插拔。** 監聽 DRM uevent：事件帶有 `HOTPLUG=1`，針對單一 connector 的事件另帶 `CONNECTOR=<id>`（[drm_sysfs.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/drm_sysfs.c)）。virtio-gpu 會把主機端的顯示變更（例如調整 QEMU 輸出大小或啟用輸出）轉成熱插拔事件（[virtgpu_kms.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_kms.c)）。收到後重新探測 connector 並選擇新模式。
+4. **VRR 與連結狀態。** 讀懂相關屬性並寫好程式路徑：只有 connector 回報 `vrr_capable` 時，才在 CRTC 上設定 `VRR_ENABLED`；`link-status` 變成 `BAD` 時，選一個有效模式重新 commit。虛擬機器沒有 VRR 螢幕，也沒有會出問題的纜線，所以這些路徑要在硬體驗證時才會實際跑到。
 
 **需要時再學：**
 - 掃描輸出與遮沒區間、vblank 計數器，以及 page-flip 事件。
@@ -286,13 +288,19 @@ VKMS 是純軟體的 KMS 驅動模型，可透過 configfs 建立具有指定平
 - 連結狀態（[connector properties](https://docs.kernel.org/gpu/drm-kms.html#standard-connector-properties)）。
 - 游標大小限制。
 
-**檢核：** 畫出開與不開 VRR 時的影格間隔。程式執行中拔掉再插回一台螢幕，並在不重啟的情況下恢復。與 `display-wake-research` 比較：Windows 可能把休眠中的 DisplayPort 螢幕當成已中斷連線，同樣的情況在 Linux 上會產生哪些 KMS 事件？
+**硬體檢核：**
+- 真實的翻頁間隔。
+- 真實 GPU 接受哪些平面。NVIDIA 只註冊主平面與游標平面（[README](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/kms.html)），所以 overlay 平面需要 Intel 或 AMD GPU。
+- 在支援 VRR 的螢幕上測 VRR。ASUS VG289Q 規格列出 40–60 Hz（[規格](https://www.asus.com/displays-desktops/monitors/tuf-gaming/tuf-gaming-vg289q/techspec/)）。
+- 實際拔掉纜線，並從 `link-status` 變成 `BAD` 的狀態恢復。
+
+**檢核：** 程式執行中停用再重新啟用 QEMU 輸出，並在不重啟的情況下恢復。展示一張從 VKMS writeback 擷取的 overlay 平面合成結果。與 `display-wake-research` 比較：Windows 可能把休眠中的 DisplayPort 螢幕當成已中斷連線，同樣的情況在 Linux 上會產生哪些 KMS 事件？
 
 ### 14 — 緩衝區共享與同步
 
-**先備：** 08 與 13，以及圖學課程的 GPU 階段。**時數：** 16–26。**執行環境：** Linux 實體機；D3D 對照在 Windows 上做。
+**先備：** 08 與 13，以及圖學課程的 GPU 階段。**時數：** 16–26。**執行環境：** Linux 虛擬機器；D3D 對照在 Windows 上做。
 
-**製作：** 用 GBM 配置緩衝區，以 OpenGL ES 或 Vulkan 繪製，匯出成 dma-buf，經 `SCM_RIGHTS` 送給第二個行程。在第二個行程中連同 modifier 匯入為 KMS framebuffer，送去掃描輸出。依序以三種方式執行：
+**製作：** 用 GBM（或 dumb buffer）配置緩衝區並繪製。在虛擬機器中只能以軟體繪製，但 virtio-gpu 支援含 timeline 的 DRM syncobj（[virtgpu_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_drv.c)），所以下列三種方式都能在虛擬機器中執行。接著匯出成 dma-buf，經 `SCM_RIGHTS` 送給第二個行程。在第二個行程中連同 modifier 匯入為 KMS framebuffer，送去掃描輸出。依序以三種方式執行：
 1. 隱式同步。
 2. 顯式同步：透過平面的 `IN_FENCE_FD` 附上 sync_file，並從 `OUT_FENCE_PTR` 取回一個。
 3. DRM syncobj timeline。
@@ -307,13 +315,13 @@ VKMS 是純軟體的 KMS 驅動模型，可透過 configfs 建立具有指定平
 - KMS 的顯式 fence 屬性（[KMS](https://docs.kernel.org/gpu/drm-kms.html#explicit-fencing-properties)）。
 - DRM sync object 的 binary 與 timeline 兩種形式（[syncobj](https://docs.kernel.org/gpu/drm-mm.html#drm-sync-objects)）。
 - Wayland 的 `linux-dmabuf-v1`（stable）與 `linux-drm-syncobj-v1`（staging）。
-- NVIDIA 的顯式同步使用 syncobj timeline 點，需要 6.8 以上的核心（[README](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/wayland-issues.html)）。
+**硬體檢核：** 改用 GPU 繪製與真實的 modifier 再做一次。NVIDIA 的顯式同步使用 syncobj timeline 點，需要 6.8 以上的核心（[README](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/wayland-issues.html)）。
 
 **檢核：** 畫出一個緩衝區的生命週期：用戶端繪製、fence、合成器匯入、掃描輸出、釋放、重用。為 Windows 的共享 handle 與 fence 畫出同樣的圖。說明若合成器在掃描輸出結束前就釋放緩衝區，會壞掉什麼。
 
 ### 15 — 輸入堆疊
 
-**先備：** 08、12。**時數：** 10–16。**執行環境：** Linux 實體機；大部分內容可在有虛擬裝置的虛擬機器中完成。
+**先備：** 08、12。**時數：** 10–16。**執行環境：** Linux 虛擬機器。虛擬機器的虛擬鍵盤與滑鼠會以 evdev 裝置出現，其餘情境用 uinput 補足。
 
 **製作：** 直接讀取 `/dev/input/eventX`，印出以 `SYN_REPORT` 分組的 `EV_KEY`、`EV_REL`、`EV_ABS` 事件。改用 libinput，再加入 xkbcommon 處理鍵盤配置與修飾鍵。用 uinput 建立虛擬裝置，寫可重複執行的測試腳本。為階段 09 的伺服器加入指標與鍵盤焦點，讓事件只送到取得焦點的用戶端。
 
@@ -327,11 +335,11 @@ VKMS 是純軟體的 KMS 驅動模型，可透過 configfs 建立具有指定平
 
 **Linux／NT 對照：** Windows 的 Raw Input 讓應用程式註冊裝置、接收 `WM_INPUT`，並能分辨兩支滑鼠（[Learn](https://learn.microsoft.com/en-us/windows/win32/inputdev/about-raw-input)）；一般輸入則以視窗訊息的形式送進執行緒的佇列。
 
-**檢核：** 從紀錄量測輸入到掃描輸出的延遲，也就是從事件時間戳記到顯示其效果的那次翻頁。說明為何輸入裝置必須由合成器，而不是由各個用戶端持有。
+**檢核：** 從紀錄量測輸入到掃描輸出的延遲，也就是從事件時間戳記到顯示其效果的那次翻頁。虛擬機器中的數字只能相對比較，硬體驗證會再量一次。說明為何輸入裝置必須由合成器，而不是由各個用戶端持有。
 
 ### 16 — 座位與工作階段管理
 
-**先備：** 12、15。**時數：** 6–10。**執行環境：** Linux 實體機。
+**先備：** 12、15。**時數：** 6–10。**執行環境：** Linux 虛擬機器。若主機攔截了 Ctrl+Alt+F 組合鍵，就改用 `chvt` 切換 VT。
 
 **製作：** 讓階段 12 的程式透過 libseat，以一般使用者身分執行，後端用 logind 或 seatd。處理 VT 切換：暫停時停止 commit 並釋放 DRM master；恢復時取得新的 fd 並還原狀態。確認工作階段非作用中時收不到任何輸入。
 
@@ -347,7 +355,7 @@ VKMS 是純軟體的 KMS 驅動模型，可透過 configfs 建立具有指定平
 
 ### 17 — 用戶端緩衝區的隔離與安全
 
-**先備：** 09、14、16。**時數：** 8–14。**執行環境：** Linux 實體機；共享記憶體的部分可在 WSL 2 進行；Windows 用於對照。
+**先備：** 09、14、16。**時數：** 8–14。**執行環境：** Linux 虛擬機器；共享記憶體的部分可在 WSL 2 進行；Windows 用於對照。
 
 **製作：** 攻擊自己的伺服器，再修好它。寫出以下用戶端：
 - 縮小自己的 shm pool；
@@ -355,7 +363,7 @@ VKMS 是純軟體的 KMS 驅動模型，可透過 configfs 建立具有指定平
 - 大量灌入請求；
 - 送出大小或 modifier 錯誤的 dma-buf；
 - 要求取得其他用戶端的緩衝區；
-- 送出永遠不會結束的 GPU 工作。觀察 GPU 重置；在 Windows 上觀察 TDR。
+- 送出永遠不會結束的 GPU 工作。現在先在 Windows 上觀察 TDR，Linux 的 GPU 重置留到硬體驗證。
 
 接著用 xdg-desktop-portal ScreenCast 正確地加入畫面擷取：其中 `Start` 通常會詢問使用者，並回傳 PipeWire 串流（[portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.ScreenCast.html)）。也了解特權擷取協定 `ext-image-copy-capture-v1`（staging）的用途。
 
@@ -373,21 +381,21 @@ VKMS 是純軟體的 KMS 驅動模型，可透過 configfs 建立具有指定平
 
 ### 18 — 總結專題：DRM/KMS 上的最小 Wayland 合成器
 
-**先備：** 10–17。**時數：** 60–120。**執行環境：** Linux 實體機。
+**先備：** 10–17。**時數：** 60–120。**執行環境：** Linux 虛擬機器（QEMU 搭配 virtio-gpu），以軟體繪製；之後在硬體驗證中於真實螢幕上執行。
 
-**建議路線：** 把階段 12–16 的程式（DRM/KMS、libinput、libseat、GBM）組成自己的後端，建立在 libwayland-server 之上。先讀 wlroots 的最小範例合成器 [tinywl](https://gitlab.freedesktop.org/wlroots/wlroots/-/tree/master/tinywl)，把它當地圖，而不是當基礎。另一條路線是後端改用 [wlroots](https://gitlab.freedesktop.org/wlroots/wlroots)（見 README 待決問題 3）。
+**路線（審閱時決定）：** 把階段 12–16 的程式（DRM/KMS、libinput、libseat、GBM）組成自己的後端，建立在 libwayland-server 之上。面向核心的程式用 C；合成器本身可用 C++，以配合圖學課程的核心。先讀 wlroots 的最小範例合成器 [tinywl](https://gitlab.freedesktop.org/wlroots/wlroots/-/tree/master/tinywl)，把它當地圖，而不是當基礎。後端不使用 [wlroots](https://gitlab.freedesktop.org/wlroots/wlroots)。
 
 **製作，分里程碑：**
 1. **單一用戶端。** `wl_compositor`、`wl_shm`、`xdg_wm_base`。由圖學模組把一個全螢幕 toplevel 合成到 KMS framebuffer，並由 page-flip 事件驅動影格回呼。
 2. **多個視窗。** 堆疊順序、焦點，以及用快捷鍵移動與置頂。透過 `wl_seat` 處理鍵盤與指標，游標放在游標平面上。
-3. **GPU 用戶端。** 匯入 `linux-dmabuf-v1`、GPU 合成、damage 追蹤；驅動支援時，以 `linux-drm-syncobj-v1` 做顯式同步。
+3. **dma-buf 用戶端。** 匯入 `linux-dmabuf-v1`、damage 追蹤；驅動支援時，以 `linux-drm-syncobj-v1` 做顯式同步。在虛擬機器中，用階段 14 的緩衝區共享用戶端測試；GPU 繪製的用戶端與 GPU 合成留到硬體驗證。
 4. **時序。** `presentation-time` 回饋；格式與 modifier 允許時，直接掃描輸出全螢幕用戶端的緩衝區。
 5. **強健性。** 用戶端當掉、熱插拔、VT 切換、GPU 重置，以及階段 17 的攻擊用戶端。
 
 要依序跑起來的真實應用程式：
 1. [Weston](https://wayland.pages.freedesktop.org/weston/) 的示範用戶端。
 2. [`foot`](https://packages.debian.org/sid/foot)，一個精簡的 Wayland 終端機。
-3. Vulkan 示範程式，例如 `vkcube`。
+3. Vulkan 示範程式，例如 `vkcube`。在虛擬機器中需要客體 Mesa 提供軟體 Vulkan 驅動，否則留到硬體驗證。
 4. GTK 4 或 Qt 6 應用程式。工具套件會用到更多 xdg-shell 功能（popup、configure 流程）與更多協定，預期要一路補上全域物件，直到程式能啟動。
 
 Xwayland 屬選修。
@@ -395,9 +403,25 @@ Xwayland 屬選修。
 **檢核：** 錄下一段操作：
 - 開機進入文字主控台，以一般使用者身分啟動合成器；
 - 開啟終端機、一個工具套件應用程式與一個 Vulkan 示範程式；
-- 移動視窗、切換 VT 再切回、熱插拔一台螢幕、強制結束一個用戶端。
+- 移動視窗、切換 VT 再切回、停用再重新啟用一個輸出、強制結束一個用戶端。
 
-寫出設計說明：附實測時間戳記，追蹤一個用戶端影格從 `wl_surface.commit` 到掃描輸出、再回到影格回呼的過程，並附上階段 17 的威脅模型。
+寫出設計說明：附實測時間戳記，追蹤一個用戶端影格從 `wl_surface.commit` 到掃描輸出、再回到影格回呼的過程，並附上階段 17 的威脅模型。在虛擬機器中，這些時間戳記只能相對比較。
+
+## 硬體驗證
+
+**先備：** 階段 18 已在虛擬機器中完成。**時數：** 15–30。**執行環境：** 能直接控制真實顯示器的 Linux 實體機，也就是 RTX 5070 Ti 桌機上的雙系統開機，或另一台電腦（README 待決問題 1）。
+
+在真實硬體上執行合成器與各階段程式，補齊虛擬機器看不到的部分：
+
+1. **翻頁時序：** 影格間隔與 vblank 的關係、錯過的期限，以及階段 06 的排程選擇如何影響它們。
+2. **平面：** 真實 GPU 接受哪些平面。NVIDIA 只註冊主平面與游標平面（[README](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/kms.html)），因此 overlay 平面需要 Intel 或 AMD GPU。
+3. **VRR：** 在支援 VRR 的螢幕上（ASUS VG289Q 規格列出 40–60 Hz），比較開與不開 `VRR_ENABLED` 的影格間隔。
+4. **熱插拔：** 實際拔掉纜線並恢復，處理 `link-status` 變成 `BAD` 的情況。
+5. **GPU 緩衝區：** 以 GPU 繪製、GPU 合成與真實的 modifier，重做階段 14 與總結專題里程碑 3。在 NVIDIA 上需要開放核心模組，顯式同步還需要 6.8 以上的核心（[README](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/wayland-issues.html)）。
+6. **延遲與重置：** 階段 15 的輸入到畫面延遲，以及階段 17 的 GPU 重置。
+7. **再做一次總結專題：** 重做階段 18 的檢核，這次的時間戳記才有意義。
+
+**檢核：** 設計說明加入一張表，對照同一組執行在虛擬機器與實體機上的數字，並解釋每一項差異。
 
 ## 與圖學課程的介面
 
@@ -483,6 +507,13 @@ Xwayland 屬選修。
 - 行程間通訊、訊息與服務：[DuplicateHandle](https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-duplicatehandle)、[I/O completion port](https://learn.microsoft.com/en-us/windows/win32/fileio/i-o-completion-ports)、[訊息與訊息佇列](https://learn.microsoft.com/en-us/windows/win32/winmsg/about-messages-and-message-queues)、[MsgWaitForMultipleObjectsEx](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-msgwaitformultipleobjectsex)、[互動式服務與 session 0](https://learn.microsoft.com/en-us/windows/win32/services/interactive-services)。
 - 同步：[自旋鎖](https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/introduction-to-spin-locks)、[dispatcher 物件](https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/introduction-to-kernel-dispatcher-objects)、[SRW lock](https://learn.microsoft.com/en-us/windows/win32/sync/slim-reader-writer--srw--locks)、[WaitOnAddress](https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitonaddress)。
 - 工具：[Windows Performance Toolkit](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/)、[Process Explorer](https://learn.microsoft.com/en-us/sysinternals/downloads/process-explorer)。
+
+**虛擬機器**
+- Hyper-V：[Discrete Device Assignment](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/plan/plan-for-deploying-devices-using-discrete-device-assignment)（以 Windows Server 為前提、需伺服器等級硬體、列出的客體只有 Windows）、[啟用 Hyper-V](https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/quick-start/enable-hyper-v)（Windows 11 專業版或企業版；與其他 hypervisor 並用的警告）。
+- virtio-gpu 客體驅動：[virtgpu_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_drv.c)（atomic、render node、含 timeline 的 syncobj）、[virtgpu_display.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_display.c)（主平面與游標平面）、[virtgpu_kms.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/virtio/virtgpu_kms.c)（主機顯示事件轉為熱插拔）。
+- vmwgfx：[vmwgfx_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/vmwgfx/vmwgfx_drv.c)、[vmwgfx_stdu.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/vmwgfx/vmwgfx_stdu.c)（atomic、render node、主平面與游標平面、沒有 syncobj）。驅動功能那一行與平面清單，都來自工具對檔案後段所做的摘要。
+- hyperv_drm：[hyperv_drm_drv.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/hyperv/hyperv_drm_drv.c)、[hyperv_drm_modeset.c](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/hyperv/hyperv_drm_modeset.c)（只有一個主平面，沒有 render node）。
+- [VMware Fusion 與 Workstation 對所有使用者免費](https://blogs.vmware.com/cloud-foundation/2024/11/11/vmware-fusion-and-workstation-are-now-free-for-all-users/)（2024-11-11）。
 
 **NVIDIA、Mesa 與螢幕**
 - NVIDIA Linux 驅動 620.70.06 README：[KMS](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/kms.html)（預設開啟；只有主平面與游標平面；已知問題）、[開放核心模組](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/kernel_open.html)（Blackwell 只支援開放模組）、[GBM](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/gbm.html)、[Wayland 已知問題](https://download.nvidia.com/XFree86/Linux-x86_64/620.70.06/README/wayland-issues.html)（顯式同步需 6.8+ 核心、COLOR_PIPELINE 需 6.19+、simpledrm 與 `fbdev=1` 的說明）。KMS 章節另說 GBM 緩衝區送交 KMS 尚未支援，與 GBM 章節矛盾，需在實機上確認。
