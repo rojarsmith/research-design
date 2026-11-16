@@ -1,0 +1,9 @@
+id,customer,country,amount,status
+1001,Acme Trading,TW,250.5,paid
+1002,Borealis,SE,99.99,paid
+1003,Chen & Sons,TW,1200,paid
+1004,Delta Foods,US,430.25,refunded
+1005,Eastwind,JP,-15,paid
+1006,Fjord Tools,NO,100,paid
+1007,Garnet Labs,TW,860.75,paid
+1008,Hollis & Co,US,155,pending
