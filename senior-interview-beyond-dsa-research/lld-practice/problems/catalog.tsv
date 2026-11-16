@@ -1,0 +1,8 @@
+# Problems in the recommended order. Columns are tab-separated.
+# row: the row of the research report's table in section 5.4 that the problem trains.
+# facade: the header under src/ that holds the public interface the tests use.
+id	title	row	blurb	facade
+parking-garage	多層停車場	可替換的演算法或計費規則	停車場的車位分配與收費。變體是研究報告第 5.6 節舉的例子：多種計費方式、換一種分配車位的規則、電動車充電。	garage.hpp
+expense-approval	費用報銷審核流程	狀態機	員工送出費用報銷，主管核准或退回，財務付款。變體會加一個狀態、讓主管代理人可以簽核、在狀態改變時通知相關的人。	expense_workflow.hpp
+auction-house	線上拍賣與通知	事件通知	限時拍賣：出價規則和通知。變體會讓使用者選擇通知方式、防止最後一秒出價、加入直接購買。	auction_house.hpp
+seat-holds	演唱會座位保留	預約與並行	多個執行緒同時保留、確認、釋放座位，保留會過期。變體會加每位客人的上限和每個座位的候補名單。	seat_holds.hpp

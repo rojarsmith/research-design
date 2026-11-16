@@ -1,0 +1,71 @@
+{
+    // 每個工作都呼叫 build/ood.exe。第一次執行時會自動用 g++ 建置 ood.exe（約 10 秒）。
+    // 開始練習之後，到新視窗裡的練習資料夾用那裡的工作（設計完成、測試、下一個變體、結束並複盤）。
+    "version": "2.0.0",
+    "options": { "cwd": "${workspaceFolder}" },
+    "tasks": [
+        {
+            "label": "ood: 確認工具已建置",
+            "type": "shell",
+            "command": "test -x build/ood.exe || g++ -std=c++20 -O2 -o build/ood.exe tools/ood.cpp",
+            "windows": {
+                "command": "if not exist build\\ood.exe g++ -std=c++20 -O2 -static -o build/ood.exe tools/ood.cpp",
+                "options": { "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } }
+            },
+            "presentation": { "reveal": "silent", "showReuseMessage": false },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "ood: 重新建置工具",
+            "type": "process",
+            "command": "g++",
+            "args": ["-std=c++20", "-O2", "-o", "build/ood.exe", "tools/ood.cpp"],
+            "windows": { "args": ["-std=c++20", "-O2", "-static", "-o", "build/ood.exe", "tools/ood.cpp"] },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "ood: 題目清單",
+            "detail": "四題與過去的練習紀錄",
+            "type": "process",
+            "command": "${workspaceFolder}/build/ood.exe",
+            "args": ["list"],
+            "dependsOn": "ood: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "ood: 開始新的練習",
+            "detail": "建立練習資料夾、開始設計計時，並用新視窗打開",
+            "type": "process",
+            "command": "${workspaceFolder}/build/ood.exe",
+            "args": ["start", "${input:problem}", "--mode", "${input:mode}"],
+            "dependsOn": "ood: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "problem",
+            "type": "pickString",
+            "description": "要練哪一題？",
+            "options": [
+                { "label": "parking-garage：多層停車場（Strategy）", "value": "parking-garage" },
+                { "label": "expense-approval：費用報銷審核流程（狀態機）", "value": "expense-approval" },
+                { "label": "auction-house：線上拍賣與通知（Observer）", "value": "auction-house" },
+                { "label": "seat-holds：演唱會座位保留（並行）", "value": "seat-holds" }
+            ],
+            "default": "parking-garage"
+        },
+        {
+            "id": "mode",
+            "type": "pickString",
+            "description": "哪一種回合？",
+            "options": [
+                { "label": "design：35 分鐘的 LLD 面試，先寫設計筆記，再實作關鍵方法", "value": "design" },
+                { "label": "machine：90 分鐘的 machine coding，要寫到能執行、測試全過", "value": "machine" }
+            ],
+            "default": "design"
+        }
+    ]
+}
