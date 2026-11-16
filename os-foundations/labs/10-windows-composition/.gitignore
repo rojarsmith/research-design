@@ -1,0 +1,10 @@
+# Build outputs, captures and traces of this lab; never commit them.
+# labs/.gitignore covers build/, *.exe, *.o and *.obj already.
+*.pdb
+*.ilk
+*.log
+# PresentMon captures (exercise D) and ETW traces
+*.csv
+*.etl
+# your own run logs, if you save them next to the program
+windows/*-flipstats.txt
