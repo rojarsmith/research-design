@@ -1,3 +1,10 @@
 # Python bytecode caches are build output; never commit them.
 __pycache__/
 *.pyc
+# minilang-c: the C VM binaries and compiled bytecode files are build output too.
+*.exe
+*.o
+*.obj
+*.mlc
+minilang-c/mlvm
+minilang-c/mlvm-*

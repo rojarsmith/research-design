@@ -1,8 +1,8 @@
 # minilang-vm：位元組碼編譯器與堆疊式 VM 範例
 
-[回主報告](../../README.zh-TW.md)｜[路線圖](../../research/03-design-your-own-dynamic-language.zh-TW.md)｜[樹走訪版 minilang](../minilang/README.zh-TW.md)｜[English README](README.md)
+[回主報告](../../README.zh-TW.md)｜[路線圖](../../research/03-design-your-own-dynamic-language.zh-TW.md)｜[樹走訪版 minilang](../minilang/README.zh-TW.md)｜[階段 5：minilang-c](../minilang-c/README.zh-TW.md)｜[English README](README.md)
 
-這是研究路線圖「階段 4」的可執行範例：替 [minilang](../minilang/README.zh-TW.md) 加上位元組碼編譯器與堆疊式 VM。詞法與語法分析器直接 `import minilang` 沿用，沒有複製也沒有修改；AST 之後的解析器、編譯器、程式碼物件、VM 與反組譯器是新的，同樣寫成單一 Python 檔案，不依賴標準函式庫以外的套件。目的在示範階段 4 的元件與驗收方式，不是生產品質的 VM。已在 Python 3.14.6 執行並通過測試。
+這是研究路線圖「階段 4」的可執行範例：替 [minilang](../minilang/README.zh-TW.md) 加上位元組碼編譯器與堆疊式 VM。詞法與語法分析器直接 `import minilang` 沿用，沒有複製也沒有修改；AST 之後的解析器、編譯器、程式碼物件、VM、反組譯器，以及位元組碼檔的寫出與讀入是新的，同樣寫成單一 Python 檔案，不依賴標準函式庫以外的套件。目的在示範階段 4 的元件與驗收方式，不是生產品質的 VM。已在 Python 3.14.6 執行並通過測試。
 
 ## 執行
 
@@ -13,6 +13,8 @@ python3 minilang_vm.py ../minilang/programs/fib.ml             # 在 VM 上跑 m
 python3 minilang_vm.py --dis ../minilang/programs/closures.ml  # 反組譯：指令、常數池、行號表、例外表
 python3 minilang_vm.py --bench                                 # 三個基準各跑 5 次，約 2 至 3 分鐘
 python3 minilang_vm.py --opt programs/bench_loop.ml            # 開啟編譯器最佳化
+python3 minilang_vm.py --emit fib.mlc ../minilang/programs/fib.ml  # 不執行，改為寫出位元組碼檔
+python3 minilang_vm.py fib.mlc                                 # 不經編譯，直接執行（或 --dis）位元組碼檔
 python3 minilang_vm.py                                         # REPL，陳述以 ; 結尾，Ctrl-D 離開
 ```
 
@@ -26,7 +28,10 @@ python3 minilang_vm.py                                         # REPL，陳述�
       → Compiler：產生指令、跳躍回填
       → Code：常數池、行號表、例外表、迴圈表、計算出的最大堆疊深度
       → VM：單一分派迴圈；呼叫框架放在 VM 自己的串列，不遞迴宿主堆疊
+      → 或 dump_program()：位元組碼檔（--emit），本 VM 與 ../minilang-c 的 C VM 都能載入
 ```
+
+`--emit` 與檔案格式是為階段 5 加入的；格式（1.0 版）說明在 [minilang-c](../minilang-c/README.zh-TW.md#位元組碼檔格式-10) 與 `minilang_vm.py` 的 bytecode file 區段開頭。其他部分沒有改動：76 個測試相同，不改一行全部通過。
 
 ## 設計一覽
 
@@ -109,7 +114,7 @@ minilang 的環境是執行 `let` 時才填入的字典，名稱指的是「查�
 ### 對路線圖階段順序的意涵
 
 - **「先樹走訪，再位元組碼」成立，而且主要理由不是效能。** 這個 VM 是對著一個會跑的參考實作與它的測試寫成的，差異測試與隨機程式比對才有仲裁依據，上面那些由實作決定的語意也是靠它發現的。
-- **用 Python 做階段 4，驗證的是設計，不是速度。** Resolver、程式碼物件、閉包、例外表、堆疊深度計算都可以在這裡先做對、測完再移植；1.45 至 2.80 倍是 Python 宿主的性質，不能拿來預估 C 版本。本研究沒有量測 C 實作。
+- **用 Python 做階段 4，驗證的是設計，不是速度。** Resolver、程式碼物件、閉包、例外表、堆疊深度計算都可以在這裡先做對、測完再移植；1.45 至 2.80 倍是 Python 宿主的性質，不能拿來預估 C 版本；C 版本的量測見 [minilang-c](../minilang-c/README.zh-TW.md#效能量測)。
 - **量測要在目標宿主上做。** 在 Python 裡有效的最佳化（少發指令）與無效的最佳化（超指令）都和 if 鏈分派有關；C 的 `switch` 或 computed goto 分派成本結構不同，路線圖「效能演進的順序」的步驟 2（指令特化）要在 C 版本上另外量。
 
 ## 檔案結構
@@ -121,9 +126,10 @@ minilang 的環境是執行 `let` 時才填入的字典，名稱指的是「查�
 | resolver | `Binding`、`Scope`、`FuncInfo`、`Resolver`：作用域、槽位、捕捉、upvalue、chain | 210 |
 | compiler | `Compiler`：陳述與運算式、跳躍回填、超指令；`stack_depth()` | 280 |
 | disassembler | `disassemble()` | 50 |
+| bytecode file | `dump_program()`、`load_program()`：格式 1.0，與 C VM 共用 | 180 |
 | VM | `VM.execute()`：分派迴圈、呼叫與返回、例外回溯、跨呼叫的 `break` | 340 |
 | benchmarks | `--bench` | 60 |
-| main | 檔案模式、反組譯、REPL | 55 |
+| main | 檔案模式（原始碼或位元組碼檔）、反組譯、`--emit`、REPL | 80 |
 
 測試在 `test_minilang_vm.py`，約 600 行。
 
@@ -131,14 +137,12 @@ minilang 的環境是執行 `let` 時才填入的字典，名稱指的是「查�
 
 - 只在一台機器、一個 Python 版本（3.14.6）量測；倍數在兩次量測之間差最多 0.18，絕對時間最多差 21%。
 - 樹走訪在宿主遞迴上限先到時回報的 `stack overflow (host recursion limit)`，VM 不會產生，因為 VM 不遞迴宿主堆疊；只在極深巢狀的運算式下才可能出現，未測試。
-- Code 物件沒有序列化到檔案，所以階段 4 的「位元組碼可快取、可離線預編譯」這個動機在這裡沒有驗證。
-- 記憶體由 Python 管理，沒有階段 5 的 GC。
+- 階段 4 的「位元組碼可快取、可離線預編譯」這個動機在 minilang-c 驗證：`--emit` 寫出檔案，C VM 執行結果相同。
+- 這裡的記憶體由 Python 管理；階段 5 的回收器在 minilang-c。
 - REPL 只手動以管線輸入驗證一次，輸出與 minilang 的 REPL 相同，沒有自動測試。
 
 ## 若要往下推進
 
-1. 把 `Code` 物件序列化成檔案並載入執行，驗證離線預編譯。
-2. 依同一份指令表與這套差異測試，把 VM 移到 C 子集，在 C 版本上量測分派方式與指令特化的效果。
-3. 移到 C 後進入階段 5：根集合是 VM 框架、全域表與 cell。
+這裡原本列的三步（把 `Code` 物件序列化成檔案、依同一份指令表與這套差異測試把 VM 移到 C、再做階段 5 的回收器）已在 [minilang-c](../minilang-c/README.zh-TW.md) 完成。本 VM 仍是編譯器的參考實作：C VM 執行的就是它寫出的位元組碼。
 
 詳細決策見[路線圖](../../research/03-design-your-own-dynamic-language.zh-TW.md)。

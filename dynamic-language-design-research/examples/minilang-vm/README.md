@@ -1,8 +1,8 @@
 # minilang-vm: a bytecode compiler and stack VM
 
-[Back to the overview](../../README.md) | [Roadmap (zh-TW)](../../research/03-design-your-own-dynamic-language.zh-TW.md) | [Tree-walking minilang](../minilang/README.md) | [Traditional Chinese README](README.zh-TW.md)
+[Back to the overview](../../README.md) | [Roadmap (zh-TW)](../../research/03-design-your-own-dynamic-language.zh-TW.md) | [Tree-walking minilang](../minilang/README.md) | [Stage 5: minilang-c](../minilang-c/README.md) | [Traditional Chinese README](README.zh-TW.md)
 
-Runnable example for stage 4 of the research roadmap: a bytecode compiler and stack VM for [minilang](../minilang/README.md). The lexer and parser are reused through `import minilang`, neither copied nor modified. Everything after the AST is new: the resolver, compiler, code objects, VM and disassembler. Like minilang, it is a single Python file with no third-party dependencies. It shows the parts of stage 4 and how to accept them; it is not a production VM. Verified on Python 3.14.6.
+Runnable example for stage 4 of the research roadmap: a bytecode compiler and stack VM for [minilang](../minilang/README.md). The lexer and parser are reused through `import minilang`, neither copied nor modified. Everything after the AST is new: the resolver, compiler, code objects, VM, disassembler and the bytecode file writer and reader. Like minilang, it is a single Python file with no third-party dependencies. It shows the parts of stage 4 and how to accept them; it is not a production VM. Verified on Python 3.14.6.
 
 ## Running
 
@@ -13,6 +13,8 @@ python3 minilang_vm.py ../minilang/programs/fib.ml             # run minilang's 
 python3 minilang_vm.py --dis ../minilang/programs/closures.ml  # disassemble: instructions, constant pool, line table, exception table
 python3 minilang_vm.py --bench                                 # three benchmarks, 5 runs each, about 2 to 3 minutes
 python3 minilang_vm.py --opt programs/bench_loop.ml            # turn on the compiler optimizations
+python3 minilang_vm.py --emit fib.mlc ../minilang/programs/fib.ml  # write a bytecode file instead of running
+python3 minilang_vm.py fib.mlc                                 # run (or --dis) a bytecode file without compiling
 python3 minilang_vm.py                                         # REPL; statements end with ';', Ctrl-D exits
 ```
 
@@ -26,7 +28,10 @@ source -> minilang.tokenize() and Parser (reused) -> AST
        -> Compiler: instructions, jump patching
        -> Code: constant pool, line table, exception table, loop table, computed maximum stack depth
        -> VM: one dispatch loop; call frames live in a VM list, not on the host stack
+       -> or dump_program(): a bytecode file (--emit), which this VM and the C VM in ../minilang-c load
 ```
+
+`--emit` and the file format were added for stage 5; the format (version 1.0) is documented in [minilang-c](../minilang-c/README.md#bytecode-file-format-10) and at the top of the bytecode file section of `minilang_vm.py`. They change nothing else: the 76 tests are the same and pass unchanged.
 
 ## Design at a glance
 
@@ -109,7 +114,7 @@ Each cell gives the two runs' speedups over the unoptimized VM. `bench_fib.ml` h
 ### What this means for the roadmap's stage order
 
 - **"Tree-walker first, then bytecode" holds, and mainly for reasons other than speed.** This VM was written against a working reference implementation and its tests. That gave the differential tests and the random-program comparison something to judge against, and it is how the implementation-defined behaviour listed above was found.
-- **Doing stage 4 in Python validates the design, not the speed.** The resolver, code objects, closures, exception tables and stack depth computation can be built, tested and corrected here before porting. The 1.45x to 2.80x is a property of the Python host and does not predict a C VM's speedup. This study did not measure a C implementation.
+- **Doing stage 4 in Python validates the design, not the speed.** The resolver, code objects, closures, exception tables and stack depth computation can be built, tested and corrected here before porting. The 1.45x to 2.80x is a property of the Python host and does not predict a C VM's speedup; the C VM is measured in [minilang-c](../minilang-c/README.md#performance).
 - **Measure on the target host.** Both the optimization that helped in Python (fewer instructions) and the ones that did not (superinstructions) depend on the if-chain dispatch. C's `switch` or computed-goto dispatch has a different cost structure, so step 2 of the roadmap's performance order (instruction specialization) needs its own measurement on a C version.
 
 ## File layout
@@ -121,9 +126,10 @@ Each cell gives the two runs' speedups over the unoptimized VM. `bench_fib.ml` h
 | resolver | `Binding`, `Scope`, `FuncInfo`, `Resolver`: scopes, slots, captures, upvalues, chains | 210 |
 | compiler | `Compiler`: statements and expressions, jump patching, superinstructions; `stack_depth()` | 280 |
 | disassembler | `disassemble()` | 50 |
+| bytecode file | `dump_program()`, `load_program()`: format 1.0, shared with the C VM | 180 |
 | VM | `VM.execute()`: dispatch loop, call and return, exception unwinding, `break` across calls | 340 |
 | benchmarks | `--bench` | 60 |
-| main | File mode, disassembly, REPL | 55 |
+| main | File mode (source or bytecode file), disassembly, `--emit`, REPL | 80 |
 
 The tests are in `test_minilang_vm.py`, about 600 lines.
 
@@ -131,14 +137,12 @@ The tests are in `test_minilang_vm.py`, about 600 lines.
 
 - Measured on one machine with one Python version (3.14.6); speedups differed by at most 0.18 between the two runs, absolute times by up to 21%.
 - When the host recursion limit is reached before the depth limit, the tree-walker reports `stack overflow (host recursion limit)`. The VM never produces that message because it does not recurse on the host stack. This can only happen with extremely deeply nested expressions and is not tested.
-- Code objects are not serialized to files, so stage 4's motivation of cacheable, offline-compiled bytecode is not verified here.
-- Memory is managed by Python; there is no stage 5 garbage collector.
+- Stage 4's motivation of cacheable, offline-compiled bytecode is verified in minilang-c: `--emit` writes the file, and the C VM runs it with the same results.
+- Memory is managed by Python here; the stage 5 collector is in minilang-c.
 - The REPL was checked once by piping input into it, with the same output as minilang's REPL; it has no automated test.
 
 ## Next steps
 
-1. Serialize `Code` objects to a file and load them back to run, to verify offline precompilation.
-2. Port the VM to a C subset using the same instruction table and these differential tests, and measure dispatch methods and instruction specialization on the C version.
-3. After the port, move on to stage 5: the root set is the VM frames, the global table and the cells.
+The three steps listed here before (serialize `Code` objects to a file, port the VM to C with the same instruction table and these differential tests, then stage 5's collector) are done in [minilang-c](../minilang-c/README.md). This VM stays the reference for the compiler: the C VM runs the bytecode it writes.
 
 Detailed decisions are in the [roadmap](../../research/03-design-your-own-dynamic-language.zh-TW.md) (Traditional Chinese).
