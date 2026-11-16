@@ -8,7 +8,7 @@
 
 1. 讀 [共通架構與軟體堆疊](01-mental-model.md)，建立分類方式。
 2. 做 [第一課](lessons/00-first-principles.md)，今天不用開發板也能開始。
-3. 接著做第二到第五課。每課先做不需要開發板的 [桌機實驗](labs/README.md)，有板子之後再做上板部分；兩者的驗收條件分開記錄。
+3. 接著做第二到第九課。每課先做不需要開發板的 [桌機實驗](labs/README.md)，有板子之後再做上板部分；兩者的驗收條件分開記錄。
 4. 按 [實作路線](02-learning-path.md) 推進，每一關都有可觀察的驗收條件。
 5. 選板前讀 [選型與文件閱讀](03-selection-and-documents.md)。已有板子就先評估能否沿用。
 6. 用 [學習紀錄](learning-log.md) 留下預測、證據與錯誤，而不只是抄程式。
@@ -22,7 +22,10 @@
 | 2 | [第三課 GPIO、接腳與時脈](lessons/02-gpio-and-clocks.md) | [GPIO 暫存器模型、延遲迴圈](labs/02-gpio-registers/) | 從 API 追到暫存器，解釋低電位有效的 LED |
 | 3 | [第四課 Timer、中斷與非阻塞流程](lessons/03-timer-and-interrupts.md) | [中斷與排程模擬](labs/03-timer-scheduler/) | 量出週期與抖動，說明 busy wait 的影響 |
 | 4 | [第五課 UART、環形緩衝區與封包](lessons/04-uart-ring-buffer.md) | [資料採集器整合測試](labs/04-uart-pipeline/) | 完整封包、設定命令、超載與感測器逾時 |
-| 5 至 8 | 尚未撰寫，依 [實作路線](02-learning-path.md) 進行 | | |
+| 5 | [第六課 ADC、DMA 與 buffer 所有權](lessons/05-adc-and-dma.md) | [DMA 所有權模型、UART 接收 DMA](labs/05-dma-buffers/) | 說明每個 buffer 誰可讀寫，量出超載與丟失 |
+| 6 | [第七課 RTOS：task、queue、mutex 與 ISR 邊界](lessons/06-rtos-tasks-and-queues.md) | [優先權搶占式 kernel 模擬](labs/06-rtos-model/) | 對比前後延遲與記憶體，重現並修正競態，ISR 可呼叫的 API |
+| 7 | [第八課 Watchdog、重啟與設定保存](lessons/07-watchdog-and-recovery.md) | [監督、重啟原因與 Flash 斷電模擬](labs/07-watchdog-recovery/) | 注入卡死後恢復，無效設定有預設值，不以無條件餵狗掩蓋故障 |
+| 8 | [第九課 換平台移植](lessons/08-porting.md) | [兩個假平台與共用協定測試](labs/08-port-layers/) | 主機端協定測試沿用，列出應用、BSP、driver、build 的改動 |
 
 ## 課程主線
 

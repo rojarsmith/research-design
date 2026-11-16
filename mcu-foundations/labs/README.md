@@ -10,6 +10,10 @@
 | [02-gpio-registers](02-gpio-registers/) | [第三課](../lessons/02-gpio-and-clocks.md) | `gcc -std=c11 -Wall -Wextra -Werror -O2 -o gpio_model gpio_model.c`，再執行 `./gpio_model --test` |
 | [03-timer-scheduler](03-timer-scheduler/) | [第四課](../lessons/03-timer-and-interrupts.md) | `gcc -std=c11 -Wall -Wextra -Werror -O2 -o sched_sim sched_sim.c`，再執行 `./sched_sim --test` |
 | [04-uart-pipeline](04-uart-pipeline/) | [第五課](../lessons/04-uart-ring-buffer.md) | 見第五課；共有三個程式，各一行建置 |
+| [05-dma-buffers](05-dma-buffers/) | [第六課](../lessons/05-adc-and-dma.md) | `gcc -std=c11 -Wall -Wextra -Werror -O2 -o adc_dma adc_dma.c`，再執行 `./adc_dma --test`；uart_dma 的命令見第六課 |
+| [06-rtos-model](06-rtos-model/) | [第七課](../lessons/06-rtos-tasks-and-queues.md) | `gcc -std=c11 -Wall -Wextra -Werror -O2 -I../04-uart-pipeline -o rtos_sim rtos_sim.c ../04-uart-pipeline/frame.c`，再執行 `./rtos_sim --test` |
+| [07-watchdog-recovery](07-watchdog-recovery/) | [第八課](../lessons/07-watchdog-and-recovery.md) | `gcc -std=c11 -Wall -Wextra -Werror -O2 -o recovery_sim recovery_sim.c supervisor.c boot_guard.c config_store.c`，再執行 `./recovery_sim --test` |
+| [08-port-layers](08-port-layers/) | [第九課](../lessons/08-porting.md) | 見第九課；兩個平台各一行建置，執行 `./test_a` 與 `./test_b`，同一份協定測試都要通過 |
 
 各課還有不帶自我檢查的觀察型實驗，例如 map file 與延遲迴圈，命令寫在課文裡。
 

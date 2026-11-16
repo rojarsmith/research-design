@@ -22,7 +22,7 @@
 | WebAssembly 研究 | 執行模型、Emscripten 移植、Claire Chang 文章查核、JavaScript 整合、效能、部署、安全與 WASI 元件 | [English overview](webassembly-research/README.md) | [完整研究](webassembly-research/README.zh-TW.md) |
 | RAD 快速應用開發工具研發 | 十類領域、原型至成熟平台的工程難度、人力、工期、預算、維護與驗收門檻 | [English overview](rad-tools-research/README.md) | [完整研究](rad-tools-research/README.zh-TW.md) |
 | MSIX 檔案與 Windows 封裝 | 套件身分、工具、簽章、部署更新、相容性與指定教學校正 | [English overview](msix-research/README.md) | [完整研究](msix-research/README.zh-TW.md) |
-| 動態語言從 0 到 1 | Python、Node.js 與 Lua 的誕生順序、移植性與執行環境六層評估、自製動態語言九階段路線與可執行直譯器範例 | [English overview](dynamic-language-design-research/README.md) | [完整研究](dynamic-language-design-research/README.zh-TW.md) |
+| 動態語言從 0 到 1 | Python、Node.js 與 Lua 的誕生順序、移植性與執行環境六層評估、自製動態語言九階段路線，以及可執行的樹走訪直譯器與其位元組碼 VM（含相對樹走訪的效能量測） | [English overview](dynamic-language-design-research/README.md) | [完整研究](dynamic-language-design-research/README.zh-TW.md) |
 | AI 與 Git 團隊協作研發 | 跨部門交付、分支保留與刪除、AI 分工、PR 審查、CI 及發布流程 | [English overview](ai-team-development-research/README.md) | [完整研究](ai-team-development-research/README.zh-TW.md) |
 | 存讀檔與版本相容性 | 大型軟體與遊戲的存檔架構、資料與內容遷移、安全提交及驗證 | [English overview](save-load-compatibility-research/README.md) | [完整研究](save-load-compatibility-research/README.zh-TW.md) |
 | MCU 嵌入式 HMI 生態 | 八項 UI 工具、圖形框架、控制晶片、MCU 與智慧顯示方案；授權、架構與評測方法 | [English overview](mcu-embedded-hmi-research/README.md) | [完整研究](mcu-embedded-hmi-research/README.zh-TW.md) |
@@ -43,7 +43,7 @@
 | 機車事故證據與求償 | 對向機車左轉、閃避摔車個案的證據保全、警方資料、醫療、機車修復與求償程序 | [研究目錄](motorcycle-accident-research/README.zh-TW.md) | [個案行動指南](motorcycle-accident-research/README.zh-TW.md) |
 | C 語言、編譯器與處理器 | C 的起源、編譯器的建構與自舉、一天內的處理器 C 支援評估流程、契約堆疊學習路線、具 RV32 與 x86-64 後端的可執行 C 子集編譯器，以及 19 種 clang 目標的實測比較 | [English overview](c-compiler-foundations/README.md) | [完整研究](c-compiler-foundations/README.zh-TW.md) |
 | 作業系統：從核心到合成器（草稿） | 待審閱的課綱草稿，附階段 00–02 的實驗草稿（Windows 部分已執行，xv6 與 Linux 部分尚未執行）：以 xv6-riscv 動手學作業系統基礎並對照 Linux 與 Windows NT，再進入顯示與視窗系統（DRM/KMS、平面與 vblank、dma-buf 與顯式同步、輸入、座位、隔離），最後完成最小 Wayland 合成器專題 | [English course](os-foundations/README.md) | [繁體中文課程](os-foundations/README.zh-TW.md) |
-| MCU 跨平台學習課程 | 給有軟體開發經驗者從零學微控制器：共通架構與軟體堆疊、以同一個資料採集器逐關推進並移植到第二平台的實作路線、選型與文件閱讀，以及學習紀錄。課程涵蓋從 reset 到 main、GPIO 與時脈、timer 與中斷、UART 環形緩衝區與封包，每課附桌機可執行的 C 實驗與上板驗收條件 | [僅繁體中文](mcu-foundations/README.md) | [繁體中文課程](mcu-foundations/README.md) |
+| MCU 跨平台學習課程 | 給有軟體開發經驗者從零學微控制器：共通架構與軟體堆疊、以同一個資料採集器逐關推進並移植到第二平台的實作路線、選型與文件閱讀，以及學習紀錄。課程涵蓋從 reset 到 main、GPIO 與時脈、timer 與中斷、UART 環形緩衝區與封包、ADC 與 DMA 的 buffer 所有權、RTOS 的 task 與 queue、watchdog 恢復與設定保存，以及換平台移植，每課附桌機可執行的 C 實驗與上板驗收條件 | [僅繁體中文](mcu-foundations/README.md) | [繁體中文課程](mcu-foundations/README.md) |
 | 歐洲 OTA Server 銷售與 CRA | OTA 服務市場進入、CRA 產品邊界與自我評估、ETSI EN 303 645 測試層級、成本模型及客戶信任證據 | [English overview](eu-ota-cra-sales-research/README.md) | [完整研究](eu-ota-cra-sales-research/README.zh-TW.md) |
 
 ## 主要文件
@@ -75,7 +75,7 @@
 | `msix-research/` | MSIX 封裝、簽章、部署、更新與教學校正 |
 | `webassembly-research/` | Wasm 原理、C/C++ 建置指南、部署與採用評估、文章導讀與查證限制 |
 | `rad-tools-research/` | RAD 工具領域與產品規模比較、研發資源與預算模型、架構、驗收路線及官方來源 |
-| `dynamic-language-design-research/` | 動態語言誕生史、移植性評估、自製語言路線圖、來源與 minilang 單檔直譯器範例 |
+| `dynamic-language-design-research/` | 動態語言誕生史、移植性評估、自製語言路線圖、來源、minilang 單檔直譯器範例與 minilang-vm 位元組碼編譯器與 VM 範例 |
 | `ai-team-development-research/` | 團隊交付主報告、分支生命週期、AI 治理與平台、來源及工作流程範本 |
 | `save-load-compatibility-research/` | 存讀檔架構、公開實作、遷移範例、相容性情境與官方來源 |
 | `iam-research/` | IAM 比較、Keycloak 整合與營運、來源索引、現況盤點及獨立本地實驗環境 |
@@ -98,7 +98,7 @@
 | `motorcycle-accident-research/` | 機車事故個案行動指南、六篇參考文章摘要與查核、官方程序與證據清單 |
 | `c-compiler-foundations/` | C 語言與編譯器起源、處理器 C 支援評估、tinyc 編譯器、RV32IM 模擬器與探針實作 |
 | `os-foundations/` | 作業系統課程草稿：階段 00–02 的 xv6-riscv 實驗草稿、Linux 與 NT 對照、DRM/KMS 與 Wayland 合成器課綱 |
-| `mcu-foundations/` | 繁體中文 MCU 課程：共通架構、實作路線、選型與文件閱讀、第一課至第五課與桌機可執行的 C 實驗、學習紀錄及官方參考資料 |
+| `mcu-foundations/` | 繁體中文 MCU 課程：共通架構、實作路線、選型與文件閱讀、第一課至第九課與桌機可執行的 C 實驗、學習紀錄及官方參考資料 |
 | `eu-ota-cra-sales-research/` | 歐洲 OTA 服務銷售、CRA 範圍與評估路徑、ETSI 基線和測試成本、供應商信任方案 |
 | `national-industrial-innovation-award-10/` | 僅限本機的申請工作區；Git 只納入其繁體中文說明、作業規則與 `.gitignore`，所有輸入資料與草稿均不納入 Git |
 

@@ -44,6 +44,13 @@
 | 第五課 | 第一次丟棄的預測與實測時間 | | | |
 | 第五課 | 60 秒收到的筆數與跳號數 | | | |
 | 第五課 | 遇到的 UART 錯誤旗標與次數 | | | |
+| 第六課 | 半滿與全滿中斷的間隔 | | | |
+| 第六課 | 卡住 35 ms 時預測與實測的遺失數 | | | |
+| 第七課 | 加入 RTOS 前後的最大延遲與記憶體用量 | | | |
+| 第七課 | 優先權反轉修正前後的最長等待 | | | |
+| 第八課 | watchdog 逾時、卡死到重啟的時間 | | | |
+| 第八課 | Flash 頁大小、抹除時間、斷電 20 次的結果 | | | |
+| 第九課 | 各層改動的行數、核心 diff 結果 | | | |
 
 ## 進度
 
@@ -52,7 +59,7 @@
 - [ ] GPIO 與時脈（[第三課](lessons/02-gpio-and-clocks.md)）
 - [ ] timer 中斷與非阻塞流程（[第四課](lessons/03-timer-and-interrupts.md)）
 - [ ] UART 與感測器介面（[第五課](lessons/04-uart-ring-buffer.md)）
-- [ ] DMA 與 buffer 所有權
-- [ ] RTOS 與同步
-- [ ] 故障恢復與持久化
-- [ ] 第二平台移植
+- [ ] DMA 與 buffer 所有權（[第六課](lessons/05-adc-and-dma.md)）
+- [ ] RTOS 與同步（[第七課](lessons/06-rtos-tasks-and-queues.md)）
+- [ ] 故障恢復與持久化（[第八課](lessons/07-watchdog-and-recovery.md)）
+- [ ] 第二平台移植（[第九課](lessons/08-porting.md)）
