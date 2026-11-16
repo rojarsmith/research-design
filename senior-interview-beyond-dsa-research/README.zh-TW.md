@@ -52,6 +52,8 @@
 
 **現成的練習環境。** [ai-round-practice/](ai-round-practice/README.zh-TW.md) 是可以直接用 VS Code 打開的練習包。它有 6 個原創情境，每個都照「修 bug → 實作 → 優化」三個階段進行，由 `drill` 工具揭曉階段、計時，並要求寫完複盤（第 6.7 節）。
 
+容量估算另有 [estimation-practice/](estimation-practice/README.zh-TW.md)：42 題原創單題加 3 條串連，由 `est` 工具計時、檢查單位、依數量級計分，並統計各題型的系統性偏差（第 3.3 節）。
+
 ## 2. 2026 年各回合的樣貌
 
 | 回合 | 常見形式 | 主要評估 | 對高級職位的份量 | 本報告 |
@@ -183,6 +185,8 @@ Hello Interview 指出，中階候選人最常見的失敗是「沒有交出一�
 
 Hello Interview 用 Top-K 熱門話題當例子：不同話題的數量，決定了一個 min-heap 就夠，還是要分片。
 
+**練習包。** [estimation-practice/](estimation-practice/README.zh-TW.md) 把本節的原則做成計時練習：42 題原創單題和 3 條串連（使用者 → QPS → 儲存 → 頻寬 → 伺服器）。作答前要先寫假設，答案一定要有單位，跟參考答案的比值在 3 倍內算命中，指出從哪一步開始偏離才會記錄；`est stats` 依題型顯示系統性高估或低估。只需要 WinLibs GCC。
+
 ### 3.4 需求觸發 → 設計模式對照表
 
 這張表對應前一份報告的「觸發條件 → 模式」表，是本報告的整理。模式名稱主要參考 Hello Interview 的 Patterns 分類（Scaling Reads、Scaling Writes、Dealing with Contention、Real-time Updates、Multi-step Processes、Handling Large Blobs、Managing Long Running Tasks），加上常見的搜尋、地理、串流聚合等主題。
@@ -246,6 +250,8 @@ Hello Interview 的練習清單有 32 題，依它標的難度：
    - 要求強一致性
    - 預算砍半
    - 加上新功能
+
+   估算也要變體和間隔練習：[estimation-practice/](estimation-practice/README.zh-TW.md) 的 `est drill` 交錯出題、不會連續兩題同一種題型，沒命中的題目由 `est review` 隔天再出。
 5. **大聲講並錄下來。** 回放時檢查有沒有先講結論、有沒有做決定。
 
 ```
@@ -761,6 +767,8 @@ DSA 欄抄自前一份報告第 6.2 節，方便對照。其餘欄位是本報�
 | 9–12 | 公司標籤題、補弱點 | 目標公司的產品題；Meta 決定 Product Architecture 或 System Design；每週 1 到 2 次模擬面試 | 依目標公司的價值觀重填矩陣（Amazon 每條準則 2 個例子）；準備自我介紹和「為什麼是這家公司」 | 有考才維持每週 1 題 | 使用目標公司的練習環境；確認 HackerRank 或 Chakra 的模式 |
 
 「AI 輔助」欄可以直接用練習包：第 3–4 週做 `build-planner`、第 5–6 週做 `log-alerts`、第 7–8 週做 `room-booking`，第 9 週以後改用開源專案或目標公司的練習環境。後來加的 `api-gateway`、`netlist-check`、`team-match` 三個情境，在一週有餘力時加做，排法見[練習包說明](ai-round-practice/README.zh-TW.md)。
+
+「系統設計」欄第 1–2 週的估算可以直接用 [estimation-practice/](estimation-practice/README.zh-TW.md)：每週 2 次 `est drill`（每次 3 題、約 15 分鐘）；第 3 週起，每次完整的系統設計練習前先跑 `est review`，每週做 1 次 `est chain`。時間從系統設計每週約 7 小時裡撥出，約 30 到 45 分鐘。
 
 ### 7.3 時間只剩 3 到 4 週時
 

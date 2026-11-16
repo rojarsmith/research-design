@@ -22,7 +22,7 @@ This topic follows [HackerRank and LeetCode practice for senior engineers](../co
     - optional data flow, about 5 minutes
     - high-level design, 10 to 15 minutes
     - deep dives, about 10 minutes
-  - Do capacity estimation only when the number changes the design.
+  - Do capacity estimation only when the number changes the design. The [estimation-practice](estimation-practice/README.md) kit drills it with 42 timed drills and 3 chains.
   - Senior candidates should find what makes the system hard and go deep in about two places. Staff candidates should lead almost the whole session, make decisions instead of listing options, and cut complexity that isn't needed.
   - Hello Interview names over-engineering as one of the most common reasons for down-leveling.
   - The report has a trigger → pattern → tradeoff table and a 14-problem set that covers every pattern. You don't need to work through all 32 common questions.
@@ -48,7 +48,7 @@ This topic follows [HackerRank and LeetCode practice for senior engineers](../co
 | --- | --- |
 | 1 | Conclusions |
 | 2 | What each round looks like in 2026 and how much it weighs for senior roles |
-| 3 | System design: expectations by level and why candidates get down-leveled, a reusable framework, capacity estimation (powers of two, latency, availability, a worked example), a trigger-to-pattern table, a 14-problem set, practice without memorizing (review card, variant drills, mocks), Meta's Product Architecture vs System Design, resources |
+| 3 | System design: expectations by level and why candidates get down-leveled, a reusable framework, capacity estimation (powers of two, latency, availability, a worked example), a trigger-to-pattern table, a 14-problem set, practice without memorizing (review card, variant drills, mocks), Meta's Product Architecture vs System Design, resources; a capacity-estimation drill kit (see below) |
 | 4 | Behavioral and leadership: Meta's eight focus areas and scope by level, Amazon's 16 Leadership Principles, Google's reported change, STAR/STAR(R)/CARL, steps to prepare 6 to 8 stories, story slots and a matrix, follow-up probes and common mistakes |
 | 5 | LLD/OOD: who asks it and in what format, a five-step framework, grading by level, problems mapped to what they test, patterns and principles, practice |
 | 6 | AI-assisted coding: comparison of Meta, Canva, Google and HackerRank Chakra; a shared workflow; anti-patterns; a weekly three-phase drill and the practice kit (see below) |
@@ -68,5 +68,13 @@ This topic follows [HackerRank and LeetCode practice for senior engineers](../co
 - **Verified** on Windows 11 with g++ 16.2.0:
   - Reference solutions use under a third of each time limit.
   - Every slower approach that was tried fails at least one large test.
+
+## Practice kit for capacity estimation
+
+[estimation-practice/](estimation-practice/README.md) turns section 3.3 into timed drills and needs only WinLibs GCC.
+
+- 42 original drills and 3 chains that walk one system's numbers from users to QPS, storage, bandwidth and servers.
+- The `est` CLI asks for assumptions before answers and rejects answers without a valid unit. It counts an answer within 3x of the reference as a hit and records an attempt only after you name the step where you diverged. It schedules missed drills for review and reports systematic over- or under-estimation by quantity type.
+- Verified on Windows 11 with g++ 16.2.0: an independent Python script re-derived every reference answer from the givens, and all agree with exact arithmetic within 1.25x.
 
 Web sources were checked on 2026-11-15, and GitHub star counts come from the GitHub API on that date. Claims that rest only on secondary or vendor sources are marked unverified in the full report. That includes most details of Meta's AI-enabled round, the scope of Google's pilot beyond what Google confirmed, HackerRank's own figures for Chakra, and which companies run LLD rounds.
