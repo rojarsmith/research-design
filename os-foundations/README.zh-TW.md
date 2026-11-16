@@ -2,7 +2,7 @@
 
 # 作業系統基礎：從核心到合成器
 
-> **草稿，待審閱（2026-11-15）。** 本文是課程規劃，不是完成的課程。目前只有階段 00–02 有實驗草稿，放在 [`labs/`](labs/)。撰寫時已建置並執行其中的 Windows 程式，xv6 與 Linux 的步驟尚未執行。階段順序、時數估算與工具選擇都屬提案。技術敘述已在當天對照[來源](SYLLABUS.zh-TW.md#來源)列出的官方頁面查核，實作前請重新確認版本。
+> **草稿，待審閱（2026-11-15）。** 本文是課程規劃，不是完成的課程。目前階段 00–06 有實驗草稿，放在 [`labs/`](labs/)。撰寫時已建置並執行其中的 Windows 程式；xv6 與 Linux 的步驟已於 2026-11-16 在 podman 下的 Ubuntu 24.04 容器中執行，尚未在 WSL 2 本身執行，階段 04 的核心模組也尚未建置或載入。階段順序、時數估算與工具選擇都屬提案。技術敘述已在當天對照[來源](SYLLABUS.zh-TW.md#來源)列出的官方頁面查核，實作前請重新確認版本。
 
 這是一門「先動手做」的作業系統課程，終點只有一個：能自己打造桌面圖形系統，也就是能執行真實應用程式的視窗系統與合成器（compositor）。第一部分建立作業系統基礎：修改一個小型教學核心，並用 Linux 與 Windows 的真實介面寫程式。第二部分把這些機制帶到顯示端，處理緩衝區如何在用戶端行程、核心與顯示硬體之間移動。課程最後在 Linux DRM/KMS 上完成一個最小的 Wayland 合成器。
 
@@ -141,10 +141,14 @@ QEMU 的執行方式：QEMU 提供 Windows 版本（Stefan Weil 的安裝檔或 
 
 - [`SYLLABUS.zh-TW.md`](SYLLABUS.zh-TW.md) / [`SYLLABUS.md`](SYLLABUS.md)：逐階段建置計畫、與圖學課程的介面、選修支線與來源。
 - [`labs/`](labs/)：每階段一個資料夾 `labs/NN-name/`，各附一份 README，內含練習、預測、檢核與常見失敗情況，與圖學課程一致。每份 README 都註明哪些步驟有執行、哪些沒有。目前的草稿：
-  - [`labs/00-workbench/`](labs/00-workbench/README.zh-TW.md)：在 QEMU 中開機 xv6，用 GDB 從重置向量逐步追到 `main()`。尚未執行。
-  - [`labs/01-system-calls/`](labs/01-system-calls/README.zh-TW.md)：追蹤一次系統呼叫跨越邊界、新增一個系統呼叫，並把錯誤指標交給 xv6、Linux 與 NT。Windows 程式已建置並執行，附輸出紀錄；xv6 與 Linux 部分尚未執行。
-  - [`labs/02-processes-threads/`](labs/02-processes-threads/README.zh-TW.md)：`fork`／`exec`／`pipe` 管線、追蹤 `fork()` 與 `swtch()`、使用者層級執行緒，以及 Linux 與 NT 上行程、執行緒與切換的成本。Windows 程式（包括手寫的 x64 情境切換）已建置並執行，附輸出紀錄；xv6 與 Linux 部分尚未執行。
-  - 階段 03–18 還沒有實驗資料夾。
+  - [`labs/00-workbench/`](labs/00-workbench/README.zh-TW.md)：在 QEMU 中開機 xv6，用 GDB 從重置向量逐步追到 `main()`。所有練習已於 2026-11-16 在 Ubuntu 24.04 容器中執行（Windows 11 上的 podman，不是 WSL 2 Ubuntu 本身），附輸出紀錄；WSL 2 的安裝步驟未執行。
+  - [`labs/01-system-calls/`](labs/01-system-calls/README.zh-TW.md)：追蹤一次系統呼叫跨越邊界、新增一個系統呼叫，並把錯誤指標交給 xv6、Linux 與 NT。Windows 程式於 2026-11-15 建置並執行；xv6 與 Linux 部分於 2026-11-16 在 Ubuntu 24.04 容器中執行。兩者都附輸出紀錄。
+  - [`labs/02-processes-threads/`](labs/02-processes-threads/README.zh-TW.md)：`fork`／`exec`／`pipe` 管線、追蹤 `fork()` 與 `swtch()`、使用者層級執行緒，以及 Linux 與 NT 上行程、執行緒與切換的成本。Windows 程式（包括手寫的 x64 情境切換）於 2026-11-15 建置並執行；xv6 與 Linux 部分於 2026-11-16 在 Ubuntu 24.04 容器中執行。兩者都附輸出紀錄。
+  - [`labs/03-virtual-memory/`](labs/03-virtual-memory/README.zh-TW.md)：印出 xv6 分頁表、寫入時複製的 `fork` 及前後的分頁數、在 GDB 中確認手算的位址轉換、Linux 上的 `MAP_SHARED` 與 `MAP_PRIVATE` 及 `SIGBUS`，以及 NT 上的保留、提交與共享 section。xv6 與 Linux 部分已在 podman（WSL 2 虛擬機器）中的 Ubuntu 24.04 容器裡，針對 xv6-riscv commit `fa2ddcb7` 建置並執行，xv6 部分搭配參考解答（參考解答沒有放進專案），寫入時複製版本通過 `usertests`；Windows 程式已建置並執行。全部附輸出紀錄。
+  - [`labs/04-interrupts-drivers/`](labs/04-interrupts-drivers/README.zh-TW.md)：在 xv6 中追蹤一次 UART 中斷從 PLIC 到主控台，以及強迫搶占的計時器中斷；一個帶週期性計時器的 Linux 字元裝置模組；在不需系統管理員權限下觀察 NT 的計時器解析度與中斷、DPC 速率。xv6 部分（搭配沒有放進專案的參考解答）、以 `timerfd` 實作的阻塞讀取版本與 Windows 程式已建置並執行，附輸出紀錄；核心模組沒有建置或載入。
+  - [`labs/05-synchronization/`](labs/05-synchronization/README.zh-TW.md)：xv6 的鎖統計與每 CPU 分頁配置器、刻意弄壞 `acquire()` 與 `push_off()`、xv6 以及條件變數、futex 與 `WaitOnAddress` 的遺失喚醒、futex mutex 對上 `pthread_mutex`、競爭下的 SRW lock、critical section 與 `WaitOnAddress`，以及 Windows 上跨行程的鎖為何需要核心物件。全部已建置並執行，附輸出紀錄：xv6 與 Linux 部分在 podman 下的 Ubuntu 24.04 容器（虛擬機器）中，Windows 程式在本機。ThreadSanitizer 與 GDB 步驟尚未執行。不附參考解答。
+  - [`labs/06-scheduling-latency/`](labs/06-scheduling-latency/README.zh-TW.md)：xv6 的優先權排程器與輪轉式的比較，附喚醒延遲分布圖；以及有負載時 Linux（`timerfd`、`SCHED_OTHER` 對 `SCHED_FIFO`）與 Windows（高解析度可等待計時器、四種執行緒優先權，其中一種另測停用優先權提升）上的 60 Hz 喚醒。xv6、Linux 與 Windows 部分已建置並執行，附輸出紀錄；xv6 與 Linux 部分在 podman 下的 Ubuntu 24.04 容器（虛擬機器）中。WPR／WPA 錄製與選做的彩票排程器尚未執行。不附參考解答。
+  - 階段 07–18 還沒有實驗資料夾。
 
 ## 完成目標
 

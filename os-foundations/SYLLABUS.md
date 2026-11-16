@@ -2,7 +2,7 @@
 
 **English** | [繁體中文](SYLLABUS.zh-TW.md) | [Course overview](README.md)
 
-> **Draft for review, 2026-11-15.** Only stages 00–02 have lab drafts so far, in [`labs/`](labs/); each lab README says which of its steps were executed. Nothing else here is built yet. Stages, hours and tools are proposals. Technical claims link to the official page they were checked against. The full list is under [Sources](#sources).
+> **Draft for review, 2026-11-15.** Only stages 00–06 have lab drafts so far, in [`labs/`](labs/); each lab README says which of its steps were executed. Nothing else here is built yet. Stages, hours and tools are proposals. Technical claims link to the official page they were checked against. The full list is under [Sources](#sources).
 
 This is a build sequence, not a list of topics. Every stage lists **Prerequisites**, **Hours** (focused hours, reading included) and **Runs on**. Then come **Build**, **Learn as needed**, a **Linux / NT** comparison where it helps, and a **Checkpoint**. As in the graphics course, a stage is finished when you can explain what the code does, not just when it runs.
 
@@ -13,7 +13,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 ### 00: Workbench, booting and debugging xv6
 
 **Prerequisites:** C with pointers and structs, a Linux shell, git and make, and reading RISC-V assembly at the level of stage 1 in the [`c-compiler-foundations` path](../c-compiler-foundations/research/04-integration-path.zh-TW.md).
-**Hours:** 4–8. **Runs on:** WSL 2 with Ubuntu 24.04. **Lab draft:** [`labs/00-workbench/`](labs/00-workbench/README.md) (not executed yet).
+**Hours:** 4–8. **Runs on:** WSL 2 with Ubuntu 24.04. **Lab draft:** [`labs/00-workbench/`](labs/00-workbench/README.md) (run in an Ubuntu 24.04 container, 2026-11-16; WSL 2 install steps not run).
 
 **Build:** install WSL 2 and the packages from MIT's [tools page](https://pdos.csail.mit.edu/6.1810/2025/tools.html): `git build-essential gdb-multiarch qemu-system-misc gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu`. The page asks for QEMU 7.2+ and GDB 8.3+. Clone [xv6-riscv](https://github.com/mit-pdos/xv6-riscv), run `make qemu`, then `make qemu-gdb` and attach `gdb-multiarch`. Step from `_entry` through `start()` to `main()`. Record every tool version in `NOTES.md`.
 
@@ -27,7 +27,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 
 ### 01: System calls, crossing the boundary
 
-**Prerequisites:** 00. **Hours:** 8–14. **Runs on:** WSL 2, plus Windows for the NT part. **MIT lab:** `syscall`. **Lab draft:** [`labs/01-system-calls/`](labs/01-system-calls/README.md) (Windows part run; xv6 and Linux parts not executed yet).
+**Prerequisites:** 00. **Hours:** 8–14. **Runs on:** WSL 2, plus Windows for the NT part. **MIT lab:** `syscall`. **Lab draft:** [`labs/01-system-calls/`](labs/01-system-calls/README.md) (Windows part run; xv6 and Linux parts run in an Ubuntu 24.04 container, 2026-11-16).
 
 **Build:** add a system call to xv6. Follow one call from the user stub (`ecall` in `usys.S`) through `uservec` in `trampoline.S`, `usertrap()` and `syscall()`, and back out through `userret`. Then pass a bad pointer from user space and show that `copyin`/`copyout` reject it. On Linux, run the same small program under `strace` once, then once more calling `syscall(2)` directly. On Windows, write the same program against Win32 and use a debugger to find the `Nt*` routine underneath it.
 
@@ -43,7 +43,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 
 ### 02: Processes, threads and context switches
 
-**Prerequisites:** 01. **Hours:** 8–14. **Runs on:** WSL 2, Windows. **MIT lab:** `util`. **Lab draft:** [`labs/02-processes-threads/`](labs/02-processes-threads/README.md) (Windows part run; xv6 and Linux parts not executed yet).
+**Prerequisites:** 01. **Hours:** 8–14. **Runs on:** WSL 2, Windows. **MIT lab:** `util`. **Lab draft:** [`labs/02-processes-threads/`](labs/02-processes-threads/README.md) (Windows part run; xv6 and Linux parts run in an Ubuntu 24.04 container, 2026-11-16).
 
 **Build:** a small pipeline in xv6 using `fork`, `exec`, `pipe` and `wait`. Trace `fork()` and `swtch()`. Then write user-level threads for xv6: a thread table, your own context switch in assembly, and a `yield`. On Linux, create threads with `pthread_create` and use `strace -f` to find the `clone` flags underneath.
 
@@ -58,7 +58,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 
 ### 03: Virtual memory
 
-**Prerequisites:** 02. **Hours:** 14–24. **Runs on:** WSL 2, Windows. **MIT labs:** `pgtbl`, `cow`.
+**Prerequisites:** 02. **Hours:** 14–24. **Runs on:** WSL 2, Windows. **MIT labs:** `pgtbl`, `cow`. **Lab draft:** [`labs/03-virtual-memory/`](labs/03-virtual-memory/README.md) (xv6, Linux and Windows parts run; xv6 and Linux in an Ubuntu 24.04 container).
 
 **Build:** print and walk an xv6 page table. Implement copy-on-write `fork`, and count the pages copied before and after. On Linux, map one file in two processes, once with `MAP_SHARED` and once with `MAP_PRIVATE`, and compare what each process sees. Read `/proc/self/maps`. Truncate the file under a live mapping and catch the `SIGBUS`. On Windows, reserve and commit memory with `VirtualAlloc`, and share a page-file-backed file mapping between two processes.
 
@@ -75,7 +75,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 
 ### 04: Interrupts, timers and device drivers
 
-**Prerequisites:** 03. **Hours:** 12–20. **Runs on:** WSL 2 for xv6, a Linux VM for the module, Windows for observation only. **MIT labs:** `traps`, `net`.
+**Prerequisites:** 03. **Hours:** 12–20. **Runs on:** WSL 2 for xv6, a Linux VM for the module, Windows for observation only. **MIT labs:** `traps`, `net`. **Lab draft:** [`labs/04-interrupts-drivers/`](labs/04-interrupts-drivers/README.md) (xv6, Linux user-space and Windows parts run; kernel module not executed yet).
 
 **Build:** in xv6, follow a UART interrupt from the PLIC to `devintr()` and into the UART driver. Also follow the timer interrupt that forces preemption. In a Linux VM, write a small kernel module with a character device and a periodic kernel timer that wakes blocked readers. Each `read()` blocks until the next tick and returns a sequence number and a timestamp. This is a miniature of the DRM event stream you will read in stage 12.
 
@@ -97,7 +97,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 
 ### 05: Synchronization
 
-**Prerequisites:** 04. **Hours:** 12–20. **Runs on:** WSL 2, Windows. **MIT lab:** `lock`.
+**Prerequisites:** 04. **Hours:** 12–20. **Runs on:** WSL 2, Windows. **MIT lab:** `lock`. **Lab draft:** [`labs/05-synchronization/`](labs/05-synchronization/README.md) (xv6, Linux and Windows parts run; ThreadSanitizer and GDB steps not executed).
 
 **Build:**
 - Measure and reduce lock contention in xv6.
@@ -121,7 +121,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 
 ### 06: Scheduling and latency
 
-**Prerequisites:** 05. **Hours:** 10–16. **Runs on:** WSL 2 and Windows. The hardware validation repeats the measurement on the Linux PC.
+**Prerequisites:** 05. **Hours:** 10–16. **Runs on:** WSL 2 and Windows. The hardware validation repeats the measurement on the Linux PC. **Lab draft:** [`labs/06-scheduling-latency/`](labs/06-scheduling-latency/README.md) (xv6, Linux and Windows parts run; WPR/WPA recording not executed).
 
 **Build:** replace xv6's round-robin loop with a priority or lottery scheduler. Test it with one CPU-bound and one interactive workload. On Linux, write a thread that wakes 60 times a second via `timerfd` while the machine is under load. Plot how late each wakeup is, first under the default policy and then under `SCHED_FIFO`. Repeat on Windows at different thread priorities, and record one run with WPR for inspection in WPA ([WPT](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/)).
 
