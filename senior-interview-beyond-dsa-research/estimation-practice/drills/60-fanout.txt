@@ -1,0 +1,74 @@
+# 扇出：一個寫入變成多少個投遞（研究報告第 3.4 節：fan-out on write 與 fan-out on read）。
+# 題目與數字是為本練習包寫的練習假設，不是任何公司的真實數據。
+
+== drill feed-fanout
+title: 動態消息的扇出寫入
+kind: FB News Feed、Instagram
+scenario: 動態消息採用 fan-out on write：每發一則貼文，就把貼文 id 寫進每位追蹤者的消息列表。
+given: posts = 1億 則/天 | 每天的新貼文
+given: followers = 200 人 | 發文者的平均追蹤者數
+given: celeb = 5000萬 人 | 一位名人的追蹤者數
+given: speed = 100萬 writes/s | 扇出 worker 叢集的總寫入速度
+ask: writes | fanout | rate | 平均每秒寫入消息列表的次數
+ask: celeb_time | time | time | 名人發一則貼文，扇出全部寫完要多久（叢集只處理這一則時）
+answer: writes = 200k /s
+answer: celeb_time = 50 s
+assume: 一天約 10⁵ 秒；追蹤者數用平均值
+calc: fan | 每天寫入：1 億 × 200 = 200 億
+calc: unit | 平均：200 億 ÷ 10⁵ 秒 = 200k /s
+calc: fan | 名人一則：5,000 萬次寫入
+calc: unit | 5,000 萬 ÷ 100 萬 /s = 50 s
+design: 平均 200k /s 撐得住，但名人一則貼文就占滿整個叢集 50 秒：這就是名人帳號改用 fan-out on read 的原因（第 3.4 節的混合策略）。
+design: 平均值會藏住長尾：追蹤者數的分布比平均值重要。
+
+== drill group-chat-fanout
+title: 群組訊息的投遞量
+kind: WhatsApp
+scenario: 群組聊天的每則訊息，要投遞給群組裡除了發送者以外的每個人。
+given: msgs = 100億 則/天 | 每天的群組訊息
+given: size = 30 人 | 群組的平均人數（含發送者）
+ask: deliveries | fanout | rate | 平均每秒的投遞次數
+answer: deliveries = 3M /s
+assume: 一天約 10⁵ 秒
+assume: 扣掉發送者是 29 人，估算時取 30
+calc: fan | 每天投遞：100 億 × 30 = 3,000 億
+calc: unit | 平均：3,000 億 ÷ 10⁵ 秒 = 3M /s
+design: 訊息只寫一次（依群組存），投遞時才展開成 3M /s；如果替每個收件人各存一份，儲存也會放大 30 倍。
+design: 上千人的大群組要特別處理，例如只推「有新訊息」的通知，讓客戶端自己來拉。
+
+== drill live-comments
+title: 直播留言的推送量
+kind: FB Live Comments
+scenario: 一場熱門直播有大量同時觀看的人。所有留言都要即時推給每位觀眾嗎？
+given: viewers = 200萬 人 | 同時觀看人數
+given: comments = 2000 則/s | 留言速率
+given: cap = 10 則/s | 每位觀眾畫面上每秒最多顯示的留言數
+ask: naive | fanout | rate | 每則留言都推給每位觀眾時，每秒的推送次數
+ask: sampled | fanout | rate | 每位觀眾每秒最多推 10 則時，每秒的推送次數
+answer: naive = 4bn /s
+answer: sampled = 20M /s
+assume: 推送次數以「一則留言送到一位觀眾」算 1 次
+calc: fan | 全推：200 萬 × 2,000 = 40 億 /s = 4bn /s
+calc: fan | 取樣：200 萬 × 10 = 2,000 萬 /s = 20M /s
+design: 40 億 /s 不可能、也沒必要：人一秒讀不了 2,000 則。取樣後是 2,000 萬 /s，再把多則合成一次推送，把訊息數再降下來。
+design: 這類題目的重點是發現「全推」的數字荒謬，然後改需求（只顯示一部分），而不是硬撐。
+
+== drill push-blast
+title: 突發新聞推播
+kind: Notification System
+scenario: 一則突發新聞要在 5 分鐘內推播到所有訂閱的裝置。推播透過外部推播服務的 API 送出。
+given: devices = 3億 個 | 訂閱的裝置數
+given: window = 5 min | 要在多久內送完
+given: latency = 50 ms | 呼叫推播服務 API 的平均延遲
+given: inflight = 1000 個 | 每個 worker 同時進行中的請求數
+ask: rate | fanout | rate | 需要的送出速率
+ask: workers | servers | count | 需要的 worker 數
+answer: rate = 1M /s
+answer: workers = 50 workers
+assume: 推播服務本身撐得住這個速率（實際上會有速率限制，要先跟供應商確認）
+calc: unit | 5 分鐘 = 300 秒
+calc: fan | 送出速率：3 億 ÷ 300 秒 = 1M /s
+calc: cap | 每個 worker：1,000 個進行中 ÷ 0.05 秒 = 2 萬 /s
+calc: cap | worker 數：1M ÷ 2 萬 = 50 workers
+design: 每個 worker 的吞吐量 = 同時進行數 ÷ 延遲（Little's law）。延遲變成 200 ms，就要 4 倍的 worker。
+design: 先把裝置清單分段放進佇列，讓 worker 平行消化；失敗的重試另外排隊，不要擋住第一輪。

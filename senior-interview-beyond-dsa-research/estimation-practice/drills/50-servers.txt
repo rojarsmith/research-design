@@ -1,0 +1,108 @@
+# 伺服器與分片：每台容量要來自壓測，再留餘裕（研究報告第 3.3 節：不背「單機上限」）。
+# 題目與數字是為本練習包寫的練習假設，不是任何公司的真實數據。
+
+== drill api-servers
+title: API 伺服器台數
+kind: 通用（任何 Web 服務）
+scenario: 一個 Web 服務的 API 層是無狀態的應用伺服器，部署在 3 個可用區（AZ）。
+given: peak = 6萬 req/s | 尖峰請求
+given: per = 2000 req/s | 壓測：一台在延遲目標內的上限
+given: target = 70% | 平常只讓每台跑到上限的比例
+ask: base | servers | count | 尖峰需要的台數
+ask: az | servers | count | 要能承受 1 個 AZ 整個故障時的總台數
+answer: base = 43 台
+answer: az = 65 台
+assume: 流量在 3 個 AZ 平均分配
+calc: cap | 每台實際承擔：2,000 × 70% = 1,400 req/s
+calc: cap | 台數：6 萬 ÷ 1,400 ≈ 43 台
+calc: copy | 少 1 個 AZ 時，剩下的 2/3 要扛全部：43 × 3 ÷ 2 ≈ 65 台
+design: 多出來的 22 台是可用性的代價。也可以選擇 AZ 故障時降級（例如關掉非必要功能），只準備 43 到 50 台。
+design: 每台的上限要來自壓測，不要背「一台能撐多少 QPS」：它取決於每個請求做了什麼。
+
+== drill kafka-partitions
+title: 點擊事件的 Kafka 分區數
+kind: Ad Click Aggregator
+scenario: 點擊事件寫進 Kafka，由串流處理作業消費。每個分區同時只能被一個消費者處理。
+given: peak = 50萬 events/s | 尖峰事件量
+given: per = 5000 events/s | 壓測：一個消費者實例的處理上限
+given: growth = 2 倍 | 預留的成長空間
+ask: parts | servers | count | 需要的分區數
+answer: parts = 200 partitions
+assume: 事件依廣告 id 平均分散到各分區（沒有特別熱的廣告）
+calc: cap | 現在的尖峰：50 萬 ÷ 5,000 = 100 個分區
+calc: cap | 預留成長：100 × 2 = 200 partitions
+design: 分區數之後很難減少，增加也會打亂 key 的分配，所以一開始就預留成長。
+design: 熱門廣告會讓單一分區過載：可以在 key 後面加隨機後綴分散，彙總時再合併。
+
+== drill metadata-shards
+title: 照片 metadata 的資料庫分片數
+kind: Instagram
+scenario: 照片的 metadata（擁有者、說明、時間、位置等）放在關聯式資料庫，要決定分片數。
+given: data = 30 TB | 三年後的 metadata 總量（含索引）
+given: shard_size = 1 TB | 每個分片希望維持的資料量上限（備份、搬移的時間可以接受）
+given: writes = 2萬 次/s | 尖峰寫入
+given: shard_writes = 3000 次/s | 壓測：一個分片主節點的寫入上限
+ask: shards | servers | count | 需要的分片數
+answer: shards = 30 個分片
+assume: 兩個限制取較大的那個
+calc: cap | 依資料量：30 TB ÷ 1 TB = 30 個分片
+calc: cap | 依寫入：2 萬 ÷ 3,000 ≈ 7 個分片
+calc: cap | 取較大者：30 個分片
+design: 決定分片數的是資料量，不是寫入：只看 QPS 會少估 4 倍。
+design: 每個可能的限制（容量、QPS、連線數）都算一次，再取最緊的那個。
+
+== drill judge-workers
+title: 程式評測的尖峰機器數
+kind: LeetCode
+type: servers
+scenario: 一個線上程式評測平台舉辦比賽，比賽最後 10 分鐘的提交特別集中。
+given: users = 10萬 人 | 參賽人數
+given: subs = 4 次 | 每人平均提交次數
+given: last = 30% | 最後 10 分鐘占全部提交的比例
+given: cpu = 2 s | 每次提交評測用的 CPU 時間（單核）
+given: cores = 16 個 | 每台評測機的核心數
+given: target = 75% | 每台只用到的 CPU 比例
+ask: rate | qps | rate | 最後 10 分鐘的提交速率
+ask: machines | servers | count | 尖峰需要的評測機台數
+answer: rate = 200 /s
+answer: machines = 34 台
+assume: 最後 10 分鐘內的提交平均分散
+calc: mult | 全部提交：10 萬 × 4 = 40 萬
+calc: peak | 最後 10 分鐘：40 萬 × 30% ÷ 600 秒 = 200 /s
+calc: cap | 需要的核心：200 × 2 秒 = 400 核
+calc: cap | 每台可用 16 × 75% = 12 核；400 ÷ 12 ≈ 34 台
+design: 比賽尖峰跟平常差很多：用佇列接住提交，評測機依佇列長度自動擴充，比賽前先預熱。
+design: 評測機來不及擴充時佇列會變長：要給使用者「排隊中」的狀態，而不是讓請求逾時。
+
+== drill ws-gateways
+title: 長連線閘道的台數
+kind: WhatsApp、FB Live Comments
+scenario: 即時訊息透過 WebSocket 長連線推送。每個在線使用者維持 1 條連線，連在一台閘道伺服器上。
+given: conns = 5000萬 條 | 尖峰同時在線的連線
+given: per = 100萬 條 | 壓測：一台閘道的連線上限
+given: target = 50% | 平常只用到上限的比例（留給故障轉移和重連風暴）
+ask: gateways | servers | count | 需要的閘道台數
+answer: gateways = 100 台
+assume: 連線平均分散；每條連線的訊息量不是瓶頸
+calc: cap | 每台實際承擔：100 萬 × 50% = 50 萬條
+calc: cap | 5,000 萬 ÷ 50 萬 = 100 台
+design: 一台閘道掛掉時，它的 50 萬條連線會同時重連：剩下的閘道要有餘裕接住，這就是只用 50% 的原因。
+design: 「誰連在哪台閘道」要放在共用的儲存（例如 Redis），送訊息時才知道要轉給哪台。
+
+== drill llm-gpus
+title: LLM 服務的 GPU 伺服器數
+kind: ChatGPT
+type: servers
+scenario: 一個 LLM 聊天服務。輸出 token 的生成是主要成本，估算尖峰需要多少 GPU 伺服器。
+given: peak = 5000 req/s | 尖峰請求
+given: out = 500 個 | 每個請求平均輸出的 token 數
+given: per = 5000 tokens/s | 一台 GPU 伺服器在延遲目標內的輸出吞吐量（題目假設的壓測結果）
+ask: tokens | qps | rate | 尖峰每秒要生成的 token 數
+ask: servers | servers | count | 需要的 GPU 伺服器台數
+answer: tokens = 2.5M tokens/s
+answer: servers = 500 GPU servers
+assume: 輸入 token 的處理成本另計，這裡只看輸出
+calc: mult | token 速率：5,000 × 500 = 2.5M tokens/s
+calc: cap | 台數：2.5M ÷ 5,000 = 500 GPU servers
+design: 500 台 GPU 伺服器是很大的成本：限制輸出長度、用較小的模型處理簡單請求、快取常見回答，都直接降低這個數字。
+design: 單台吞吐量取決於模型大小、批次大小和延遲目標，一定要用自己的壓測數字。

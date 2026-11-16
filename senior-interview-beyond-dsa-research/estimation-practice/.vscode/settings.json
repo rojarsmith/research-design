@@ -1,0 +1,16 @@
+{
+    // 題庫檔（drills/）裡有參考答案和推導，預設隱藏，避免作答前先看到。
+    // 要新增或修改題目時，暫時把 "drills" 改成 false。
+    "files.exclude": {
+        "build": true,
+        "drills": true,
+        "progress": true
+    },
+    "search.exclude": {
+        "build": true,
+        "drills": true,
+        "progress": true
+    },
+    "files.encoding": "utf8",
+    "C_Cpp.default.cppStandard": "c++20"
+}

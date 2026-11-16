@@ -1,0 +1,196 @@
+# 串連：照第 3.2 節的框架，把一個系統的數字依序算完：使用者 → QPS → 儲存 → 頻寬 → 伺服器。
+# 每一步都用上一步的參考答案當已知條件，所以一步錯不會拖累後面。
+# 題目與數字是為本練習包寫的練習假設，不是任何公司的真實數據。
+
+== chain photo-app
+title: 照片分享 App 的一整串數字
+kind: Instagram
+scenario: 你在面試中設計一個照片分享 App。需求談完之後，面試官說：「算一下規模，看哪些數字會影響設計。」你決定從使用者一路算到伺服器。
+given: mau = 2億 人 | 月活躍使用者
+assume: 一天約 10⁵ 秒；尖峰取平均的 3 倍；一年約 365 天
+
+== step photo-app 1
+title: 日活躍使用者
+given: daily = 50% | 月活躍使用者中每天會用的比例
+ask: dau | users | count | 日活躍使用者
+answer: dau = 1億 人
+calc: mix | 2 億 × 50% = 1億 人
+design: 先把使用者數定下來，後面每個數字都從它乘出來。
+
+== step photo-app 2
+title: 上傳與讀取的 QPS
+scenario: 每位日活躍使用者每天平均上傳 0.2 張照片，打開動態消息 20 次（每次 1 個請求）。
+given: dau = 1億 人 | 第 1 步的參考答案：日活躍使用者
+given: uploads = 0.2 張 | 每人每天上傳
+given: opens = 20 次 | 每人每天打開動態消息
+ask: write | qps | rate | 平均上傳 QPS
+ask: read_peak | qps | rate | 尖峰讀取 QPS
+answer: write = 200 QPS
+answer: read_peak = 60k QPS
+calc: unit | 上傳：1 億 × 0.2 ÷ 10⁵ 秒 = 200 QPS
+calc: unit | 讀取平均：1 億 × 20 ÷ 10⁵ 秒 = 20k QPS
+calc: peak | 讀取尖峰：20k × 3 = 60k QPS
+design: 讀寫比是 100 比 1：讀取靠快取和 CDN，寫入一台主資料庫就夠。
+
+== step photo-app 3
+title: 五年的照片儲存
+scenario: 每張照片連同各種縮圖合計 3 MB，放在物件儲存（副本由服務處理），保存 5 年。
+given: write = 200 QPS | 第 2 步的參考答案：平均上傳 QPS
+given: size = 3 MB | 每張照片合計
+given: years = 5 年 | 保存年限
+ask: total | storage | bytes | 五年的照片儲存量
+answer: total = 110 PB
+calc: unit | 每天上傳：200 × 10⁵ 秒 = 2,000 萬張
+calc: size | 每天：2,000 萬 × 3 MB = 60 TB
+calc: mult | 五年：60 TB × 365 × 5 ≈ 110 PB
+design: 一定放物件儲存加 CDN，資料庫只存 metadata。
+
+== step photo-app 4
+title: 尖峰的圖片出口頻寬
+scenario: 每次打開動態消息會載入 10 張縮圖，每張 200 KB。
+given: read_peak = 60k QPS | 第 2 步的參考答案：尖峰讀取 QPS
+given: images = 10 張 | 每次打開動態消息載入的縮圖
+given: thumb = 200 KB | 每張縮圖
+ask: egress | bandwidth | byterate | 尖峰的圖片出口頻寬
+answer: egress = 120 GB/s
+calc: size | 每次打開：10 × 200 KB = 2 MB
+calc: mult | 尖峰：60k × 2 MB = 120 GB/s（約 1 Tbps）
+design: 約 1 Tbps：圖片一定走 CDN，源站只處理未命中。
+
+== step photo-app 5
+title: 動態消息 API 伺服器
+scenario: 動態消息 API 是無狀態服務。壓測顯示一台在延遲目標內可以處理 2,000 req/s，平常只讓它跑到 60%。
+given: read_peak = 60k QPS | 第 2 步的參考答案：尖峰讀取 QPS
+given: per = 2000 req/s | 壓測：一台的上限
+given: target = 60% | 平常只用到的比例
+ask: servers | servers | count | 需要的 API 伺服器台數
+answer: servers = 50 台
+calc: cap | 每台實際承擔：2,000 × 60% = 1,200 req/s
+calc: cap | 60k ÷ 1,200 = 50 台
+design: 50 台無狀態伺服器不難；真正的瓶頸在背後的快取與資料庫，這是深入探討要講的地方。
+
+== chain chat-app
+title: 聊天 App 的一整串數字
+kind: WhatsApp
+scenario: 設計一個一對一和小群組的聊天 App。面試官請你估算規模，你決定從使用者算到伺服器。
+given: registered = 5億 人 | 註冊使用者
+assume: 一天約 10⁵ 秒；訊息流量分散在全球各時區，尖峰取平均的 2 倍
+
+== step chat-app 1
+title: 日活躍使用者
+given: daily = 40% | 註冊使用者中每天會用的比例
+ask: dau | users | count | 日活躍使用者
+answer: dau = 2億 人
+calc: mix | 5 億 × 40% = 2億 人
+design: 聊天 App 的日活躍比例通常很高；這個比例是面試時要先跟面試官確認的假設。
+
+== step chat-app 2
+title: 尖峰的訊息寫入
+scenario: 每位日活躍使用者每天送出 50 則訊息。
+given: dau = 2億 人 | 第 1 步的參考答案：日活躍使用者
+given: msgs = 50 則 | 每人每天送出的訊息
+ask: peak | qps | rate | 尖峰訊息寫入 QPS
+answer: peak = 200k QPS
+calc: mult | 每天：2 億 × 50 = 100 億則
+calc: unit | 平均：100 億 ÷ 10⁵ 秒 = 100k QPS
+calc: peak | 尖峰：100k × 2 = 200k QPS
+design: 200k 寫入 QPS 要依對話 id 分片；同一個對話的訊息放在同一個分片，才能保持順序。
+
+== step chat-app 3
+title: 訊息保留 30 天的儲存
+scenario: 伺服器保留訊息 30 天供新裝置同步，每則訊息含 metadata 約 150 B，存 3 份副本。
+given: daily = 100億 則/天 | 第 2 步算出的每天訊息量
+given: size = 150 B | 每則訊息
+given: keep = 30 天 | 保留天數
+given: copies = 3 倍 | 副本數
+ask: total | storage | bytes | 穩定狀態的總儲存量（含副本）
+answer: total = 135 TB
+calc: size | 每天：100 億 × 150 B = 1.5 TB
+calc: mult | 30 天：1.5 TB × 30 = 45 TB
+calc: copy | 含副本：45 TB × 3 = 135 TB
+design: 135 TB 用依日期分區的寬欄位資料庫就放得下，到期整區刪除。
+
+== step chat-app 4
+title: 閘道的訊息頻寬
+scenario: 每則訊息平均送給 2 位收件人（一對一是 1 位，小群組多幾位）。圖片和影片另外走物件儲存加 CDN，這裡只算文字訊息。
+given: peak = 200k QPS | 第 2 步的參考答案：尖峰訊息寫入
+given: size = 150 B | 每則訊息
+given: recipients = 2 倍 | 每則訊息的平均收件人數
+ask: bw | bandwidth | byterate | 尖峰時閘道進出的訊息頻寬合計
+answer: bw = 90 MB/s
+calc: size | 進：200k × 150 B = 30 MB/s
+calc: fan | 出：30 MB/s × 2 = 60 MB/s
+calc: mult | 合計：30 + 60 = 90 MB/s（720 Mbps）
+design: 文字訊息的頻寬很小：這個系統的瓶頸是同時連線數，不是頻寬。
+
+== step chat-app 5
+title: 長連線閘道的台數
+scenario: 尖峰時 30% 的日活躍使用者同時在線，每人 1 條 WebSocket 連線。一台閘道在目標使用率下維持 50 萬條連線。
+given: dau = 2億 人 | 第 1 步的參考答案：日活躍使用者
+given: online = 30% | 尖峰同時在線的比例
+given: per = 50萬 條 | 一台閘道在目標使用率下的連線數
+ask: gateways | servers | count | 需要的閘道台數
+answer: gateways = 120 台
+calc: mix | 尖峰連線：2 億 × 30% = 6,000 萬條
+calc: cap | 6,000 萬 ÷ 50 萬 = 120 台
+design: 120 台閘道加上「誰連在哪台」的共用儲存；閘道掛掉時的重連風暴，是深入探討的好題目。
+
+== chain ride-app
+title: 叫車平台的一整串數字
+kind: Uber
+scenario: 設計叫車平台的司機位置服務：司機 App 回報位置，配對服務查詢附近的司機。你從司機人數一路算到接收位置的伺服器。
+given: drivers = 500萬 人 | 註冊司機
+assume: 題目給的是尖峰在線比例，算出來的就是尖峰量；一天約 10⁵ 秒
+
+== step ride-app 1
+title: 尖峰在線司機
+given: online = 20% | 尖峰時在線的比例
+ask: online | users | count | 尖峰同時在線的司機
+answer: online = 100萬 人
+calc: mix | 500 萬 × 20% = 100萬 人
+design: 位置服務的負載跟「在線」司機成正比，不是註冊人數。
+
+== step ride-app 2
+title: 位置更新的寫入速率
+scenario: 在線司機每 5 秒回報一次位置。
+given: online = 100萬 人 | 第 1 步的參考答案：尖峰在線司機
+given: every = 5 s | 回報間隔
+ask: updates | qps | rate | 尖峰每秒的位置更新
+answer: updates = 200k /s
+calc: unit | 100 萬 ÷ 5 秒 = 200k /s
+design: 200k /s 的寫入如果都進資料庫會很重：最新位置放記憶體，軌跡另外批次寫入。
+
+== step ride-app 3
+title: 30 天的軌跡儲存
+scenario: 全天平均在線的司機約 50 萬人。每個位置點存 50 B，軌跡保留 30 天。
+given: avg_online = 50萬 人 | 全天平均在線的司機
+given: every = 5 s | 回報間隔
+given: point = 50 B | 每個位置點
+given: keep = 30 天 | 保留天數
+ask: total | storage | bytes | 30 天的軌跡儲存量（不含副本）
+answer: total = 15 TB
+calc: unit | 全天平均每秒點數：50 萬 ÷ 5 秒 = 10 萬 /s
+calc: mult | 每天：10 萬 × 10⁵ 秒 = 100 億點
+calc: size | 每天：100 億 × 50 B = 500 GB
+calc: mult | 30 天：500 GB × 30 = 15 TB
+design: 用尖峰人數算一整天會多估一倍：儲存要用全天平均，容量規劃才用尖峰。
+
+== step ride-app 4
+title: 位置更新的入口頻寬
+scenario: 每次位置回報是一個 HTTPS 請求，連同標頭和加密的額外負擔約 200 B。
+given: updates = 200k /s | 第 2 步的參考答案：尖峰位置更新
+given: req = 200 B | 每個請求的大小
+ask: ingress | bandwidth | byterate | 尖峰的入口頻寬
+answer: ingress = 40 MB/s
+calc: mult | 200k × 200 B = 40 MB/s（320 Mbps）
+design: 頻寬不是問題；每秒 20 萬個 TLS 請求的 CPU 成本才是。長連線（例如 WebSocket）可以省下握手。
+
+== step ride-app 5
+title: 位置接收服務的台數
+scenario: 壓測顯示一台接收服務在目標使用率下可以處理 2 萬次更新/秒。
+given: updates = 200k /s | 第 2 步的參考答案：尖峰位置更新
+given: per = 2萬 次/s | 一台在目標使用率下的處理量
+ask: servers | servers | count | 需要的接收服務台數
+answer: servers = 10 台
+calc: cap | 200k ÷ 2 萬 = 10 台
+design: 10 台接收服務沒問題；位置要寫進依地理分片的記憶體索引，市區分片會比郊區熱很多。

@@ -1,0 +1,107 @@
+# 記憶體：快取與索引放不放得進一台機器（研究報告第 3.3 節、第 3.4 節）。
+# 題目與數字是為本練習包寫的練習假設，不是任何公司的真實數據。
+
+== drill shortlink-cache
+title: 短網址的熱門快取
+kind: Bitly（短網址）
+scenario: 短網址服務想把當天被點過的短網址都放在快取裡。每個快取項目包含短碼、原網址和快取本身的額外負擔，大小請自己假設。
+given: active = 1000萬 個 | 每天被點過至少一次的不同短網址
+ask: mem | memory | bytes | 快取需要的記憶體（不含副本） | 10
+answer: mem = 2 GB
+assume: 每個項目約 200 B：短碼 7 B、原網址約 100 B，加上鍵值儲存的額外負擔（自訂假設，所以容許 10 倍）
+calc: size | 每個項目約 200 B
+calc: mult | 1,000 萬 × 200 B = 2 GB
+design: 2 GB 一個快取節點就放得下：要多台是為了可用性（副本），不是為了容量。
+design: 快取不必放全部的短網址，只放當天熱門的，就能接住大部分讀取。
+
+== drill session-store
+title: 登入工作階段的記憶體
+kind: 通用（登入、API 閘道）
+scenario: 所有登入中的工作階段放在記憶體型的鍵值儲存，每個工作階段有一份副本，以防節點故障。
+given: sessions = 3000萬 個 | 尖峰同時有效的工作階段
+given: size = 1 KB | 每個工作階段的資料
+given: overhead = 1.5 倍 | 鍵值儲存的資料結構額外負擔
+given: copies = 2 倍 | 主副本加 1 份副本
+ask: mem | memory | bytes | 總記憶體（含額外負擔和副本）
+answer: mem = 90 GB
+assume: 每個工作階段的大小差不多
+calc: mult | 資料：3,000 萬 × 1 KB = 30 GB
+calc: copy | 含額外負擔：30 GB × 1.5 = 45 GB
+calc: copy | 含副本：45 GB × 2 = 90 GB
+design: 90 GB 可以放在幾個中型節點上，例如 3 個主節點各配 1 個副本。
+design: 改用簽章的 token（例如 JWT）讓伺服器不存工作階段，這 90 GB 就省下來了；代價是撤銷 token 比較難。
+
+== drill geo-index-memory
+title: 地點搜尋的記憶體索引
+kind: Yelp
+scenario: 一個找附近店家的服務，考慮把所有地點的地理索引放在記憶體裡。地點很少更新。
+given: places = 5000萬 個 | 地點數
+given: entry = 32 B | 每個地點的索引欄位（id 8 B、經緯度 16 B、geohash 8 B）
+given: overhead = 2 倍 | 索引資料結構（樹或雜湊表）的額外負擔
+ask: mem | memory | bytes | 索引需要的記憶體
+answer: mem = 3.2 GB
+assume: 店家名稱、評價等資料不放在索引裡，查到 id 之後再去資料庫拿
+calc: size | 每個地點：32 B × 2 = 64 B
+calc: mult | 5,000 萬 × 64 B = 3.2 GB
+design: 3.2 GB 一台機器的記憶體就放得下：不用分片，用多台副本分攤讀取即可。
+design: 第 3.1 節 staff 面試的例子也是這個思路：資料量小又很少更新時，定期同步到記憶體裡搜尋，而不是架一套分散式地理索引。
+
+== drill driver-location-memory
+title: 司機的最新位置與一天的軌跡
+kind: Uber
+scenario: 叫車平台把每位在線司機的最新位置放在記憶體，用來配對；另外把所有位置點寫進儲存，保留軌跡。
+given: drivers = 100萬 人 | 司機數（簡化：最新位置和軌跡都用這個數）
+given: latest = 100 B | 記憶體裡每位司機一筆（位置、方向、狀態、時間，含額外負擔）
+given: hours = 8 h | 每位司機一天平均在線時間
+given: every = 4 s | 位置回報間隔
+given: point = 40 B | 儲存裡的每個位置點
+ask: mem | memory | bytes | 最新位置需要的記憶體
+ask: track | storage | bytes | 一天的軌跡資料量
+answer: mem = 100 MB
+answer: track = 290 GB
+assume: 每位司機一天在線 8 小時，期間每 4 秒一個點
+calc: mult | 最新位置：100 萬 × 100 B = 100 MB
+calc: unit | 每位司機每天的點數：8 × 3,600 秒 ÷ 4 秒 = 7,200
+calc: mult | 一天的軌跡：100 萬 × 7,200 × 40 B ≈ 290 GB
+design: 最新位置只有 100 MB，任何一台機器都放得下；難點是每秒 25 萬次更新，不是容量。
+design: 軌跡是另一回事：每天約 290 GB、一年 100 TB 以上，要放進依時間分區的儲存。
+
+== drill topk-counters
+title: 熱門影片排行的計數器
+kind: YouTube Top K
+scenario: 要算最近一小時觀看次數最多的影片。比較兩種做法：每部影片一個精確計數器，或用 count-min sketch 近似計數。
+given: videos = 1億 個 | 一小時內被看過的不同影片
+given: entry = 50 B | 雜湊表裡每部影片一筆（id、計數、雜湊表額外負擔）
+given: rows = 5 倍 | count-min sketch 的列數
+given: width = 2^21 個 | 每列的計數器數量
+given: counter = 4 B | 每個計數器的大小
+ask: exact | memory | bytes | 精確計數的雜湊表記憶體
+ask: sketch | memory | bytes | count-min sketch 的記憶體
+answer: exact = 5 GB
+answer: sketch = 40 MB
+assume: 2²¹ ≈ 200 萬（第 3.3 節：2²⁰ ≈ 一百萬）
+calc: mult | 精確：1 億 × 50 B = 5 GB
+calc: unit | 2²¹ ≈ 2×10⁶
+calc: mult | sketch：5 列 × 2×10⁶ × 4 B = 40 MB
+design: 5 GB 單機也放得下，但每個時間視窗都要一份、還要跨機器合併；40 MB 的 sketch 可以輕鬆複製和合併，代價是計數會偏高。
+design: 精確與近似的取捨（第 3.4 節）要用數字講：這裡差了 100 倍以上。
+
+== drill feed-cache
+title: 預先算好的動態消息快取
+kind: FB News Feed
+scenario: 動態消息採用 fan-out on write：每位活躍使用者的消息列表預先算好，放在記憶體快取，每份只存貼文 id。
+given: users = 1億 人 | 要預先算好消息的活躍使用者
+given: ids = 500 個 | 每份消息列表保留的貼文數
+given: id = 8 B | 每個貼文 id
+given: node = 64 GB | 每個快取節點可用的記憶體
+given: copies = 2 倍 | 每份資料的份數（含主副本）
+ask: mem | memory | bytes | 消息列表的總資料量（不含副本）
+ask: nodes | servers | count | 需要的快取節點數（含副本）
+answer: mem = 400 GB
+answer: nodes = 14 台
+assume: 不計列表本身的資料結構額外負擔
+calc: mult | 資料量：1 億 × 500 × 8 B = 400 GB
+calc: cap | 主節點：400 GB ÷ 64 GB ≈ 6.25，取 7 台
+calc: copy | 含副本：7 × 2 = 14 台
+design: 400 GB 超過單機記憶體，所以依使用者 id 分片；14 台的規模還很好管理。
+design: 只替活躍使用者預先計算；不活躍的使用者登入時才用 fan-out on read 補算，省下大部分記憶體。

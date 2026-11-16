@@ -1,0 +1,136 @@
+# 儲存量：N 年的總量、副本、保留期限（研究報告第 3.3 節）。
+# 題目與數字是為本練習包寫的練習假設，不是任何公司的真實數據。
+
+== drill shortlink-storage
+title: 短網址十年的儲存量
+kind: Bitly（短網址）
+scenario: 同樣是短網址服務，這次估算資料庫要存多少資料。每筆紀錄有短碼、原網址、建立時間、建立者等欄位。每筆紀錄的大小請自己假設。
+given: links = 1億 個/月 | 每個月新建的短網址
+given: years = 10 年 | 保存年限
+given: copies = 3 倍 | 副本數
+ask: total | storage | bytes | 十年的總儲存量（含副本） | 10
+answer: total = 18 TB
+assume: 每筆紀錄約 500 B：原網址平均約 100 B，加上其他欄位、索引與儲存引擎的額外負擔（自訂假設，所以容許 10 倍）
+calc: mult | 筆數：1 億 × 12 個月 × 10 年 = 120 億
+calc: size | 資料：120 億 × 500 B = 6 TB
+calc: copy | 含 3 份副本：6 TB × 3 = 18 TB
+design: 18 TB 放在幾台機器上就夠，儲存量不是這個系統的難點；難點是讀取量（見 shortlink-qps）。
+design: 每筆假設成 200 B 或 2 KB，結果在 7 TB 到 72 TB 之間，結論一樣：所以這題容許 10 倍。
+
+== drill photo-storage
+title: 照片五年的儲存量
+kind: Instagram、Dropbox
+scenario: 一個照片分享 App 保存使用者上傳的原圖，另外產生 3 種縮圖。檔案放在物件儲存，耐久性（多副本或糾刪碼）由物件儲存服務處理，這題不另外計算副本。
+given: uploads = 2000萬 張/天 | 每天上傳的照片
+given: original = 2 MB | 原圖平均大小
+given: thumbs = 0.5 MB | 3 種縮圖合計
+given: years = 5 年 | 保存年限
+ask: daily | storage | bytes | 每天新增的儲存量
+ask: total | storage | bytes | 五年的總儲存量
+answer: daily = 50 TB
+answer: total = 90 PB
+assume: 不刪除舊照片；一年約 365 天
+calc: size | 每張合計：2 MB + 0.5 MB = 2.5 MB
+calc: mult | 每天：2,000 萬 × 2.5 MB = 50 TB
+calc: mult | 一年：50 TB × 365 ≈ 18 PB
+calc: mult | 五年：18 PB × 5 = 90 PB
+design: 90 PB 一定放物件儲存加 CDN，資料庫只存 metadata（第 3.3 節的範例也是這個結論）。
+design: 縮圖只占 20% 的空間，讀取卻幾乎都讀縮圖：縮圖放 CDN，原圖可以移到較便宜的儲存層。
+
+== drill chat-retention
+title: 聊天訊息保留 30 天
+kind: WhatsApp
+scenario: 聊天服務在伺服器上保留訊息 30 天，讓使用者的新裝置可以同步最近的對話；超過 30 天就刪除。
+given: msgs = 200億 則/天 | 每天的訊息量
+given: size = 200 B | 每則訊息（文字加 metadata）
+given: keep = 30 天 | 保留天數
+given: copies = 3 倍 | 副本數
+ask: total | storage | bytes | 穩定狀態下的總儲存量（含副本）
+answer: total = 360 TB
+assume: 訊息量每天差不多，所以穩定狀態就是 30 天的量
+calc: size | 每天：200 億 × 200 B = 4 TB
+calc: mult | 30 天：4 TB × 30 = 120 TB
+calc: copy | 含 3 份副本：120 TB × 3 = 360 TB
+design: 保留期限決定了總量：保留 30 天是 360 TB；永久保存的話，每年增加 4 PB 以上。
+design: 用 TTL 或依日期分區的資料表，到期整區刪除，比逐筆刪除便宜。
+
+== drill metrics-storage
+title: 監控指標的寫入量與一年儲存
+kind: Metrics Monitoring
+type: storage
+scenario: 一套監控系統收集每台主機的指標，時間序列資料庫會壓縮資料點。
+given: hosts = 10萬 台 | 主機數
+given: metrics = 200 個 | 每台主機的指標數
+given: interval = 10 s | 取樣間隔
+given: point = 2 B | 壓縮後每個資料點的平均大小（題目假設）
+ask: points | qps | rate | 每秒寫入的資料點
+ask: year | storage | bytes | 一年的原始解析度資料量
+answer: points = 2M /s
+answer: year = 150 TB
+assume: 一天約 10⁵ 秒；一年約 365 天
+assume: 不含副本，也不含降低解析度後的彙總資料
+calc: mult | 時間序列數：10 萬 × 200 = 2,000 萬
+calc: unit | 每秒資料點：2,000 萬 ÷ 10 秒 = 2M /s
+calc: unit | 每天：2M × 10⁵ 秒 × 2 B = 400 GB
+calc: mult | 一年：400 GB × 365 ≈ 150 TB
+design: 2M /s 的寫入必須批次寫入、依時間序列 id 分片，LSM 型的時序資料庫適合這種量。
+design: 不壓縮時每點約 16 B（8 B 時間戳加 8 B 數值），一年就是 8 倍，超過 1 PB：壓縮率是這個系統的關鍵數字。
+
+== drill ad-click-logs
+title: 廣告點擊原始紀錄
+kind: Ad Click Aggregator
+scenario: 廣告點擊彙總系統除了即時統計，也把每筆原始點擊事件保留下來，供對帳和重算使用。
+given: clicks = 20億 次/天 | 每天的點擊事件
+given: size = 300 B | 每筆原始事件（JSON）
+given: keep = 90 天 | 原始事件保留天數
+ask: total | storage | bytes | 原始事件的總儲存量（不含副本）
+answer: total = 54 TB
+assume: 點擊量每天差不多
+calc: size | 每天：20 億 × 300 B = 600 GB
+calc: mult | 90 天：600 GB × 90 = 54 TB
+design: 54 TB 放物件儲存（例如依日期分區的欄式檔案），需要重算時用批次作業讀取，不必放在線上資料庫。
+design: 欄式格式通常還能再壓縮幾倍；估算時先算未壓縮的量，再說明壓縮帶來的差異。
+
+== drill doc-snapshots
+title: 協同文件的操作紀錄與快照
+kind: Google Docs
+scenario: 協同編輯服務保存每份文件的完整操作紀錄（可以回到任何版本），另外每 100 個操作存一份完整快照，開檔時不用從頭重播。
+given: docs = 2000萬 份/天 | 每天被編輯的文件
+given: ops = 500 次 | 每份文件每天的編輯操作
+given: op = 50 B | 每個操作的大小
+given: snap = 20 KB | 每份快照的大小
+given: years = 3 年 | 保存年限
+ask: daily | storage | bytes | 每天新增的儲存量（操作紀錄加快照）
+ask: total | storage | bytes | 三年的總儲存量
+answer: daily = 2.5 TB
+answer: total = 2.7 PB
+assume: 每份文件每天 500 次操作，所以每天 5 份快照
+assume: 不含副本；一年約 365 天
+calc: mult | 操作紀錄：2,000 萬 × 500 × 50 B = 500 GB/天
+calc: mult | 快照：2,000 萬 × (500 ÷ 100) × 20 KB = 2 TB/天
+calc: mult | 每天合計：500 GB + 2 TB = 2.5 TB
+calc: mult | 三年：2.5 TB × 365 × 3 ≈ 2.7 PB
+design: 快照占了 80%，操作紀錄反而小：要省空間，先調快照的頻率（或只存差異），而不是壓縮操作紀錄。
+design: 把總量拆成組成，才看得出哪一塊主導。
+
+== drill crawler-storage
+title: 網頁爬蟲的儲存與下載頻寬
+kind: Web Crawler
+scenario: 一個搜尋引擎的爬蟲每個月把 10 億個網頁各重新抓一次，壓縮後存下最近 3 個版本。
+given: pages = 10億 個 | 要追蹤的網頁
+given: period = 1 月 | 每個網頁多久重新抓一次（一個月以 30 天計）
+given: html = 100 KB | 每個網頁的 HTML 平均大小
+given: ratio = 4 倍 | 壓縮比
+given: versions = 3 倍 | 保留的版本數
+ask: storage | storage | bytes | 總儲存量（不含副本）
+ask: download | bandwidth | byterate | 平均下載頻寬
+answer: storage = 75 TB
+answer: download = 40 MB/s
+assume: 一個月約 2.5×10⁶ 秒（30 × 86,400 = 2,592,000）
+assume: 抓取平均分散在整個月
+calc: size | 壓縮後每頁：100 KB ÷ 4 = 25 KB
+calc: copy | 儲存：10 億 × 25 KB × 3 個版本 = 75 TB
+calc: unit | 抓取速率：10 億 ÷ 2.5×10⁶ 秒 = 400 頁/s
+calc: size | 下載頻寬：400 × 100 KB = 40 MB/s（320 Mbps）
+design: 40 MB/s 對一個資料中心很小；爬蟲真正的限制是每個網站的禮貌限速和 DNS，不是頻寬。
+design: 75 TB 的網頁內容放物件儲存或分散式檔案系統；URL 的狀態和排程另外放。
