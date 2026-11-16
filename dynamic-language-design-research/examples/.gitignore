@@ -8,3 +8,10 @@ __pycache__/
 *.mlc
 minilang-c/mlvm
 minilang-c/mlvm-*
+# minilang-embed: the test and example programs and the shared library are build output.
+*.dll
+*.so
+*.a
+minilang-embed/test_embed
+minilang-embed/test_embed_*
+minilang-embed/mlfilter

@@ -17,6 +17,12 @@
  * collector, strings, tables, integers, number text, code object loading,
  * formatting, disassembler, errors, operators, builtins, interpreter, driver.
  *
+ * As a library (roadmap stage 6): ../minilang-embed/minilang.c defines
+ * MLVM_LIBRARY and includes this file, which leaves out the command-line
+ * driver; the embedding API uses the hooks marked "embedding" below (host
+ * functions, extra roots, a heap limit, runs that start above a host's
+ * call). The command-line VM leaves them all zero.
+ *
  * Memory model: every heap object is on one linked list and is freed only by
  * the sweep phase. Roots are listed explicitly in mark_roots(). Any C code that
  * holds an object pointer across an allocation must keep the object reachable
@@ -54,17 +60,21 @@ static uint64_t now_ns(void) {
     uint64_t c = (uint64_t)count.QuadPart, f = (uint64_t)freq.QuadPart;
     return c / f * 1000000000u + c % f * 1000000000u / f;
 }
+#ifndef MLVM_LIBRARY
 static void binary_stdio(void) {
     _setmode(_fileno(stdout), _O_BINARY);
     _setmode(_fileno(stdin), _O_BINARY);
 }
+#endif
 #else
 static uint64_t now_ns(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (uint64_t)ts.tv_sec * 1000000000u + (uint64_t)ts.tv_nsec;
 }
+#ifndef MLVM_LIBRARY
 static void binary_stdio(void) {}
+#endif
 #endif
 
 static double wall_seconds(void) { /* minilang's clock(): Python's time.time() */
@@ -163,7 +173,7 @@ static void buf_free(Buf *b) {
  * 64 bits, lists, cells, closures and code objects are heap objects. */
 
 typedef enum { V_NIL, V_BOOL, V_INT, V_FLOAT, V_BUILTIN, V_UNDEF, V_OBJ } VKind;
-typedef enum { O_STRING, O_BIGINT, O_LIST, O_CELL, O_CLOSURE, O_CODE } OKind;
+typedef enum { O_STRING, O_BIGINT, O_LIST, O_CELL, O_CLOSURE, O_CODE, O_HOST } OKind;
 
 typedef struct Obj {
     struct Obj *next; /* every object is on vm->objects */
@@ -260,6 +270,17 @@ typedef struct {
     ObjCell *up[];
 } ObjClosure;
 
+/* Embedding: a function written in C by the host. To minilang it is a
+ * builtin (type "function", printed <builtin NAME>, equal only to itself);
+ * the command-line VM never creates one. */
+typedef struct ObjHost {
+    Obj obj;
+    ObjString *name;
+    int arity;        /* -1: any number of arguments */
+    void (*fn)(void); /* the host's function, cast back by the embedding layer */
+    void *ud;
+} ObjHost;
+
 static inline Value v_nil(void) { Value v; v.k = V_NIL; v.as.i = 0; return v; }
 static inline Value v_undef(void) { Value v; v.k = V_UNDEF; v.as.i = 0; return v; }
 static inline Value v_bool(int b) { Value v; v.k = V_BOOL; v.as.i = 0; v.as.b = b != 0; return v; }
@@ -288,7 +309,6 @@ static inline int falsy(Value v) { return v.k == V_NIL || (v.k == V_BOOL && !v.a
 
 #define MAX_DEPTH 400   /* minilang's call depth limit, reported as stack overflow */
 #define MAX_NESTING 1000 /* nesting depth for str()/repr of lists; see README */
-#define TEMP_ROOTS 64
 #define STACK_SLACK 1 /* ADD_CONST and friends push their constant on the slow path */
 #define GC_GROWTH 2               /* collect when the heap has doubled since the last collection */
 #define GC_MIN_HEAP (1024 * 1024) /* never collect below this, unless stressing */
@@ -331,8 +351,8 @@ typedef struct VM {
     int stress;
     Obj **gray;
     size_t ngray, gray_cap;
-    Value temps[TEMP_ROOTS]; /* explicit roots for C code that allocates twice */
-    int ntemps;
+    Value *temps; /* explicit roots for C code that allocates twice; grows, because */
+    int ntemps, temps_cap; /* the loader keeps one per level of function nesting */
     /* statistics */
     uint64_t total_bytes, total_objects, freed_objects, freed_bytes, collections;
     uint64_t pause_ns_total, pause_ns_max, mark_ns, sweep_ns, run_ns, load_ns;
@@ -348,6 +368,12 @@ typedef struct VM {
     OutputFn out;
     void *out_ud;
     Buf line; /* print()'s line, reused */
+    /* embedding: all zero in the command-line VM */
+    size_t mem_limit; /* heap limit in bytes, 0 for none; see heap_realloc() */
+    int over_limit;   /* the heap passed mem_limit even after a collection */
+    void (*mark_host)(struct VM *vm);                                    /* marks the host's handles */
+    int (*call_host)(struct VM *vm, ObjHost *fn, int nargs, Value *out); /* args are the top nargs values */
+    void *host;
 } VM;
 
 static void collect(VM *vm);
@@ -361,6 +387,14 @@ static void *heap_realloc(VM *vm, void *p, size_t old, size_t new_size) {
     if (new_size > old) {
         vm->total_bytes += new_size - old;
         if (vm->stress || vm->bytes + (new_size - old) > vm->next_gc) collect(vm);
+        /* Embedding: a host-set heap limit is soft. The allocation still
+         * succeeds, so no code here needs a failure path; the interpreter
+         * raises MemoryError at its next jump or call, and the embedding API
+         * checks over_limit after each allocation it makes. */
+        if (vm->mem_limit && vm->bytes + (new_size - old) > vm->mem_limit) {
+            collect(vm);
+            if (vm->bytes + (new_size - old) > vm->mem_limit) vm->over_limit = 1;
+        }
     } else {
         vm->freed_bytes += old - new_size;
     }
@@ -385,8 +419,11 @@ static Obj *new_obj(VM *vm, OKind kind, size_t size) {
     return o;
 }
 
-static void push_temp(VM *vm, Value v) {
-    if (vm->ntemps == TEMP_ROOTS) fatal("temp root stack overflow");
+static void push_temp(VM *vm, Value v) { /* malloc, not the GC heap: never collects */
+    if (vm->ntemps == vm->temps_cap) {
+        vm->temps_cap = vm->temps_cap ? vm->temps_cap * 2 : 64;
+        vm->temps = xrealloc(vm->temps, (size_t)vm->temps_cap * sizeof(Value));
+    }
     vm->temps[vm->ntemps++] = v;
 }
 static void pop_temp(VM *vm) { vm->ntemps--; }
@@ -436,6 +473,9 @@ static void blacken(VM *vm, Obj *o) {
             for (uint32_t i = 0; i < c->nslots; i++) mark_obj(vm, (Obj *)c->slot_names[i]);
         break;
     }
+    case O_HOST:
+        mark_obj(vm, (Obj *)((ObjHost *)o)->name);
+        break;
     }
 }
 
@@ -455,6 +495,7 @@ static void mark_roots(VM *vm) {
     }
     for (int i = 0; i < vm->ntemps; i++) mark_value(vm, vm->temps[i]);
     if (vm->has_errval) mark_value(vm, vm->errval);
+    if (vm->mark_host) vm->mark_host(vm); /* embedding: values the host holds through handles */
     /* vm->strings is weak: interned strings survive only if marked elsewhere */
 }
 
@@ -1805,6 +1846,7 @@ static int stringify(VM *vm, Value v, Buf *b, int depth) {
     case O_CLOSURE: buf_printf(b, "<fn %s>", AS_CLOSURE(v)->code->name->s); return 0;
     case O_CODE: buf_printf(b, "<code %s>", AS_CODE(v)->name->s); return 0;
     case O_CELL: buf_str(b, "<cell>"); return 0;
+    case O_HOST: buf_printf(b, "<builtin %s>", ((ObjHost *)v.as.o)->name->s); return 0;
     }
     return 0;
 }
@@ -1893,6 +1935,7 @@ static const char *type_name(Value v) {
     case O_CLOSURE: return "function";
     case O_CODE: return "Code";
     case O_CELL: return "cell"; /* never a minilang value */
+    case O_HOST: return "function";
     }
     return "?";
 }
@@ -1911,6 +1954,7 @@ static int line_at(const ObjCode *co, size_t offset) {
     return co->lines[2 * lo + 1];
 }
 
+#ifndef MLVM_LIBRARY /* the disassembler is part of the command-line tool */
 static void disassemble(VM *vm, ObjCode *co, Buf *b) {
     buf_printf(b, "== %s  params=", co->name->s);
     for (uint32_t i = 0; i < co->nparams; i++) buf_printf(b, "%s%s", i ? "," : "", co->params[i]->s);
@@ -1987,6 +2031,7 @@ static void disassemble(VM *vm, ObjCode *co, Buf *b) {
         disassemble(vm, AS_CODE(co->consts[i]), b);
     }
 }
+#endif
 
 /* ------------------------------------------------------------------ errors */
 /* A raised error is recorded in the VM and the function returns -1; the
@@ -2346,38 +2391,50 @@ static int32_t loop_exit_at(const ObjCode *co, size_t offset) {
     return -1;
 }
 
-static ObjCell *as_cell(Value v) {
-    if (!is_kind(v, O_CELL)) fatal("bytecode reads a slot that holds no cell");
-    return AS_CELL(v);
-}
+/* NULL if the slot holds no cell: the one fault the verifier cannot rule out
+ * statically. It ends the run with an error instead of the process, which
+ * would take every other session (or the embedding host) with it. */
+static ObjCell *as_cell(Value v) { return is_kind(v, O_CELL) ? AS_CELL(v) : NULL; }
+
+static ErrKind run(VM *vm, int floor, Value *result);
 
 /* Run a loaded script. Returns E_NONE with *result set (the trailing
  * expression's value, for the REPL), or the kind of error that ended it.
+ * The script's frame starts at vm->sp, which is 0 in the command-line VM;
+ * an embedding host may run a script from inside a host function. */
+static ErrKind execute(VM *vm, ObjCode *script, Value *result) {
+    vm->err = E_NONE;
+    size_t base = vm->sp;
+    ensure_stack(vm, base + script->nslots + script->max_stack + STACK_SLACK);
+    for (uint32_t i = 0; i < script->nslots; i++) vm->stack[base + i] = v_nil();
+    Frame *f = &vm->frames[vm->nframes++];
+    f->closure = NULL;
+    f->code = script;
+    f->base = base;
+    f->pc = 0;
+    vm->sp = base + script->nslots;
+    return run(vm, vm->nframes - 1, result);
+}
+
+/* Run from the top frame until the frame at index `floor` finishes. floor is
+ * 0 in the command-line VM; when a host calls minilang from inside a host
+ * function, the new frames start above the suspended ones, and exceptions,
+ * break and return never unwind below floor (embedding).
  *
  * The loop keeps sp, regs and pc in locals. Before anything that can
  * allocate, SYNC() publishes sp to the VM, because the collector marks
  * exactly stack[0 .. vm->sp). Leaving a SYNC() out is a rooting bug of the
  * kind --gc-stress is there to find. */
-static ErrKind execute(VM *vm, ObjCode *script, Value *result) {
-    vm->nframes = 0;
-    vm->err = E_NONE;
-    ensure_stack(vm, (size_t)script->nslots + script->max_stack + STACK_SLACK);
-    for (uint32_t i = 0; i < script->nslots; i++) vm->stack[i] = v_nil();
-    Frame *f = &vm->frames[vm->nframes++];
-    f->closure = NULL;
-    f->code = script;
-    f->base = 0;
-    f->pc = 0;
-    vm->sp = script->nslots;
-
-    ObjCode *co = script;
-    ObjClosure *clo = NULL;
+static ErrKind run(VM *vm, int floor, Value *result) {
+    Frame *f = &vm->frames[vm->nframes - 1];
+    ObjCode *co = f->code;
+    ObjClosure *clo = f->closure;
     const int32_t *code = co->code;
     Value *consts = co->consts;
     Value *stack = vm->stack;
-    Value *regs = stack;
+    Value *regs = stack + f->base;
     Value *sp = stack + vm->sp;
-    size_t pc = 0;
+    size_t pc = f->pc;
     Value r;
 #define SYNC() (vm->sp = (size_t)(sp - stack))
 #define LOAD_FRAME()                                                                                       \
@@ -2395,8 +2452,18 @@ static ErrKind execute(VM *vm, ObjCode *script, Value *result) {
         case OP_LOAD_LOCAL: *sp++ = regs[arg]; break;
         case OP_LOAD_CONST: *sp++ = consts[arg]; break;
         case OP_STORE_LOCAL: regs[arg] = *--sp; break;
-        case OP_LOAD_CELL: *sp++ = as_cell(regs[arg])->v; break;
-        case OP_STORE_CELL: as_cell(regs[arg])->v = *--sp; break;
+        case OP_LOAD_CELL: {
+            ObjCell *c = as_cell(regs[arg]);
+            if (!c) goto no_cell;
+            *sp++ = c->v;
+            break;
+        }
+        case OP_STORE_CELL: {
+            ObjCell *c = as_cell(regs[arg]);
+            if (!c) goto no_cell;
+            c->v = *--sp;
+            break;
+        }
         case OP_MAKE_CELL: {
             SYNC();
             ObjCell *c = (ObjCell *)new_obj(vm, O_CELL, sizeof(ObjCell));
@@ -2583,12 +2650,15 @@ static ErrKind execute(VM *vm, ObjCode *script, Value *result) {
             ObjClosure *c = (ObjClosure *)new_obj(vm, O_CLOSURE, sizeof(ObjClosure) + fc->nup * sizeof(ObjCell *));
             c->code = fc;
             c->nup = fc->nup;
-            for (uint32_t i = 0; i < fc->nup; i++)
+            for (uint32_t i = 0; i < fc->nup; i++) {
                 c->up[i] = fc->ups[i].local ? as_cell(regs[fc->ups[i].index]) : clo->up[fc->ups[i].index];
+                if (!c->up[i]) goto no_cell; /* c is unreachable garbage; NULL upvalues are not traced */
+            }
             *sp++ = v_obj(c);
             break;
         }
         case OP_CALL: {
+            if (vm->over_limit) goto out_of_memory;
             Value fn = sp[-arg - 1];
             if (IS_CLOSURE(fn)) {
                 ObjClosure *c = AS_CLOSURE(fn);
@@ -2633,6 +2703,20 @@ static ErrKind execute(VM *vm, ObjCode *script, Value *result) {
                 if (BUILTIN_FNS[which](vm, sp - arg, arg, &r)) FAIL();
                 sp -= arg;
                 sp[-1] = r;
+            } else if (is_kind(fn, O_HOST) && vm->call_host) {
+                /* Embedding: a host function may run minilang code, which can
+                 * move the stack, so the cached pointers are reloaded. */
+                size_t at = (size_t)(sp - stack) - (size_t)arg - 1;
+                SYNC();
+                int failed = vm->call_host(vm, (ObjHost *)fn.as.o, arg, &r);
+                stack = vm->stack;
+                regs = stack + f->base;
+                sp = stack + at;
+                if (failed) {
+                    sp += arg + 1;
+                    FAIL();
+                }
+                *sp++ = r;
             } else {
                 SYNC();
                 rt_error(vm, "cannot call a %s", type_name(fn));
@@ -2640,7 +2724,10 @@ static ErrKind execute(VM *vm, ObjCode *script, Value *result) {
             }
             break;
         }
-        case OP_JUMP: pc = (size_t)arg; break;
+        case OP_JUMP:
+            if (vm->over_limit) goto out_of_memory; /* every loop's back edge is a JUMP */
+            pc = (size_t)arg;
+            break;
         case OP_JUMP_IF_FALSE:
             if (falsy(*--sp)) pc = (size_t)arg;
             break;
@@ -2654,12 +2741,21 @@ static ErrKind execute(VM *vm, ObjCode *script, Value *result) {
             break;
         case OP_RETURN: {
             r = sp[-1];
-            if (vm->nframes == 1) { /* top-level return: ReturnSignal escapes, as in the tree-walker */
+            if (vm->nframes - 1 == floor) {
+                if (!clo) { /* top-level return: ReturnSignal escapes, as in the tree-walker */
+                    SYNC();
+                    vm->err = E_RETURN;
+                    vm->errval = r;
+                    vm->has_errval = 1;
+                    return E_RETURN;
+                }
+                /* embedding: a function the host called returns to the host */
+                sp = stack + f->base - 1;
+                *sp++ = r;
                 SYNC();
-                vm->err = E_RETURN;
-                vm->errval = r;
-                vm->has_errval = 1;
-                return E_RETURN;
+                vm->nframes--;
+                *result = r;
+                return E_NONE;
             }
             size_t at = f->base - 1;
             vm->nframes--;
@@ -2685,7 +2781,7 @@ static ErrKind execute(VM *vm, ObjCode *script, Value *result) {
         case OP_BREAK_OUT: {
             int32_t target;
             for (;;) { /* the nearest caller whose CALL sits inside one of its loops */
-                if (vm->nframes == 1) {
+                if (vm->nframes - 1 == floor) {
                     SYNC();
                     vm->err = E_BREAK;
                     return E_BREAK;
@@ -2748,11 +2844,19 @@ static ErrKind execute(VM *vm, ObjCode *script, Value *result) {
         }
         continue;
 
+    no_cell: /* malformed bytecode; not catchable, since no minilang program can cause it */
+        SYNC();
+        host_error(vm, "SystemError", "bytecode reads a slot that holds no cell");
+        goto error;
+    out_of_memory: /* embedding: the heap passed the host's limit; not catchable, like Python's MemoryError */
+        SYNC();
+        vm->over_limit = 0;
+        host_error(vm, "MemoryError", "heap limit exceeded");
     error:
         /* Unwind to the innermost handler covering the faulting instruction,
          * first in this frame, then at each caller's CALL instruction. */
         if (vm->err == E_RUNTIME && vm->errline < 0) vm->errline = line_at(co, pc - 2);
-        if (vm->err == E_RECURSION && vm->nframes > 1) {
+        if (vm->err == E_RECURSION && vm->nframes - 1 > floor) {
             /* Interpreter.call() turns RecursionError into a minilang error
              * at the call site of the innermost minilang function. */
             vm->nframes--;
@@ -2770,7 +2874,7 @@ static ErrKind execute(VM *vm, ObjCode *script, Value *result) {
             for (;;) {
                 target = handler_at(co, pc - 2);
                 if (target >= 0) break;
-                if (vm->nframes == 1) {
+                if (vm->nframes - 1 == floor) {
                     SYNC();
                     return E_RUNTIME;
                 }
@@ -2832,6 +2936,7 @@ static size_t vm_free(VM *vm) {
     table_free(&vm->strings);
     free(vm->stack);
     free(vm->gray);
+    free(vm->temps);
     buf_free(&vm->errmsg);
     buf_free(&vm->line);
     free(vm);
@@ -2855,6 +2960,8 @@ static int read_file(const char *path, uint8_t **data, size_t *n) {
     *n = len;
     return 0;
 }
+
+#ifndef MLVM_LIBRARY /* the rest is the command-line driver; the embedding API replaces it */
 
 static void stats_text(VM *vm, Buf *b) {
     buf_str(b, "collections=");
@@ -3156,3 +3263,4 @@ int main(int argc, char **argv) {
     }
     return status;
 }
+#endif /* MLVM_LIBRARY */

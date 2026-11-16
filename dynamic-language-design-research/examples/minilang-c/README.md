@@ -24,6 +24,8 @@ python3 minilang_c.py --bench                                      # tree-walker
 
 On Windows, `python3` may be `python`. The only things to install are GCC (WinLibs) and the Python used for minilang.
 
+`mlvm.c` also builds as a library, for stage 6: [minilang-embed](../minilang-embed/README.md) defines `MLVM_LIBRARY` and includes the file, which leaves out the command-line driver and uses a few embedding hooks (host functions, extra roots, a heap limit, runs that start above a suspended call). Here the hooks stay zero: the build line, the command line, the output and these tests are unchanged, and the benchmark run times stayed within noise of the version before them (measured in minilang-embed's README).
+
 The 94 tests: minilang's 13 tests on the C VM (plain and with compiler optimizations; the 10 semantics tests also under `--gc-stress`), 5 checks that those runs really use the C VM, stage 4's 24 differential tests with each program run on four C VM configurations (plain, `--opt`, `--gc-stress`, both), one test that runs every program file, and 28 tests of the file format, the loader, numbers and memory.
 
 ## Pipeline
@@ -68,7 +70,7 @@ str    := nbytes:u32 UTF-8 bytes
 
 - **Versions.** A reader rejects another major version, a newer minor version, or a different opcode count; renumbering opcodes is a major change. `flags` bit 0 records that an optimization was on and is informational.
 - **Debug names are kept** (parameters, slots, upvalues), so `mlvm --dis` prints exactly what `minilang_vm.py --dis` prints. That equality is the loader's main test: a file that disassembles identically was read back field by field.
-- **The loader verifies before running.** Every read is bounds-checked and every count must fit in the remaining bytes, strings must be valid UTF-8, operands must be in range for their opcode (constant of the right type, slot, upvalue, chain, jump target on an instruction boundary), tables must be in order, and a stack-depth walk over every path, including exception handlers (depth 1) and loop exits (depth 0), rejects underflow, inconsistent depths, code that runs off the end, and a `max_stack` smaller than computed. What it cannot check statically, that a slot holds a cell when `LOAD_CELL` runs, is checked at run time.
+- **The loader verifies before running.** Every read is bounds-checked and every count must fit in the remaining bytes, strings must be valid UTF-8, operands must be in range for their opcode (constant of the right type, slot, upvalue, chain, jump target on an instruction boundary), tables must be in order, and a stack-depth walk over every path, including exception handlers (depth 1) and loop exits (depth 0), rejects underflow, inconsistent depths, code that runs off the end, and a `max_stack` smaller than computed. What it cannot check statically, that a slot holds a cell when `LOAD_CELL` runs, is checked at run time; a file that fails it ends its run with an uncatchable `SystemError` (until stage 6 it ended the process, and in `--serve` every other session with it).
 
 ## Design at a glance
 
@@ -106,7 +108,8 @@ The roadmap suggested "VM stack, global table and open upvalues". Building it sh
 | The value stack up to `vm->sp` | Every frame's slots and operands. The loop keeps `sp` in a local variable and publishes it (`SYNC()`) before anything that can allocate; the collector marks exactly `stack[0 .. vm->sp)` |
 | Each frame's closure and code object | The script's code object is reachable only from its frame. A frame's closure is also on the stack, just below the arguments, so this root is redundant today (a planted bug that removed it went unnoticed, see below); it stays so that a later change such as tail calls cannot break it |
 | The global table, keys and values | Global variables and the builtins |
-| A temporary root stack | C code that allocates twice before the first object is reachable: a list and then its item array, the loader filling a code object, an integer constant parsed from its text |
+| A temporary root stack | C code that allocates twice before the first object is reachable: a list and then its item array, the loader filling a code object, an integer constant parsed from its text. It grows as needed: the loader holds one entry per level of function nesting, up to its limit of 200, and the first version's fixed 64 entries made 64 nested function literals abort the process (found by the stage 8 conformance tests, fixed in stage 6) |
+| Embedding only: the host's handles | Marked through the `mark_host` hook; see [minilang-embed](../minilang-embed/README.md#rooting-handles-in-scopes) |
 | The value being thrown, or a top-level `return` value | Between the throw and the handler that catches it |
 | Not a root: the intern table | It is weak: before the sweep, entries whose strings are unmarked are removed |
 | Not a root: open upvalues | There are none. The stage 4 bytecode boxes a captured variable in a cell when its scope is entered (CPython's design), so a captured variable costs one allocation per scope entry, and no upvalue ever points into the stack. Lua's and clox's open upvalues avoid that allocation but need a "close" instruction at scope exit, which this shared bytecode does not have |
@@ -243,7 +246,7 @@ Speedup over plain bytecode, two runs:
 
 | File | Contents | Lines |
 | --- | --- | --- |
-| `mlvm.c` | platform, buffers, values and objects (130), heap and collector (165), strings, tables, integers (500), number text (170), loader and verifier (390), formatting, disassembler, operators, builtins, interpreter (470), driver and serve protocol | 3,160 |
+| `mlvm.c` | platform, buffers, values and objects (130), heap and collector (165), strings, tables, integers (500), number text (170), loader and verifier (390), formatting, disassembler, operators, builtins, interpreter (530), driver and serve protocol; the embedding hooks are spread over these sections | 3,270 |
 | `minilang_c.py` | `CVM`, the serve-protocol client, `--bench` | 410 |
 | `difftest.py` | random program generator and differential runner | 450 |
 | `test_minilang_c.py` | the tests | 520 |
@@ -264,7 +267,7 @@ Speedup over plain bytecode, two runs:
 
 ## Next steps
 
-1. Stage 6: the `VM` struct already holds all state (the serve mode runs many VMs in one process); a C API with opaque handles and status codes can be put on top, with the root set extended by handles that C callers hold.
+1. Stage 6 is done in [minilang-embed](../minilang-embed/README.md): a C API with handles in scopes, status codes and reentrant calls on top of this file, which it includes rather than copies.
 2. Stage 7: a C front end, so that a single executable runs source files; then CI on the two platforms tested here.
 3. Measure an incremental collector (Lua 5.1's approach, needs a write barrier) only if pause times start to matter; at the sizes measured here they do not.
 
