@@ -52,7 +52,7 @@
 
 **現成的練習環境。** [ai-round-practice/](ai-round-practice/README.zh-TW.md) 是可以直接用 VS Code 打開的練習包。它有 6 個原創情境，每個都照「修 bug → 實作 → 優化」三個階段進行，由 `drill` 工具揭曉階段、計時，並要求寫完複盤（第 6.7 節）。
 
-容量估算另有 [estimation-practice/](estimation-practice/README.zh-TW.md)：42 題原創單題加 3 條串連，由 `est` 工具計時、檢查單位、依數量級計分，並統計各題型的系統性偏差（第 3.3 節）。
+容量估算另有 [estimation-practice/](estimation-practice/README.zh-TW.md)：42 題原創單題加 3 條串連，由 `est` 工具計時、檢查單位、依數量級計分，並統計各題型的系統性偏差（第 3.3 節）。LLD/OOD 另有 [lld-practice/](lld-practice/README.zh-TW.md)：4 題原創題目，先寫設計筆記再寫程式，每個「如果……」之後量出改了多少既有的類別和函式（第 5.6 節）。
 
 ## 2. 2026 年各回合的樣貌
 
@@ -558,6 +558,7 @@ Hello Interview 的建議是直接問招募人員或面試官，他們期待什�
 - **變體練習：** 做完一題後抽一個「如果……」，例如停車場要支援電動車充電、要支援預約、要支援多種計費方式。檢查要改幾個類別。改動範圍小，代表職責劃分得好。
 - **machine coding 型的公司**（例如 Flipkart）：要練到 90 分鐘內寫出能執行、有測試的程式。可以把題目加進自己慣用的練習專案，例如前一份報告的 [cpp-practice](../coding-interview-practice-research/cpp-practice/README.zh-TW.md)。
 - **題庫：** ashishps1/awesome-low-level-design（28,071 星，GPL-3.0）列了 33 題（7 題簡單、15 題中等、11 題困難）加 9 題並行題。多數講解連到 algomaster.io，那是販售付費課程的網站。
+- **練習包。** [lld-practice/](lld-practice/README.zh-TW.md) 把本節的練習做成工具，安裝需求和 cpp-practice 一樣：VS Code、C/C++ 擴充、WinLibs GCC。4 題原創題目（停車場、費用報銷審核、拍賣通知、並行的座位保留）各對應第 5.4 節的一個考點；`ood` 工具要求先寫設計筆記才能寫程式，替 35 分鐘（design）或 90 分鐘（machine）的回合計時，一次揭曉一個「如果……」，並在每個變體之後算出改到幾個既有的類別、函式和程式碼行。
 
 ## 6. AI 輔助程式回合
 
@@ -769,6 +770,8 @@ DSA 欄抄自前一份報告第 6.2 節，方便對照。其餘欄位是本報�
 「AI 輔助」欄可以直接用練習包：第 3–4 週做 `build-planner`、第 5–6 週做 `log-alerts`、第 7–8 週做 `room-booking`，第 9 週以後改用開源專案或目標公司的練習環境。後來加的 `api-gateway`、`netlist-check`、`team-match` 三個情境，在一週有餘力時加做，排法見[練習包說明](ai-round-practice/README.zh-TW.md)。
 
 「系統設計」欄第 1–2 週的估算可以直接用 [estimation-practice/](estimation-practice/README.zh-TW.md)：每週 2 次 `est drill`（每次 3 題、約 15 分鐘）；第 3 週起，每次完整的系統設計練習前先跑 `est review`，每週做 1 次 `est chain`。時間從系統設計每週約 7 小時裡撥出，約 30 到 45 分鐘。
+
+「LLD/OOD」欄可以直接用 [lld-practice](lld-practice/README.zh-TW.md)：第 3–4 週做 `parking-garage`，第 5–6 週做 `expense-approval` 和 `seat-holds`（並行），第 7–8 週做 `auction-house`；目標公司考 machine coding 時，挑一題用 `machine` 模式重做。只在目標公司有考 LLD 時才做。
 
 ### 7.3 時間只剩 3 到 4 週時
 
