@@ -1,0 +1,307 @@
+Recorded 2026-11-16 (UTC times below) on the machine this lab was written on.
+Windows 11 Pro, build 26300; hypervisor present (Win32_ComputerSystem.HypervisorPresent = True).
+CPU: 11th Gen Intel(R) Core(TM) i7-11700 @ 2.50GHz, 16 logical processors.
+Compiler: gcc 16.2.0 (MinGW-W64 x86_64-ucrt-posix-seh, WinLibs).
+Run from a normal (unelevated) Git Bash prompt, so every process had a
+medium-integrity token. Other work was running on the machine at the same
+time. The timings in these logs are incidental; the lab is about what
+happens, not how fast. PIDs, handle values and addresses change every run.
+
+The account name, the machine name and the domain part of the user's SID
+were replaced with <user>, <machine> and <domain> in this file.
+
+Built with (outputs went to a scratch directory outside the repository):
+> gcc -O2 -Wall -o namedpipe.exe namedpipe.c -ladvapi32
+> gcc -O2 -Wall -o dupsection.exe dupsection.c -ladvapi32
+> gcc -O2 -Wall -o msgwait.exe msgwait.c -luser32
+> gcc -O2 -Wall -o iocp.exe iocp.c
+
+Not run: Process Explorer (not installed here); dupsection.exe prints the
+same facts its handle view would show (type, granted access, handle count).
+"dupsection.exe hold" was run once with Enter piped in, only to check that
+it stops after part 3 and then finishes; its output is not recorded here.
+
+==============================================================================
+namedpipe.exe, run 1
+==============================================================================
+
+date: 2026-11-16 07:05:20 UTC
+> namedpipe.exe
+1. A message-mode pipe and its client
+  server: pid 26824 created \\.\pipe\lab08-namedpipe-26824
+  server: started the client, CreateProcess says pid 23136
+
+2. Who connected?
+  server: GetNamedPipeClientProcessId 23136 (matches CreateProcess), session 1 (mine 1)
+  server: first message: "hello from the client" (21 bytes)
+  server: impersonated the client at level SecurityIdentification and took its token
+  client's token: user <machine>\<user> (S-1-5-21-<domain>-1001), integrity medium (0x2000)
+  server's token: user <machine>\<user> (S-1-5-21-<domain>-1001), integrity medium (0x2000)
+  server: same user: yes -> accept
+
+3. Message boundaries
+  server: next message is 100 bytes (3100 bytes in the pipe in total)
+    ReadFile into 64 bytes: 1 x (64 bytes, FALSE, ERROR_MORE_DATA), then 36 bytes, TRUE: end of message
+  server: next message is 3000 bytes (3000 bytes in the pipe in total)
+    ReadFile into 64 bytes: 46 x (64 bytes, FALSE, ERROR_MORE_DATA), then 56 bytes, TRUE: end of message
+
+4. Name squatting
+  a second instance with FILE_FLAG_FIRST_PIPE_INSTANCE: failed, error 5
+  a second instance without the flag:           created (the flag guards only the first instance)
+  client: pid 23136; GetNamedPipeServerProcessId says the server is pid 26824
+  client: sent 3 messages (21, 100, 3000 bytes); server replied "accepted"
+
+  server: client exited with code 0
+(exit status 0)
+
+==============================================================================
+namedpipe.exe, run 2
+==============================================================================
+
+date: 2026-11-16 07:05:21 UTC
+> namedpipe.exe
+1. A message-mode pipe and its client
+  server: pid 29012 created \\.\pipe\lab08-namedpipe-29012
+  server: started the client, CreateProcess says pid 26932
+
+2. Who connected?
+  server: GetNamedPipeClientProcessId 26932 (matches CreateProcess), session 1 (mine 1)
+  server: first message: "hello from the client" (21 bytes)
+  server: impersonated the client at level SecurityIdentification and took its token
+  client's token: user <machine>\<user> (S-1-5-21-<domain>-1001), integrity medium (0x2000)
+  server's token: user <machine>\<user> (S-1-5-21-<domain>-1001), integrity medium (0x2000)
+  server: same user: yes -> accept
+
+3. Message boundaries
+  server: next message is 100 bytes (3100 bytes in the pipe in total)
+    ReadFile into 64 bytes: 1 x (64 bytes, FALSE, ERROR_MORE_DATA), then 36 bytes, TRUE: end of message
+  server: next message is 3000 bytes (3000 bytes in the pipe in total)
+    ReadFile into 64 bytes: 46 x (64 bytes, FALSE, ERROR_MORE_DATA), then 56 bytes, TRUE: end of message
+
+4. Name squatting
+  a second instance with FILE_FLAG_FIRST_PIPE_INSTANCE: failed, error 5
+  a second instance without the flag:           created (the flag guards only the first instance)
+  client: pid 26932; GetNamedPipeServerProcessId says the server is pid 29012
+  client: sent 3 messages (21, 100, 3000 bytes); server replied "accepted"
+
+  server: client exited with code 0
+(exit status 0)
+
+==============================================================================
+dupsection.exe, run 1
+==============================================================================
+
+date: 2026-11-16 07:05:21 UTC
+> dupsection.exe
+1. An unnamed section backed by the paging file
+  server: pid 24776, section of 65536 bytes, view at 00000205B5F20000
+  server: section handle               handle 0x00f4  type Section  access 0x000f0007  handle count 1
+
+2. Push two handles into the client
+  server: client pid 11836 connected (CreateProcess said 11836)
+  server: DuplicateHandle into pid 11836 -> 0x0070 (FILE_MAP_READ), 0x0074 (FILE_MAP_READ | FILE_MAP_WRITE); valid only in that process
+  server: section handle               handle 0x00f4  type Section  access 0x000f0007  handle count 3
+  server: locked-down section (DACL 0x5) handle 0x0148  type Section  access 0x000f0007  handle count 1
+  server: pushed a FILE_MAP_READ handle to it as 0x00fc
+
+3. The client maps them
+  client: the server says my handles are 0x0070 (read-only) and 0x0074 (read-write)
+  client: read-only handle             handle 0x0070  type Section  access 0x00000004  handle count 3
+  client: read-write handle            handle 0x0074  type Section  access 0x00000006  handle count 3
+  client: read-only view at 000001F7FCD70000, 65536 bytes, MEM_MAPPED: "page 0, written by the server"
+  client: MapViewOfFile(read-only handle, FILE_MAP_WRITE) -> NULL, error 5
+  client: DuplicateHandle(read-only handle, FILE_MAP_ALL_ACCESS) -> TRUE, error 0
+  client: upgraded copy                handle 0x0100  type Section  access 0x000f001f  handle count 4
+  client: MapViewOfFile(upgraded copy, FILE_MAP_WRITE) -> a writable view
+  client: locked-down section handle   handle 0x00fc  type Section  access 0x00000004  handle count 2
+  client: DuplicateHandle(locked-down handle, FILE_MAP_ALL_ACCESS) -> FALSE, error 5
+  client: its read-only view says "the locked-down section"
+  client: wrote into page 1 through the read-write handle's view at 000001F7FCD80000
+  server: page 1 of my view now reads "page 1, written by the client"
+  server: pulled the client's 0x0070 back as 0x006c; CompareObjectHandles with my section: TRUE; with another section: FALSE
+
+4. Lifetime
+  server: unmapped my view and closed my section handle
+  client: closed my handles too; my view still reads "page 0, written by the server" and "page 1, written by the client"
+
+5. Push, do not pull
+  client: server's pseudo-handle, copied handle 0x0074  type Process  access 0x001fffff  handle count 9
+  server: client exited with code 0
+(exit status 0)
+
+==============================================================================
+dupsection.exe, run 2
+==============================================================================
+
+date: 2026-11-16 07:05:21 UTC
+> dupsection.exe
+1. An unnamed section backed by the paging file
+  server: pid 20148, section of 65536 bytes, view at 000001DB53340000
+  server: section handle               handle 0x00f8  type Section  access 0x000f0007  handle count 1
+
+2. Push two handles into the client
+  server: client pid 19692 connected (CreateProcess said 19692)
+  server: DuplicateHandle into pid 19692 -> 0x00fc (FILE_MAP_READ), 0x0100 (FILE_MAP_READ | FILE_MAP_WRITE); valid only in that process
+  server: section handle               handle 0x00f8  type Section  access 0x000f0007  handle count 3
+  server: locked-down section (DACL 0x5) handle 0x0144  type Section  access 0x000f0007  handle count 1
+  server: pushed a FILE_MAP_READ handle to it as 0x0104
+
+3. The client maps them
+  client: the server says my handles are 0x00fc (read-only) and 0x0100 (read-write)
+  client: read-only handle             handle 0x00fc  type Section  access 0x00000004  handle count 3
+  client: read-write handle            handle 0x0100  type Section  access 0x00000006  handle count 3
+  client: read-only view at 000001E6C86E0000, 65536 bytes, MEM_MAPPED: "page 0, written by the server"
+  client: MapViewOfFile(read-only handle, FILE_MAP_WRITE) -> NULL, error 5
+  client: DuplicateHandle(read-only handle, FILE_MAP_ALL_ACCESS) -> TRUE, error 0
+  client: upgraded copy                handle 0x0108  type Section  access 0x000f001f  handle count 4
+  client: MapViewOfFile(upgraded copy, FILE_MAP_WRITE) -> a writable view
+  client: locked-down section handle   handle 0x0104  type Section  access 0x00000004  handle count 2
+  client: DuplicateHandle(locked-down handle, FILE_MAP_ALL_ACCESS) -> FALSE, error 5
+  client: its read-only view says "the locked-down section"
+  client: wrote into page 1 through the read-write handle's view at 000001E6C86F0000
+  server: page 1 of my view now reads "page 1, written by the client"
+  server: pulled the client's 0x00fc back as 0x0150; CompareObjectHandles with my section: TRUE; with another section: FALSE
+
+4. Lifetime
+  server: unmapped my view and closed my section handle
+  client: closed my handles too; my view still reads "page 0, written by the server" and "page 1, written by the client"
+
+5. Push, do not pull
+  client: server's pseudo-handle, copied handle 0x0110  type Process  access 0x001fffff  handle count 9
+  server: client exited with code 0
+(exit status 0)
+
+==============================================================================
+msgwait.exe, run 1
+==============================================================================
+
+date: 2026-11-16 07:05:21 UTC
+> msgwait.exe
+[loop process: pid 14748, GUI thread 28340]
+1. How each kind of wakeup counts (one thread, nothing else running)
+  SetEvent x3 on an auto-reset event, then wait until it times out: 1 wakeup(s)
+  ReleaseSemaphore(3), then wait until it times out:                3 wakeup(s)
+  PostMessage x3, then PeekMessage until empty:                     3 message(s)
+  two messages posted, then one PeekMessage(PM_NOREMOVE); GetQueueStatus: new 0x0000, present 0x0008 (QS_POSTMESSAGE is 0x0008)
+    MsgWaitForMultipleObjectsEx(no handles, 200 ms, QS_ALLINPUT, 0)                    -> WAIT_TIMEOUT after 201 ms
+    MsgWaitForMultipleObjectsEx(no handles, 200 ms, QS_ALLINPUT, MWMO_INPUTAVAILABLE) -> WAIT_OBJECT_0 + n (input in the queue) after 0 ms
+
+2. One thread waits on four handles and its message queue
+[  206.3 ms] loop: listening on \\.\pipe\lab08-msgwait-14748; waiting on 4 handles and the message queue
+[  221.0 ms] pipe: a client connected (pid 26636)
+[  329.9 ms] event: the worker's event is set
+[  330.3 ms] message: WM_APP+1 from the worker, job 1
+[  330.5 ms] APC: job 1's callback ran on thread 28340 inside the alertable wait
+[  454.7 ms] event: the worker's event is set
+[  455.4 ms] message: WM_APP+1 from the worker, job 2
+[  455.8 ms] APC: job 2's callback ran on thread 28340 inside the alertable wait
+[  579.8 ms] event: the worker's event is set
+[  580.6 ms] message: WM_APP+1 from the worker, job 3
+[  580.9 ms] APC: job 3's callback ran on thread 28340 inside the alertable wait
+[  734.7 ms] pipe: overlapped ReadFile completed, 13 bytes already in my buffer: "first message"
+[  797.9 ms] pipe: overlapped ReadFile completed, 14 bytes already in my buffer: "second message"
+[  861.5 ms] pipe: overlapped ReadFile completed, 13 bytes already in my buffer: "third message"
+[  923.2 ms] pipe: the client went away (error 109); waiting for the next one
+[ 1126.5 ms] console control: CTRL_BREAK_EVENT, delivered by the handler on thread 7328; this is thread 28340
+[ 1127.6 ms] message: WM_QUIT; leaving the loop
+
+  in 0.92 s: 135 waits; waitable-timer wakeups 56 (58 expected at 16 ms); WM_TIMER 59 (92 asked for at 10 ms); worker: 3 event wakeup(s), 3 message(s), 3 APC(s)
+[launcher] the loop process exited with code 0
+(exit status 0)
+
+==============================================================================
+msgwait.exe, run 2
+==============================================================================
+
+date: 2026-11-16 07:05:23 UTC
+> msgwait.exe
+[loop process: pid 26020, GUI thread 23820]
+1. How each kind of wakeup counts (one thread, nothing else running)
+  SetEvent x3 on an auto-reset event, then wait until it times out: 1 wakeup(s)
+  ReleaseSemaphore(3), then wait until it times out:                3 wakeup(s)
+  PostMessage x3, then PeekMessage until empty:                     3 message(s)
+  two messages posted, then one PeekMessage(PM_NOREMOVE); GetQueueStatus: new 0x0000, present 0x0008 (QS_POSTMESSAGE is 0x0008)
+    MsgWaitForMultipleObjectsEx(no handles, 200 ms, QS_ALLINPUT, 0)                    -> WAIT_TIMEOUT after 210 ms
+    MsgWaitForMultipleObjectsEx(no handles, 200 ms, QS_ALLINPUT, MWMO_INPUTAVAILABLE) -> WAIT_OBJECT_0 + n (input in the queue) after 0 ms
+
+2. One thread waits on four handles and its message queue
+[  214.3 ms] loop: listening on \\.\pipe\lab08-msgwait-26020; waiting on 4 handles and the message queue
+[  229.4 ms] pipe: a client connected (pid 13860)
+[  338.9 ms] event: the worker's event is set
+[  339.4 ms] message: WM_APP+1 from the worker, job 1
+[  339.6 ms] APC: job 1's callback ran on thread 23820 inside the alertable wait
+[  464.9 ms] event: the worker's event is set
+[  465.3 ms] message: WM_APP+1 from the worker, job 2
+[  466.0 ms] APC: job 2's callback ran on thread 23820 inside the alertable wait
+[  590.8 ms] event: the worker's event is set
+[  591.4 ms] message: WM_APP+1 from the worker, job 3
+[  591.6 ms] APC: job 3's callback ran on thread 23820 inside the alertable wait
+[  731.8 ms] pipe: overlapped ReadFile completed, 13 bytes already in my buffer: "first message"
+[  792.6 ms] pipe: overlapped ReadFile completed, 14 bytes already in my buffer: "second message"
+[  855.2 ms] pipe: overlapped ReadFile completed, 13 bytes already in my buffer: "third message"
+[  917.3 ms] pipe: the client went away (error 109); waiting for the next one
+[ 1120.5 ms] console control: CTRL_BREAK_EVENT, delivered by the handler on thread 11892; this is thread 23820
+[ 1121.5 ms] message: WM_QUIT; leaving the loop
+
+  in 0.91 s: 133 waits; waitable-timer wakeups 55 (57 expected at 16 ms); WM_TIMER 58 (91 asked for at 10 ms); worker: 3 event wakeup(s), 3 message(s), 3 APC(s)
+[launcher] the loop process exited with code 0
+(exit status 0)
+
+==============================================================================
+iocp.exe, run 1
+==============================================================================
+
+date: 2026-11-16 07:05:24 UTC
+> iocp.exe
+[    0.1 ms] server: 3 instances of \\.\pipe\lab08-iocp-16876 on one completion port
+[   29.4 ms] instance 0: connect completed, client pid 15704
+[   29.6 ms] instance 1: connect completed, client pid 21744
+[   29.8 ms] instance 0: read completed, 19 bytes already in the buffer: "client 0, message 1"
+[   30.0 ms] instance 1: read completed, 19 bytes already in the buffer: "client 1, message 1"
+[   36.7 ms] instance 2: connect completed, client pid 28136
+[   36.9 ms] instance 2: read completed, 19 bytes already in the buffer: "client 2, message 1"
+[   56.0 ms] instance 0: read completed, 19 bytes already in the buffer: "client 0, message 2"
+[   71.4 ms] instance 1: read completed, 19 bytes already in the buffer: "client 1, message 2"
+[   86.7 ms] instance 0: read completed, 19 bytes already in the buffer: "client 0, message 3"
+[  102.8 ms] instance 2: read completed, 19 bytes already in the buffer: "client 2, message 2"
+[  118.7 ms] instance 0: read completed, 19 bytes already in the buffer: "client 0, message 4"
+[  119.1 ms] instance 1: read completed, 19 bytes already in the buffer: "client 1, message 3"
+[  150.0 ms] instance 0: read completed with error 109: client pid 15704 is gone after 4 messages
+[  166.0 ms] instance 2: read completed, 19 bytes already in the buffer: "client 2, message 3"
+[  166.3 ms] instance 1: read completed, 19 bytes already in the buffer: "client 1, message 4"
+[  213.2 ms] instance 1: read completed with error 109: client pid 21744 is gone after 4 messages
+[  228.8 ms] instance 2: read completed, 19 bytes already in the buffer: "client 2, message 4"
+[  288.9 ms] instance 2: read completed with error 109: client pid 28136 is gone after 4 messages
+
+  in 0.29 s: 36 GetQueuedCompletionStatusEx calls returned 49 entries (at most 3 at once); 18 timer packets (18 expected at 16 ms); clients that got every reply: 3 of 3
+(exit status 0)
+
+==============================================================================
+iocp.exe, run 2
+==============================================================================
+
+date: 2026-11-16 07:05:24 UTC
+> iocp.exe
+[    0.1 ms] server: 3 instances of \\.\pipe\lab08-iocp-28404 on one completion port
+[   29.4 ms] instance 0: connect completed, client pid 31532
+[   29.6 ms] instance 1: connect completed, client pid 16884
+[   29.8 ms] instance 0: read completed, 19 bytes already in the buffer: "client 0, message 1"
+[   30.0 ms] instance 1: read completed, 19 bytes already in the buffer: "client 1, message 1"
+[   36.7 ms] instance 2: connect completed, client pid 8184
+[   36.9 ms] instance 2: read completed, 19 bytes already in the buffer: "client 2, message 1"
+[   65.0 ms] instance 0: read completed, 19 bytes already in the buffer: "client 0, message 2"
+[   80.1 ms] instance 1: read completed, 19 bytes already in the buffer: "client 1, message 2"
+[   96.1 ms] instance 2: read completed, 19 bytes already in the buffer: "client 2, message 2"
+[   96.5 ms] instance 0: read completed, 19 bytes already in the buffer: "client 0, message 3"
+[  126.9 ms] instance 0: read completed, 19 bytes already in the buffer: "client 0, message 4"
+[  128.1 ms] instance 1: read completed, 19 bytes already in the buffer: "client 1, message 3"
+[  156.9 ms] instance 2: read completed, 19 bytes already in the buffer: "client 2, message 3"
+[  157.3 ms] instance 0: read completed with error 109: client pid 31532 is gone after 4 messages
+[  172.5 ms] instance 1: read completed, 19 bytes already in the buffer: "client 1, message 4"
+[  219.0 ms] instance 2: read completed, 19 bytes already in the buffer: "client 2, message 4"
+[  219.3 ms] instance 1: read completed with error 109: client pid 16884 is gone after 4 messages
+[  281.3 ms] instance 2: read completed with error 109: client pid 8184 is gone after 4 messages
+
+  in 0.28 s: 32 GetQueuedCompletionStatusEx calls returned 48 entries (at most 3 at once); 17 timer packets (18 expected at 16 ms); clients that got every reply: 3 of 3
+(exit status 0)
+

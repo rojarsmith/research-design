@@ -1,0 +1,7 @@
+# The Linux files are compiled and run inside Linux (WSL 2, a container).
+# Keep LF line endings even in a Windows checkout with core.autocrlf=true,
+# so that sh and patch accept them.
+*.sh    text eol=lf
+*.patch text eol=lf
+linux/*.c text eol=lf
+linux/*.h text eol=lf

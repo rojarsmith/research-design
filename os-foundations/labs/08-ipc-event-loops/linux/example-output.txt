@@ -1,0 +1,584 @@
+Recorded 2026-11-16 (07:03 UTC) in an Ubuntu 24.04.5 container (image
+oslab:24.04) under podman 5.7.1 on Windows 11 Pro build 26300. podman runs
+in a podman machine on WSL 2 and reported itself as rootful. This is not
+WSL 2 Ubuntu itself. Kernel 6.6.87.2-microsoft-standard-WSL2, 16 vCPUs, on
+an Intel Core i7-11700 host that was running other work at the same time.
+Tools in the image: gcc 13.3.0, strace 6.8, patch. The programs ran as root
+(uid 0) under podman's default seccomp profile (Seccomp: 2).
+
+Command, from Git Bash on the host, with the repository and the reference
+solution mounted read-only (builds went to /tmp inside the container):
+
+  MSYS_NO_PATHCONV=1 podman run --rm --cap-add SYS_PTRACE -e SOLUTION_DIR=/sol \
+    -v "<repository>:/work:ro" -v "<reference solution>:/sol:ro" oslab:24.04 \
+    sh /work/os-foundations/labs/08-ipc-event-loops/linux/run.sh
+
+The section "exercise C: your fix for the leak" ran a reference fix
+(evserver-fdleak.patch) that is kept outside this repository and is not
+shipped. A third run, without --cap-add SYS_PTRACE and without SOLUTION_DIR,
+printed "SKIPPED: no evserver-fdleak.patch in SOLUTION_DIR" for that
+section, and strace still traced the server (it traces its own child).
+
+PIDs, inode numbers, fd numbers in strace, temporary names and timings
+change from run to run; the timings come from a VM and are incidental.
+
+==============================================================================
+sh linux/run.sh, run 1 (started 07:03:06 UTC)
+==============================================================================
+
+== environment
+6.6.87.2-microsoft-standard-WSL2
+16
+gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+uid 0; Seccomp: 2
+
+== exercise A: SCM_RIGHTS and SO_PEERCRED (fdserver)
+server: pid 45, uid 0, listening on /tmp/lab08-fdserver-SbY2Fq/fdserver.sock (SOCK_SEQPACKET)
+
+1. The fd a client sends is the client's open file description
+  client: opened /tmp/lab08-fdserver-SbY2Fq/shared.txt as fd 4, inode 63392, offset now 4; sending it
+  server: message "file" with fd 5 -> /tmp/lab08-fdserver-SbY2Fq/shared.txt, inode 63392
+  server: offset of the received fd: 4
+  server: read 3 bytes through it: "456"
+  server: my own open() of the same path is fd 6, offset 0: a new open file description
+  server: received fd status flags: O_RDWR
+  client: after the server read 3 bytes, my fd 4's offset is 7
+
+2. Passing an fd passes a capability, not a name
+  client: opened /tmp/lab08-fdserver-SbY2Fq/nameless.txt read-only as fd 4, then unlinked it; sending the fd
+  server: fd 5 -> /tmp/lab08-fdserver-SbY2Fq/nameless.txt (deleted)
+  server: pread -> 23 bytes: "only the fd leads here"
+  server: write through it -> -1, errno 9 (Bad file descriptor): the access mode travelled with the fd
+  server: open("/proc/self/fd/5", O_RDWR) -> 6  (a reopen is checked against the file's permissions, not the fd's mode)
+
+3. SO_PEERCRED: who connected? (abstract socket, no file permissions)
+  server: pid 45, uid 0, listening on @lab08-fdserver-45
+  server: peer pid 48 (fork returned 48), uid 0, gid 0; message "A (same uid), sent with uid 0"
+  server: SO_PEERPIDFD gave pidfd 5, whose fdinfo says Pid 48
+  client A (same uid): server replied "accepted"
+  server: peer pid 49 (fork returned 49), uid 65534, gid 65534; message "B (uid 65534 before connect), sent with uid 65534"
+  server: uid 65534 is not mine (0): rejected, connection closed
+  client B (uid 65534 before connect): server closed the connection
+  server: peer pid 50 (fork returned 50), uid 0, gid 0; message "C (uid 65534 after connect), sent with uid 65534"
+  server: SO_PEERPIDFD gave pidfd 5, whose fdinfo says Pid 50
+  client C (uid 65534 after connect): server replied "accepted"
+
+4. Edge cases
+  a) 3 fds sent, room for 1: received 1, MSG_CTRUNC set, open fds 8 -> 9
+  b) SOCK_STREAM: sent "AB"+fd, "CD", "EF"+fd, "GH"; each recvmsg asks for 100 bytes and up to 4 fds
+     recvmsg -> "AB" with 1 fd(s)
+     recvmsg -> "CDEF" with 1 fd(s)
+     recvmsg -> "GH" with 0 fd(s)
+
+== exercise B: sealed memfd buffers (sealtest)
+1. The receiver accepts a buffer only if it can never shrink
+  a pipe                                 reject: not a regular file
+  a regular file in /tmp                 reject: cannot be sealed (F_GET_SEALS: Invalid argument)
+  a POSIX shm_open() object (tmpfs)      reject: could still shrink or change: seals SEAL, need SHRINK
+  memfd without MFD_ALLOW_SEALING        reject: could still shrink or change: seals SEAL, need SHRINK
+  memfd, sealing allowed, no seals       reject: could still shrink or change: seals none, need SHRINK
+  memfd sealed GROW only                 reject: could still shrink or change: seals GROW, need SHRINK
+  memfd sealed, but claims 16 pages      reject: claims 65536 bytes but has 16384
+  memfd sealed SHRINK                    ACCEPT: seals SHRINK, 16384 bytes
+  memfd sealed SHRINK|GROW|SEAL          ACCEPT: seals SEAL|SHRINK|GROW, 16384 bytes
+  memfd sealed SHRINK|GROW|WRITE|SEAL    ACCEPT: seals SEAL|SHRINK|GROW|WRITE, 16384 bytes
+
+2. A sealed buffer cannot be shrunk by its sender
+  sender:   memfd of 4 pages filled with 0x10..0x13, F_ADD_SEALS SHRINK|GROW|SEAL -> ok
+  receiver: accepted (seals SEAL|SHRINK|GROW, 16384 bytes) and mapped 16384 bytes
+  sender:   ftruncate to 1 page                 -> EPERM (Operation not permitted)
+  sender:   ftruncate to 0                      -> EPERM (Operation not permitted)
+  sender:   ftruncate to 8 pages                -> EPERM (Operation not permitted)
+  sender:   open(/proc/self/fd/4, O_TRUNC)      -> EPERM (Operation not permitted)
+  sender:   F_ADD_SEALS WRITE (after SEAL)      -> EPERM (Operation not permitted)
+  sender:   F_GET_SEALS                         -> SEAL|SHRINK|GROW; there is no call that removes a seal
+  sender:   writes 0xAA into page 0 through its mapping -> ok (contents may change)
+  sender:   punches a hole in page 2            -> ok
+  receiver: first byte of each page: 0xaa 0x11 0x00 0x13  (no SIGBUS)
+
+3. An unsealed buffer, and a receiver that only checked its size
+  a) receiver without a SIGBUS handler
+  receiver: fstat says 16384 bytes >= 16384 claimed: looks fine, mapping it
+  sender:   ftruncate to 1 page -> ok
+  receiver was killed by signal 7 (Bus error)
+  b) receiver with a SIGBUS handler
+  receiver: fstat says 16384 bytes >= 16384 claimed: looks fine, mapping it
+  sender:   ftruncate to 1 page -> ok
+  receiver: SIGBUS (si_code 2, BUS_ADRERR) at offset 0x1000; dropping this client's buffer and carrying on
+  receiver exited with status 0
+
+4. Freezing the contents: F_SEAL_WRITE and F_SEAL_FUTURE_WRITE
+  F_SEAL_WRITE while the writer still has a shared writable mapping -> EBUSY (Device or resource busy)
+  F_SEAL_WRITE after munmap                                    -> ok
+  pwrite                                                       -> EPERM (Operation not permitted)
+  mmap PROT_WRITE, MAP_SHARED                                  -> EPERM (Operation not permitted)
+  mmap PROT_WRITE, MAP_PRIVATE                                 -> ok  (writes go to private copies)
+    wrote 'X' through it; the file still starts with 'f'
+  reopen /proc/self/fd/3 O_RDWR (ok), then write             -> EPERM (Operation not permitted)
+  F_SEAL_FUTURE_WRITE with the writer's mapping still in place -> ok
+  the writer writes "frame 2" through its old mapping; a reader's mapping shows "frame 2"
+  pwrite                                                       -> EPERM (Operation not permitted)
+  a new mmap PROT_WRITE, MAP_SHARED                            -> EPERM (Operation not permitted)
+
+== exercise C: one epoll loop (evserver demo)
+[    0.8 ms] server: pid 57 listening on /tmp/lab08-evserver-NU0mBC/evserver.sock; epoll fd 3 watches the socket, a 60 Hz timerfd, signalfds for SIGINT, SIGTERM and SIGUSR1, and an eventfd
+[    0.9 ms] demo: --- client "good" ---
+[    1.1 ms] server: client 1 connected: pid 59, uid 0
+[    1.2 ms] server: client 1 says hello: "good"
+[    1.2 ms] client good: welcome, I am client 1
+[    1.5 ms] server: client 1 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[   21.7 ms] server: eventfd read 1 (worker posts since the last read); 1 job(s) done
+[   21.8 ms] client good: OK, checksum 6f208000
+[   21.9 ms] client good: PONG, server's vblank tick count 1
+[   21.9 ms] server: client 1 (good) said bye
+[   72.1 ms] demo: --- client "unsealed" ---
+[   72.5 ms] server: client 2 connected: pid 60, uid 0
+[   72.5 ms] server: client 2 says hello: "unsealed"
+[   72.5 ms] client unsealed: welcome, I am client 2
+[   72.7 ms] server: client 2 buffer rejected: could still shrink or change: seals none, need SHRINK
+[   72.7 ms] client unsealed: REJECT, could still shrink or change: seals none, need SHRINK
+[   72.7 ms] client unsealed: now claiming twice the size of a sealed buffer
+[   72.9 ms] server: client 2 buffer rejected: claims 131072 bytes but has 65536
+[   72.9 ms] client unsealed: REJECT, claims 131072 bytes but has 65536
+[   73.0 ms] server: client 2 (unsealed) said bye
+[  123.1 ms] demo: --- client "foreign" ---
+[  123.5 ms] client foreign (uid 65534): connect: Permission denied
+[  173.7 ms] demo: --- client "stall" ---
+[  174.2 ms] server: client 3 connected: pid 62, uid 0
+[  174.3 ms] server: client 3 says hello: "stall"
+[  174.4 ms] client stall: welcome, I am client 3
+[  174.6 ms] server: client 3 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  174.6 ms] server: client 3 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  174.7 ms] server: client 3 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  174.7 ms] server: client 3 asked the loop to block for 100 ms; blocking
+[  274.8 ms] server: timerfd read returned 6 expirations: 5 vblank tick(s) went by unseen
+[  274.8 ms] client stall: PONG, server's vblank tick count 10
+[  274.9 ms] server: eventfd read 3 (worker posts since the last read); 3 job(s) done
+[  274.9 ms] client stall: OK, checksum 6f208000
+[  274.9 ms] client stall: OK, checksum 6f208000
+[  275.0 ms] client stall: OK, checksum 6f208000
+[  275.0 ms] server: client 3 (stall) said bye
+[  325.3 ms] demo: --- client "crash" ---
+[  325.7 ms] server: client 4 connected: pid 63, uid 0
+[  325.7 ms] server: client 4 says hello: "crash"
+[  325.7 ms] client crash: welcome, I am client 4
+[  325.9 ms] client crash: sent a buffer, now exiting without waiting or saying bye
+[  325.9 ms] server: client 4 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  326.1 ms] server: client 4 (crash) hung up
+[  346.2 ms] server: eventfd read 1 (worker posts since the last read); 1 job(s) done
+[  346.2 ms] server: client 4 left before its job finished; result dropped
+[  376.2 ms] demo: --- client "fdflood" ---
+[  376.7 ms] server: client 5 connected: pid 64, uid 0
+[  376.8 ms] server: client 5 says hello: "fdflood"
+[  376.9 ms] client fdflood: welcome, I am client 5
+[  412.9 ms] server: timerfd read returned 2 expirations: 1 vblank tick(s) went by unseen
+[  453.8 ms] client fdflood: sent 200 PINGs with 2 fds attached to each; 200 PONGs came back
+[  453.9 ms] server: client 5 (fdflood) said bye
+[  504.1 ms] demo: --- kill -USR1, then kill -TERM ---
+[  504.3 ms] server: signalfd: User defined signal 1 from pid 56
+[  504.3 ms] server: statistics: 0.50 s, 30 vblank ticks (30 expected), 2 late timer reads, at most 6 expirations in one read; 0 client(s); open fds 410 (at start 10)
+[  704.5 ms] server: signalfd: Terminated from pid 56
+[  704.6 ms] server: shutting down: 0.70 s, 42 vblank ticks (42 expected), 2 late timer reads, at most 6 expirations in one read; 0 client(s); open fds 410 (at start 10)
+[  706.4 ms] demo: server exited with status 0
+
+== exercise C: the server's system calls while one good client talks to it
+73    accept4(7, NULL, NULL, SOCK_CLOEXEC|SOCK_NONBLOCK) = 10
+73    write(1, "[  146.4 ms] server: client 1 co"..., 55) = 55
+73    accept4(7, NULL, NULL, SOCK_CLOEXEC|SOCK_NONBLOCK) = -1 EAGAIN (Resource temporarily unavailable)
+73    epoll_wait(3, [{events=EPOLLIN, data={u32=1400088000, u64=96032573859264}}], 32, -1) = 1
+73    recvmsg(10, {msg_name=NULL, msg_namelen=0, msg_iov=[{iov_base="\1\0\0\0\0\0\0\0good\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., iov_len=64}], m
+73    write(1, "[  146.9 ms] server: client 1 sa"..., 49) = 49
+73    sendto(10, "d\0\0\0\1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 64, MSG_DONTWAIT|MSG_NOSIGNAL, NULL, 0) = 64
+73    recvmsg(10, {msg_namelen=0}, MSG_CMSG_CLOEXEC) = -1 EAGAIN (Resource temporarily unavailable)
+73    epoll_wait(3, [{events=EPOLLIN, data={u32=1400088000, u64=96032573859264}}], 32, -1) = 1
+73    recvmsg(10, {msg_name=NULL, msg_namelen=0, msg_iov=[{iov_base="\2\0\0\0\0\0\1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., iov_len=64}
+73    write(1, "[  147.7 ms] server: client 1 bu"..., 107) = 107
+73    recvmsg(10, {msg_namelen=0}, MSG_CMSG_CLOEXEC) = -1 EAGAIN (Resource temporarily unavailable)
+73    epoll_wait(3, [{events=EPOLLIN, data={u32=1400083392, u64=96032573854656}}], 32, -1) = 1
+73    read(8, "\1\0\0\0\0\0\0\0", 8)    = 8
+73    epoll_wait(3,  <unfinished ...>
+74    write(9, "\1\0\0\0\0\0\0\0", 8 <unfinished ...>
+73    <... epoll_wait resumed>[{events=EPOLLIN, data={u32=1400083456, u64=96032573854720}}], 32, -1) = 1
+74    <... write resumed>)              = 8
+73    read(9, "\1\0\0\0\0\0\0\0", 8)    = 8
+73    write(1, "[  168.8 ms] server: eventfd rea"..., 86) = 86
+73    sendto(10, "e\0\0\0\0\200 ochecksum 6f208000\0\0\0\0\0\0\0"..., 64, MSG_DONTWAIT|MSG_NOSIGNAL, NULL, 0) = 64
+73    epoll_wait(3, [{events=EPOLLIN, data={u32=1400088000, u64=96032573859264}}], 32, -1) = 1
+73    recvmsg(10, {msg_name=NULL, msg_namelen=0, msg_iov=[{iov_base="\3\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., iov_len=64}
+73    sendto(10, "g\0\0\0\t\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 64, MSG_DONTWAIT|MSG_NOSIGNAL, NULL, 0) = 64
+73    recvmsg(10, {msg_name=NULL, msg_namelen=0, msg_iov=[{iov_base="\5\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., iov_len=64}
+-- the control data of the BUFFER message, which those lines cut off:
+   msg_control=[{cmsg_len=20, cmsg_level=SOL_SOCKET, cmsg_type=SCM_RIGHTS, cmsg_data=[11]}]
+(full trace: /tmp/lab08-linux.VYrNDJ/strace-evserver.txt; client output: /tmp/lab08-linux.VYrNDJ/client.log)
+
+== exercise C: your fix for the leak
+[    0.8 ms] server: pid 98 listening on /tmp/lab08-evserver-GdDhzM/evserver.sock; epoll fd 3 watches the socket, a 60 Hz timerfd, signalfds for SIGINT, SIGTERM and SIGUSR1, and an eventfd
+[    1.0 ms] demo: --- client "good" ---
+[    1.3 ms] server: client 1 connected: pid 100, uid 0
+[    1.3 ms] server: client 1 says hello: "good"
+[    1.4 ms] client good: welcome, I am client 1
+[    1.6 ms] server: client 1 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[   21.9 ms] server: eventfd read 1 (worker posts since the last read); 1 job(s) done
+[   22.1 ms] client good: OK, checksum 6f208000
+[   22.2 ms] client good: PONG, server's vblank tick count 1
+[   22.2 ms] server: client 1 (good) said bye
+[   72.6 ms] demo: --- client "unsealed" ---
+[   73.1 ms] server: client 2 connected: pid 101, uid 0
+[   73.2 ms] server: client 2 says hello: "unsealed"
+[   73.2 ms] client unsealed: welcome, I am client 2
+[   73.4 ms] server: client 2 buffer rejected: could still shrink or change: seals none, need SHRINK
+[   73.5 ms] client unsealed: REJECT, could still shrink or change: seals none, need SHRINK
+[   73.6 ms] client unsealed: now claiming twice the size of a sealed buffer
+[   74.1 ms] server: client 2 buffer rejected: claims 131072 bytes but has 65536
+[   74.2 ms] client unsealed: REJECT, claims 131072 bytes but has 65536
+[   74.2 ms] server: client 2 (unsealed) said bye
+[  124.5 ms] demo: --- client "foreign" ---
+[  124.8 ms] client foreign (uid 65534): connect: Permission denied
+[  175.2 ms] demo: --- client "stall" ---
+[  175.7 ms] server: client 3 connected: pid 103, uid 0
+[  175.7 ms] server: client 3 says hello: "stall"
+[  175.8 ms] client stall: welcome, I am client 3
+[  176.0 ms] server: client 3 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  176.1 ms] server: client 3 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  176.2 ms] server: client 3 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  176.3 ms] server: client 3 asked the loop to block for 100 ms; blocking
+[  276.5 ms] server: timerfd read returned 6 expirations: 5 vblank tick(s) went by unseen
+[  276.5 ms] server: eventfd read 3 (worker posts since the last read); 3 job(s) done
+[  276.6 ms] client stall: PONG, server's vblank tick count 10
+[  276.6 ms] client stall: OK, checksum 6f208000
+[  276.6 ms] client stall: OK, checksum 6f208000
+[  276.6 ms] client stall: OK, checksum 6f208000
+[  276.9 ms] server: client 3 (stall) said bye
+[  327.2 ms] demo: --- client "crash" ---
+[  327.9 ms] server: client 4 connected: pid 104, uid 0
+[  328.0 ms] server: client 4 says hello: "crash"
+[  328.0 ms] client crash: welcome, I am client 4
+[  328.2 ms] client crash: sent a buffer, now exiting without waiting or saying bye
+[  328.2 ms] server: client 4 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  328.3 ms] server: client 4 (crash) hung up
+[  348.7 ms] server: eventfd read 1 (worker posts since the last read); 1 job(s) done
+[  348.8 ms] server: client 4 left before its job finished; result dropped
+[  378.7 ms] demo: --- client "fdflood" ---
+[  379.0 ms] server: client 5 connected: pid 105, uid 0
+[  379.0 ms] server: client 5 says hello: "fdflood"
+[  379.1 ms] client fdflood: welcome, I am client 5
+[  379.2 ms] server: client 5 sent 2 fd(s) that message type 3 does not take; closing them (and any later ones)
+[  394.0 ms] client fdflood: sent 200 PINGs with 2 fds attached to each; 200 PONGs came back
+[  394.1 ms] server: client 5 (fdflood) said bye
+[  394.1 ms] server: client 5 had sent 400 fd(s) without a use; all were closed
+[  444.4 ms] demo: --- kill -USR1, then kill -TERM ---
+[  444.5 ms] server: signalfd: User defined signal 1 from pid 97
+[  444.7 ms] server: statistics: 0.44 s, 26 vblank ticks (27 expected), 1 late timer reads, at most 6 expirations in one read; 0 client(s); open fds 10 (at start 10)
+[  644.6 ms] server: signalfd: Terminated from pid 97
+[  644.7 ms] server: shutting down: 0.64 s, 38 vblank ticks (39 expected), 1 late timer reads, at most 6 expirations in one read; 0 client(s); open fds 10 (at start 10)
+[  645.1 ms] demo: server exited with status 0
+
+== exercise D: readiness vs completion (readiness)
+1. Level-triggered vs edge-triggered, on a pipe
+  level-triggered (EPOLLIN):
+    wrote 10 bytes                 -> epoll_wait reports 1 event(s)
+    read 4, 6 left unread          -> epoll_wait reports 1 event(s)
+    read until EAGAIN (6 bytes)    -> epoll_wait reports 0 event(s)
+  edge-triggered (EPOLLIN | EPOLLET):
+    wrote 10 bytes                 -> epoll_wait reports 1 event(s)
+    read 4, 6 left unread          -> epoll_wait reports 0 event(s)
+    wrote 1 more byte              -> epoll_wait reports 1 event(s)
+    read until EAGAIN (7 bytes)    -> epoll_wait reports 0 event(s)
+
+2. Writability is back-pressure (SOCK_SEQPACKET socketpair, 64-byte messages)
+  SO_SNDBUF 212992 bytes; 278 messages sent before send() failed with EAGAIN
+  the sender's EPOLLOUT now: 0 event(s)
+  the peer had to read 209 of the 278 messages before EPOLLOUT came back
+
+3. Regular files are always "ready"
+  poll() on a regular file: 1 ready, revents 0x1 (POLLIN is 0x1)
+  epoll_ctl(EPOLL_CTL_ADD) on it: -1, EPERM (Operation not permitted)
+
+4. A completion interface: io_uring
+  io_uring_setup(4 entries) -> -1, ENOSYS (Function not implemented)
+  /proc/sys/kernel/io_uring_disabled: 0
+  this process's Seccomp mode: 2 (a seccomp filter is installed)
+  (completion via io_uring could not be shown here)
+
+build outputs are in /tmp/lab08-linux.VYrNDJ
+
+==============================================================================
+sh linux/run.sh, run 2 (started 07:03:11 UTC)
+==============================================================================
+
+== environment
+6.6.87.2-microsoft-standard-WSL2
+16
+gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+uid 0; Seccomp: 2
+
+== exercise A: SCM_RIGHTS and SO_PEERCRED (fdserver)
+server: pid 45, uid 0, listening on /tmp/lab08-fdserver-9iTlHW/fdserver.sock (SOCK_SEQPACKET)
+
+1. The fd a client sends is the client's open file description
+  client: opened /tmp/lab08-fdserver-9iTlHW/shared.txt as fd 4, inode 63392, offset now 4; sending it
+  server: message "file" with fd 5 -> /tmp/lab08-fdserver-9iTlHW/shared.txt, inode 63392
+  server: offset of the received fd: 4
+  server: read 3 bytes through it: "456"
+  server: my own open() of the same path is fd 6, offset 0: a new open file description
+  server: received fd status flags: O_RDWR
+  client: after the server read 3 bytes, my fd 4's offset is 7
+
+2. Passing an fd passes a capability, not a name
+  client: opened /tmp/lab08-fdserver-9iTlHW/nameless.txt read-only as fd 4, then unlinked it; sending the fd
+  server: fd 5 -> /tmp/lab08-fdserver-9iTlHW/nameless.txt (deleted)
+  server: pread -> 23 bytes: "only the fd leads here"
+  server: write through it -> -1, errno 9 (Bad file descriptor): the access mode travelled with the fd
+  server: open("/proc/self/fd/5", O_RDWR) -> 6  (a reopen is checked against the file's permissions, not the fd's mode)
+
+3. SO_PEERCRED: who connected? (abstract socket, no file permissions)
+  server: pid 45, uid 0, listening on @lab08-fdserver-45
+  server: peer pid 48 (fork returned 48), uid 0, gid 0; message "A (same uid), sent with uid 0"
+  server: SO_PEERPIDFD gave pidfd 5, whose fdinfo says Pid 48
+  client A (same uid): server replied "accepted"
+  server: peer pid 49 (fork returned 49), uid 65534, gid 65534; message "B (uid 65534 before connect), sent with uid 65534"
+  server: uid 65534 is not mine (0): rejected, connection closed
+  client B (uid 65534 before connect): server closed the connection
+  server: peer pid 50 (fork returned 50), uid 0, gid 0; message "C (uid 65534 after connect), sent with uid 65534"
+  server: SO_PEERPIDFD gave pidfd 5, whose fdinfo says Pid 50
+  client C (uid 65534 after connect): server replied "accepted"
+
+4. Edge cases
+  a) 3 fds sent, room for 1: received 1, MSG_CTRUNC set, open fds 8 -> 9
+  b) SOCK_STREAM: sent "AB"+fd, "CD", "EF"+fd, "GH"; each recvmsg asks for 100 bytes and up to 4 fds
+     recvmsg -> "AB" with 1 fd(s)
+     recvmsg -> "CDEF" with 1 fd(s)
+     recvmsg -> "GH" with 0 fd(s)
+
+== exercise B: sealed memfd buffers (sealtest)
+1. The receiver accepts a buffer only if it can never shrink
+  a pipe                                 reject: not a regular file
+  a regular file in /tmp                 reject: cannot be sealed (F_GET_SEALS: Invalid argument)
+  a POSIX shm_open() object (tmpfs)      reject: could still shrink or change: seals SEAL, need SHRINK
+  memfd without MFD_ALLOW_SEALING        reject: could still shrink or change: seals SEAL, need SHRINK
+  memfd, sealing allowed, no seals       reject: could still shrink or change: seals none, need SHRINK
+  memfd sealed GROW only                 reject: could still shrink or change: seals GROW, need SHRINK
+  memfd sealed, but claims 16 pages      reject: claims 65536 bytes but has 16384
+  memfd sealed SHRINK                    ACCEPT: seals SHRINK, 16384 bytes
+  memfd sealed SHRINK|GROW|SEAL          ACCEPT: seals SEAL|SHRINK|GROW, 16384 bytes
+  memfd sealed SHRINK|GROW|WRITE|SEAL    ACCEPT: seals SEAL|SHRINK|GROW|WRITE, 16384 bytes
+
+2. A sealed buffer cannot be shrunk by its sender
+  sender:   memfd of 4 pages filled with 0x10..0x13, F_ADD_SEALS SHRINK|GROW|SEAL -> ok
+  receiver: accepted (seals SEAL|SHRINK|GROW, 16384 bytes) and mapped 16384 bytes
+  sender:   ftruncate to 1 page                 -> EPERM (Operation not permitted)
+  sender:   ftruncate to 0                      -> EPERM (Operation not permitted)
+  sender:   ftruncate to 8 pages                -> EPERM (Operation not permitted)
+  sender:   open(/proc/self/fd/4, O_TRUNC)      -> EPERM (Operation not permitted)
+  sender:   F_ADD_SEALS WRITE (after SEAL)      -> EPERM (Operation not permitted)
+  sender:   F_GET_SEALS                         -> SEAL|SHRINK|GROW; there is no call that removes a seal
+  sender:   writes 0xAA into page 0 through its mapping -> ok (contents may change)
+  sender:   punches a hole in page 2            -> ok
+  receiver: first byte of each page: 0xaa 0x11 0x00 0x13  (no SIGBUS)
+
+3. An unsealed buffer, and a receiver that only checked its size
+  a) receiver without a SIGBUS handler
+  receiver: fstat says 16384 bytes >= 16384 claimed: looks fine, mapping it
+  sender:   ftruncate to 1 page -> ok
+  receiver was killed by signal 7 (Bus error)
+  b) receiver with a SIGBUS handler
+  receiver: fstat says 16384 bytes >= 16384 claimed: looks fine, mapping it
+  sender:   ftruncate to 1 page -> ok
+  receiver: SIGBUS (si_code 2, BUS_ADRERR) at offset 0x1000; dropping this client's buffer and carrying on
+  receiver exited with status 0
+
+4. Freezing the contents: F_SEAL_WRITE and F_SEAL_FUTURE_WRITE
+  F_SEAL_WRITE while the writer still has a shared writable mapping -> EBUSY (Device or resource busy)
+  F_SEAL_WRITE after munmap                                    -> ok
+  pwrite                                                       -> EPERM (Operation not permitted)
+  mmap PROT_WRITE, MAP_SHARED                                  -> EPERM (Operation not permitted)
+  mmap PROT_WRITE, MAP_PRIVATE                                 -> ok  (writes go to private copies)
+    wrote 'X' through it; the file still starts with 'f'
+  reopen /proc/self/fd/3 O_RDWR (ok), then write             -> EPERM (Operation not permitted)
+  F_SEAL_FUTURE_WRITE with the writer's mapping still in place -> ok
+  the writer writes "frame 2" through its old mapping; a reader's mapping shows "frame 2"
+  pwrite                                                       -> EPERM (Operation not permitted)
+  a new mmap PROT_WRITE, MAP_SHARED                            -> EPERM (Operation not permitted)
+
+== exercise C: one epoll loop (evserver demo)
+[    0.8 ms] server: pid 57 listening on /tmp/lab08-evserver-WucRiT/evserver.sock; epoll fd 3 watches the socket, a 60 Hz timerfd, signalfds for SIGINT, SIGTERM and SIGUSR1, and an eventfd
+[    0.9 ms] demo: --- client "good" ---
+[    1.1 ms] server: client 1 connected: pid 59, uid 0
+[    1.2 ms] server: client 1 says hello: "good"
+[    1.2 ms] client good: welcome, I am client 1
+[    1.4 ms] server: client 1 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[   21.7 ms] server: eventfd read 1 (worker posts since the last read); 1 job(s) done
+[   21.9 ms] client good: OK, checksum 6f208000
+[   21.9 ms] client good: PONG, server's vblank tick count 1
+[   22.0 ms] server: client 1 (good) said bye
+[   72.3 ms] demo: --- client "unsealed" ---
+[   72.7 ms] server: client 2 connected: pid 60, uid 0
+[   72.7 ms] server: client 2 says hello: "unsealed"
+[   72.8 ms] client unsealed: welcome, I am client 2
+[   73.0 ms] server: client 2 buffer rejected: could still shrink or change: seals none, need SHRINK
+[   73.1 ms] client unsealed: REJECT, could still shrink or change: seals none, need SHRINK
+[   73.1 ms] client unsealed: now claiming twice the size of a sealed buffer
+[   73.2 ms] server: client 2 buffer rejected: claims 131072 bytes but has 65536
+[   73.3 ms] client unsealed: REJECT, claims 131072 bytes but has 65536
+[   73.3 ms] server: client 2 (unsealed) said bye
+[  123.5 ms] demo: --- client "foreign" ---
+[  123.9 ms] client foreign (uid 65534): connect: Permission denied
+[  174.2 ms] demo: --- client "stall" ---
+[  174.6 ms] server: client 3 connected: pid 62, uid 0
+[  174.7 ms] server: client 3 says hello: "stall"
+[  174.7 ms] client stall: welcome, I am client 3
+[  174.9 ms] server: client 3 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  175.0 ms] server: client 3 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  175.1 ms] server: client 3 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  175.1 ms] server: client 3 asked the loop to block for 100 ms; blocking
+[  275.3 ms] server: timerfd read returned 6 expirations: 5 vblank tick(s) went by unseen
+[  275.3 ms] server: eventfd read 3 (worker posts since the last read); 3 job(s) done
+[  275.4 ms] client stall: PONG, server's vblank tick count 10
+[  275.4 ms] client stall: OK, checksum 6f208000
+[  275.4 ms] client stall: OK, checksum 6f208000
+[  275.4 ms] client stall: OK, checksum 6f208000
+[  275.6 ms] server: client 3 (stall) said bye
+[  325.9 ms] demo: --- client "crash" ---
+[  326.3 ms] server: client 4 connected: pid 63, uid 0
+[  326.4 ms] server: client 4 says hello: "crash"
+[  326.5 ms] client crash: welcome, I am client 4
+[  326.7 ms] client crash: sent a buffer, now exiting without waiting or saying bye
+[  326.7 ms] server: client 4 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  326.8 ms] server: client 4 (crash) hung up
+[  347.0 ms] server: eventfd read 1 (worker posts since the last read); 1 job(s) done
+[  347.0 ms] server: client 4 left before its job finished; result dropped
+[  377.1 ms] demo: --- client "fdflood" ---
+[  377.9 ms] server: client 5 connected: pid 64, uid 0
+[  377.9 ms] server: client 5 says hello: "fdflood"
+[  378.0 ms] client fdflood: welcome, I am client 5
+[  445.2 ms] client fdflood: sent 200 PINGs with 2 fds attached to each; 200 PONGs came back
+[  445.3 ms] server: client 5 (fdflood) said bye
+[  495.6 ms] demo: --- kill -USR1, then kill -TERM ---
+[  495.7 ms] server: signalfd: User defined signal 1 from pid 56
+[  495.7 ms] server: statistics: 0.49 s, 29 vblank ticks (30 expected), 1 late timer reads, at most 6 expirations in one read; 0 client(s); open fds 410 (at start 10)
+[  695.8 ms] server: signalfd: Terminated from pid 56
+[  695.9 ms] server: shutting down: 0.70 s, 41 vblank ticks (42 expected), 1 late timer reads, at most 6 expirations in one read; 0 client(s); open fds 410 (at start 10)
+[  696.9 ms] demo: server exited with status 0
+
+== exercise C: the server's system calls while one good client talks to it
+73    accept4(7, NULL, NULL, SOCK_CLOEXEC|SOCK_NONBLOCK) = 10
+73    write(1, "[  147.2 ms] server: client 1 co"..., 55) = 55
+73    accept4(7, NULL, NULL, SOCK_CLOEXEC|SOCK_NONBLOCK) = -1 EAGAIN (Resource temporarily unavailable)
+73    epoll_wait(3, [{events=EPOLLIN, data={u32=1389897152, u64=111417136522688}}], 32, -1) = 1
+73    recvmsg(10, {msg_name=NULL, msg_namelen=0, msg_iov=[{iov_base="\1\0\0\0\0\0\0\0good\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., iov_len=64}], m
+73    write(1, "[  147.8 ms] server: client 1 sa"..., 49) = 49
+73    sendto(10, "d\0\0\0\1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 64, MSG_DONTWAIT|MSG_NOSIGNAL, NULL, 0) = 64
+73    recvmsg(10, {msg_namelen=0}, MSG_CMSG_CLOEXEC) = -1 EAGAIN (Resource temporarily unavailable)
+73    epoll_wait(3, [{events=EPOLLIN, data={u32=1389897152, u64=111417136522688}}], 32, -1) = 1
+73    recvmsg(10, {msg_name=NULL, msg_namelen=0, msg_iov=[{iov_base="\2\0\0\0\0\0\1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., iov_len=64}
+73    write(1, "[  148.9 ms] server: client 1 bu"..., 107) = 107
+73    recvmsg(10, {msg_namelen=0}, MSG_CMSG_CLOEXEC) = -1 EAGAIN (Resource temporarily unavailable)
+73    epoll_wait(3, [{events=EPOLLIN, data={u32=1389892544, u64=111417136518080}}], 32, -1) = 1
+73    read(8, "\1\0\0\0\0\0\0\0", 8)    = 8
+73    epoll_wait(3, [{events=EPOLLIN, data={u32=1389892544, u64=111417136518080}}], 32, -1) = 1
+73    read(8, "\1\0\0\0\0\0\0\0", 8)    = 8
+73    epoll_wait(3,  <unfinished ...>
+74    write(9, "\1\0\0\0\0\0\0\0", 8 <unfinished ...>
+73    <... epoll_wait resumed>[{events=EPOLLIN, data={u32=1389892608, u64=111417136518144}}], 32, -1) = 1
+74    <... write resumed>)              = 8
+73    read(9, "\1\0\0\0\0\0\0\0", 8)    = 8
+73    write(1, "[  169.8 ms] server: eventfd rea"..., 86) = 86
+73    sendto(10, "e\0\0\0\0\200 ochecksum 6f208000\0\0\0\0\0\0\0"..., 64, MSG_DONTWAIT|MSG_NOSIGNAL, NULL, 0) = 64
+73    epoll_wait(3, [{events=EPOLLIN, data={u32=1389897152, u64=111417136522688}}], 32, -1) = 1
+73    recvmsg(10, {msg_name=NULL, msg_namelen=0, msg_iov=[{iov_base="\3\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., iov_len=64}
+73    sendto(10, "g\0\0\0\n\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 64, MSG_DONTWAIT|MSG_NOSIGNAL, NULL, 0) = 64
+73    recvmsg(10, {msg_name=NULL, msg_namelen=0, msg_iov=[{iov_base="\5\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., iov_len=64}
+-- the control data of the BUFFER message, which those lines cut off:
+   msg_control=[{cmsg_len=20, cmsg_level=SOL_SOCKET, cmsg_type=SCM_RIGHTS, cmsg_data=[11]}]
+(full trace: /tmp/lab08-linux.q2Nfvq/strace-evserver.txt; client output: /tmp/lab08-linux.q2Nfvq/client.log)
+
+== exercise C: your fix for the leak
+[    1.0 ms] server: pid 98 listening on /tmp/lab08-evserver-PA2CoC/evserver.sock; epoll fd 3 watches the socket, a 60 Hz timerfd, signalfds for SIGINT, SIGTERM and SIGUSR1, and an eventfd
+[    1.1 ms] demo: --- client "good" ---
+[    1.6 ms] server: client 1 connected: pid 100, uid 0
+[    1.6 ms] server: client 1 says hello: "good"
+[    1.7 ms] client good: welcome, I am client 1
+[    1.9 ms] server: client 1 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[   22.1 ms] server: eventfd read 1 (worker posts since the last read); 1 job(s) done
+[   22.3 ms] client good: OK, checksum 6f208000
+[   22.3 ms] client good: PONG, server's vblank tick count 1
+[   22.4 ms] server: client 1 (good) said bye
+[   72.6 ms] demo: --- client "unsealed" ---
+[   73.0 ms] server: client 2 connected: pid 101, uid 0
+[   73.1 ms] server: client 2 says hello: "unsealed"
+[   73.1 ms] client unsealed: welcome, I am client 2
+[   73.3 ms] server: client 2 buffer rejected: could still shrink or change: seals none, need SHRINK
+[   73.4 ms] client unsealed: REJECT, could still shrink or change: seals none, need SHRINK
+[   73.4 ms] client unsealed: now claiming twice the size of a sealed buffer
+[   73.5 ms] server: client 2 buffer rejected: claims 131072 bytes but has 65536
+[   73.6 ms] client unsealed: REJECT, claims 131072 bytes but has 65536
+[   73.6 ms] server: client 2 (unsealed) said bye
+[  123.8 ms] demo: --- client "foreign" ---
+[  124.3 ms] client foreign (uid 65534): connect: Permission denied
+[  174.6 ms] demo: --- client "stall" ---
+[  175.0 ms] server: client 3 connected: pid 103, uid 0
+[  175.0 ms] server: client 3 says hello: "stall"
+[  175.0 ms] client stall: welcome, I am client 3
+[  175.2 ms] server: client 3 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  175.3 ms] server: client 3 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  175.4 ms] server: client 3 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  175.4 ms] server: client 3 asked the loop to block for 100 ms; blocking
+[  275.5 ms] server: timerfd read returned 6 expirations: 5 vblank tick(s) went by unseen
+[  275.5 ms] client stall: PONG, server's vblank tick count 10
+[  275.5 ms] server: eventfd read 3 (worker posts since the last read); 3 job(s) done
+[  275.6 ms] client stall: OK, checksum 6f208000
+[  275.7 ms] client stall: OK, checksum 6f208000
+[  275.7 ms] client stall: OK, checksum 6f208000
+[  275.7 ms] server: client 3 (stall) said bye
+[  326.0 ms] demo: --- client "crash" ---
+[  326.4 ms] server: client 4 connected: pid 104, uid 0
+[  326.5 ms] server: client 4 says hello: "crash"
+[  326.5 ms] client crash: welcome, I am client 4
+[  326.7 ms] client crash: sent a buffer, now exiting without waiting or saying bye
+[  326.8 ms] server: client 4 buffer accepted (seals SEAL|SHRINK|GROW, 65536 bytes); queued for the worker
+[  326.8 ms] server: client 4 (crash) hung up
+[  347.0 ms] server: eventfd read 1 (worker posts since the last read); 1 job(s) done
+[  347.0 ms] server: client 4 left before its job finished; result dropped
+[  377.0 ms] demo: --- client "fdflood" ---
+[  377.4 ms] server: client 5 connected: pid 105, uid 0
+[  377.4 ms] server: client 5 says hello: "fdflood"
+[  377.5 ms] client fdflood: welcome, I am client 5
+[  377.6 ms] server: client 5 sent 2 fd(s) that message type 3 does not take; closing them (and any later ones)
+[  388.5 ms] client fdflood: sent 200 PINGs with 2 fds attached to each; 200 PONGs came back
+[  388.5 ms] server: client 5 (fdflood) said bye
+[  388.6 ms] server: client 5 had sent 400 fd(s) without a use; all were closed
+[  438.8 ms] demo: --- kill -USR1, then kill -TERM ---
+[  438.9 ms] server: signalfd: User defined signal 1 from pid 97
+[  438.9 ms] server: statistics: 0.44 s, 26 vblank ticks (26 expected), 1 late timer reads, at most 6 expirations in one read; 0 client(s); open fds 10 (at start 10)
+[  639.1 ms] server: signalfd: Terminated from pid 97
+[  639.1 ms] server: shutting down: 0.64 s, 38 vblank ticks (38 expected), 1 late timer reads, at most 6 expirations in one read; 0 client(s); open fds 10 (at start 10)
+[  639.5 ms] demo: server exited with status 0
+
+== exercise D: readiness vs completion (readiness)
+1. Level-triggered vs edge-triggered, on a pipe
+  level-triggered (EPOLLIN):
+    wrote 10 bytes                 -> epoll_wait reports 1 event(s)
+    read 4, 6 left unread          -> epoll_wait reports 1 event(s)
+    read until EAGAIN (6 bytes)    -> epoll_wait reports 0 event(s)
+  edge-triggered (EPOLLIN | EPOLLET):
+    wrote 10 bytes                 -> epoll_wait reports 1 event(s)
+    read 4, 6 left unread          -> epoll_wait reports 0 event(s)
+    wrote 1 more byte              -> epoll_wait reports 1 event(s)
+    read until EAGAIN (7 bytes)    -> epoll_wait reports 0 event(s)
+
+2. Writability is back-pressure (SOCK_SEQPACKET socketpair, 64-byte messages)
+  SO_SNDBUF 212992 bytes; 278 messages sent before send() failed with EAGAIN
+  the sender's EPOLLOUT now: 0 event(s)
+  the peer had to read 209 of the 278 messages before EPOLLOUT came back
+
+3. Regular files are always "ready"
+  poll() on a regular file: 1 ready, revents 0x1 (POLLIN is 0x1)
+  epoll_ctl(EPOLL_CTL_ADD) on it: -1, EPERM (Operation not permitted)
+
+4. A completion interface: io_uring
+  io_uring_setup(4 entries) -> -1, ENOSYS (Function not implemented)
+  /proc/sys/kernel/io_uring_disabled: 0
+  this process's Seccomp mode: 2 (a seccomp filter is installed)
+  (completion via io_uring could not be shown here)
+
+build outputs are in /tmp/lab08-linux.q2Nfvq

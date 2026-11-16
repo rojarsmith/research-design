@@ -1,0 +1,17 @@
+# Build outputs, logs and traces of the companion programs; labs/.gitignore
+# covers build/, *.exe, *.o and *.obj already. run.sh builds in /tmp.
+*.d
+*.log
+*.sock
+strace-*.txt
+linux/fdserver
+linux/sealtest
+linux/evserver
+linux/evserver-fixed
+linux/evserver-fixed.c
+linux/readiness
+
+# Your fix for exercise C (for run.sh's SOLUTION_DIR) stays out of the
+# repository.
+linux/solution/
+*.patch
