@@ -97,7 +97,7 @@ Engineering research, feasibility studies, architecture proposals for software p
 | `marriage-and-dating/` | Platform research, profile and action plan, international dating and safety, sources, research logs, a paid-plan assessment and a weekly review template |
 | `motorcycle-accident-research/` | Motorcycle accident case guide, source checks, official procedures and evidence checklist |
 | `c-compiler-foundations/` | C language and compiler origins, processor C-readiness evaluation, and the tinyc compiler, RV32IM simulator and probe labs |
-| `os-foundations/` | Draft OS course: draft xv6-riscv labs for stages 00–09 with Linux and NT comparisons, a headless display server project with its test harness,, and a DRM/KMS and Wayland compositor syllabus |
+| `os-foundations/` | Draft OS course: draft xv6-riscv labs for stages 00–09 with Linux and NT comparisons, a headless display server project with its test harness, and a DRM/KMS and Wayland compositor syllabus |
 | `mcu-foundations/` | Traditional Chinese MCU course: architecture model, learning path, selection and document reading, lessons 00–08 with host-runnable C labs, learning log and official references |
 | `eu-ota-cra-sales-research/` | European OTA sales, CRA scope and conformity paths, ETSI baseline and testing costs, and supplier trust plan |
 | `national-industrial-innovation-award-10/` | Local-only application workspace; only its Traditional Chinese README, working rules and `.gitignore` are tracked, and all inputs and drafts stay outside Git |
