@@ -2,7 +2,7 @@
 
 [回主報告](../../README.zh-TW.md)｜[路線圖](../../research/03-design-your-own-dynamic-language.zh-TW.md)
 
-這是研究路線圖「階段 2」的可執行範例：一門小型動態語言的完整管線，用 Python 寫成單一檔案，不依賴標準函式庫以外的套件。目的在示範元件如何銜接，不是生產品質的語言。已在 Python 3.13 執行並通過測試。
+這是研究路線圖「階段 2」的可執行範例：一門小型動態語言的完整管線，用 Python 寫成單一檔案，不依賴標準函式庫以外的套件。目的在示範元件如何銜接，不是生產品質的語言。已在 Python 3.13 與 3.14 執行並通過測試。
 
 ## 執行
 
@@ -57,5 +57,7 @@ try { throw "boom"; } catch (e) { print(e); }
 2. `Environment` 鏈改為 VM 堆疊加 upvalue，`Function` 改為程式碼物件加捕捉的 upvalue。
 3. 保留本目錄的測試當作等價性測試：兩種實作必須產生相同輸出。
 4. 用 `programs/fib.ml` 記錄加速倍數。
+
+這些步驟已實作在 [minilang-vm](../minilang-vm/README.zh-TW.md)，可以拿來對照自己的版本。
 
 詳細決策見[路線圖](../../research/03-design-your-own-dynamic-language.zh-TW.md)。
