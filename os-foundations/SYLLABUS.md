@@ -2,7 +2,7 @@
 
 **English** | [繁體中文](SYLLABUS.zh-TW.md) | [Course overview](README.md)
 
-> **Draft for review, 2026-11-15.** Only stages 00–09 have lab drafts so far, in [`labs/`](labs/); each lab README says which of its steps were executed. Nothing else here is built yet. Stages, hours and tools are proposals. Technical claims link to the official page they were checked against. The full list is under [Sources](#sources).
+> **Draft for review, 2026-11-15.** Only stages 00–10 have lab drafts so far, in [`labs/`](labs/); each lab README says which of its steps were executed. Nothing else here is built yet. Stages, hours and tools are proposals. Technical claims link to the official page they were checked against. The full list is under [Sources](#sources).
 
 This is a build sequence, not a list of topics. Every stage lists **Prerequisites**, **Hours** (focused hours, reading included) and **Runs on**. Then come **Build**, **Learn as needed**, a **Linux / NT** comparison where it helps, and a **Checkpoint**. As in the graphics course, a stage is finished when you can explain what the code does, not just when it runs.
 
@@ -202,7 +202,7 @@ Before starting Part II, finish the graphics course's Part I through lab 05. By 
 
 ### 10: Window system architecture, measured on Windows
 
-**Prerequisites:** Part I. **Hours:** 8–12. **Runs on:** Windows 11 on the RTX 5070 Ti desktop.
+**Prerequisites:** Part I. **Hours:** 8–12. **Runs on:** Windows 11 on the RTX 5070 Ti desktop. **Lab draft:** [`labs/10-windows-composition/`](labs/10-windows-composition/README.md) (windowed and overlapped runs executed in a Remote Desktop session on another machine, 2026-11-16; borderless run, PresentMon and Win+Ctrl+Shift+B not executed).
 
 **Build:** a small D3D11 or D3D12 app with a flip-model swapchain, or the graphics course's native app. Capture it with [PresentMon](https://github.com/GameTechDev/PresentMon) three ways: windowed, borderless full screen, and with another window overlapping it. Record each run's PresentMode, for example `Composed: Flip`, `Hardware: Independent Flip` or `Hardware Composed: Independent Flip`. Draw the presentation paths of X11, Wayland and Windows side by side.
 

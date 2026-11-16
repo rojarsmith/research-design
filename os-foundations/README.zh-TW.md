@@ -2,7 +2,7 @@
 
 # 作業系統基礎：從核心到合成器
 
-> **草稿，待審閱（2026-11-15）。** 本文是課程規劃，不是完成的課程。目前階段 00–09 有實驗草稿，放在 [`labs/`](labs/)；階段 09 是第一部分的專題。撰寫時已建置並執行其中的 Windows 程式；xv6 與 Linux 的步驟已於 2026-11-16 在 podman 下的 Ubuntu 24.04 容器中執行，尚未在 WSL 2 本身執行，階段 04 的核心模組也尚未建置或載入。階段順序、時數估算與工具選擇都屬提案。技術敘述已在當天對照[來源](SYLLABUS.zh-TW.md#來源)列出的官方頁面查核，實作前請重新確認版本。
+> **草稿，待審閱（2026-11-15）。** 本文是課程規劃，不是完成的課程。目前階段 00–10 有實驗草稿，放在 [`labs/`](labs/)；階段 09 是第一部分的專題。撰寫時已建置並執行其中的 Windows 程式；xv6 與 Linux 的步驟已於 2026-11-16 在 podman 下的 Ubuntu 24.04 容器中執行，尚未在 WSL 2 本身執行，階段 04 的核心模組也尚未建置或載入。階段順序、時數估算與工具選擇都屬提案。技術敘述已在當天對照[來源](SYLLABUS.zh-TW.md#來源)列出的官方頁面查核，實作前請重新確認版本。
 
 這是一門「先動手做」的作業系統課程，終點只有一個：能自己打造桌面圖形系統，也就是能執行真實應用程式的視窗系統與合成器（compositor）。第一部分建立作業系統基礎：修改一個小型教學核心，並用 Linux 與 Windows 的真實介面寫程式。第二部分把這些機制帶到顯示端，處理緩衝區如何在用戶端行程、核心與顯示硬體之間移動。課程最後在 Linux DRM/KMS 上完成一個最小的 Wayland 合成器。
 
@@ -151,7 +151,8 @@ QEMU 的執行方式：QEMU 提供 Windows 版本（Stefan Weil 的安裝檔或 
   - [`labs/07-file-systems/`](labs/07-file-systems/README.zh-TW.md)：為 xv6 加上雙重間接區塊、符號連結與以檔案為後盾的 `mmap`；在寫入途中強制結束 QEMU，逐個區塊說明日誌的復原（並刻意弄壞它）；Linux 的檔案描述子與開啟檔案描述、NT 的 handle 與檔案物件，以及各系統由誰寫回被映射的髒頁。xv6 與 Linux 部分已在 podman 下的 Ubuntu 24.04 容器（虛擬機器）中建置並執行，xv6 的擴充搭配參考解答（不隨附），並通過 `usertests -q`；Windows 程式已建置並執行。全部附輸出紀錄。負責寫回的執行緒本身沒有追蹤。
   - [`labs/08-ipc-event-loops/`](labs/08-ipc-event-loops/README.zh-TW.md)：以 `SCM_RIGHTS` 傳遞 fd、以 `SO_PEERCRED` 檢查對方身分、接收端只接受無法縮小的封存 `memfd` 緩衝區、一個同時服務 socket、`timerfd`、`signalfd` 與 `eventfd` 的 `epoll` 迴圈、就緒與完成兩種模型，以及 Windows 上的具名管道伺服器、以 `DuplicateHandle` 交出的 section、`MsgWaitForMultipleObjectsEx` 與 I/O completion port。Linux 部分在 podman 下的 Ubuntu 24.04 容器（虛擬機器）中建置並執行，Windows 程式在本機，全部附輸出紀錄。`io_uring` 被容器的 seccomp 設定檔拒絕；Process Explorer 步驟與 libwayland 原始碼閱讀尚未執行。不附參考解答。
   - [`labs/09-headless-display-server/`](labs/09-headless-display-server/README.zh-TW.md)：第一部分專題。無螢幕顯示伺服器的題目與檢查清單、一份固定的線上協定（[`PROTOCOL.zh-TW.md`](labs/09-headless-display-server/PROTOCOL.zh-TW.md)），以及測試框架：兩個正常的用戶端；在影格中途當掉、永遠不讀自己的 socket、送出超出緩衝區的 damage、或送出未封存或太小緩衝區的問題用戶端；以及檢查存活、60 Hz 影格節奏、外洩的 fd 與映射、影格像素的檢查程式。測試框架已於 2026-11-16 在 podman 下的 Ubuntu 24.04 容器（虛擬機器）中建置並執行，對象是一個不隨附的參考伺服器（三次通過，附輸出紀錄），以及它刻意加入錯誤的 14 個建置，每一個都失敗。設計說明、Wayland 比較與延伸練習由學習者撰寫，尚未執行。
-  - 階段 10–18 還沒有實驗資料夾。
+  - [`labs/10-windows-composition/`](labs/10-windows-composition/README.zh-TW.md)：一個使用 flip-model swapchain 的 Direct3D 11 程式，在視窗、被部分遮住與無邊框三種情況下，記錄不需特殊權限的 API 對其影格的描述（`Present` 時間、`GetFrameStatistics`、`GetFrameStatisticsMedia`、`DwmGetCompositionTimingInfo`、`WaitForVBlank`）；一張說明每個來源能證明與不能證明什麼的表；用來讀取 `PresentMode` 的 PresentMon 命令列；以及 Win+Ctrl+Shift+B 與 TDR 的比較。視窗與被遮住兩種情況已於 2026-11-16 建置並執行，vsync 開與關各兩次，附輸出紀錄；但執行環境是一台 Intel UHD Graphics 750 機器上的遠端桌面工作階段，不是 RTX 5070 Ti 桌機的本機主控台：每個影格都為 32 Hz 的遠端顯示器合成，vblank 欄位一直是 0。無邊框執行、PresentMon、任何追蹤與 Win+Ctrl+Shift+B 都沒有執行。
+  - 階段 11–18 還沒有實驗資料夾。
 
 ## 完成目標
 
