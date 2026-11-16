@@ -1,0 +1,33 @@
+# Lab 05, exercise C, control: the same 100 us window as lostwake-a.patch,
+# with the correct sleep_prepare()/sleep()/wakeup() pair. lostwake should
+# still finish. Applies to xv6-riscv fa2ddcb7, on top of
+# lab05-lockstat.patch or alone. Undo with patch -R -p1.
+diff -ruN a/kernel/pipe.c b/kernel/pipe.c
+--- a/kernel/pipe.c
++++ b/kernel/pipe.c
+@@ -10,6 +10,17 @@
+ 
+ #define PIPESIZE 512
+ 
++// Lab 05: keep the window between "decided to sleep" and "asleep" open
++// for about 100 us (1000 ticks of QEMU's 10 MHz time CSR), so that the
++// lost-wakeup race in piperead() happens often enough to see.
++static void
++race_window(void)
++{
++  uint64 t0 = r_time();
++  while (r_time() - t0 < 1000)
++    ;
++}
++
+ struct pipe {
+   struct spinlock lock;
+   char data[PIPESIZE];
+@@ -123,6 +134,7 @@
+     }
+     sleep_prepare(&pi->nread); //DOC: piperead-sleep
+     release(&pi->lock);
++    race_window(); // Lab 05: the reader is registered but still awake
+     sleep();
+     acquire(&pi->lock);
+   }

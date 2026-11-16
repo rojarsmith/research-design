@@ -1,0 +1,177 @@
+Recorded 2026-11-16 (between 03:00 and 03:45 UTC) in an Ubuntu 24.04.5 container
+(image oslab:24.04) under podman on Windows 11 Pro build 26300. podman runs
+in a podman machine on WSL 2 and reported itself as rootful. Kernel
+6.6.87.2-microsoft-standard-WSL2, 16 vCPUs, on an Intel Core i7-11700 host
+(16 logical processors) that was running other work at the same time.
+Tools in the image: gcc 13.3.0, riscv64-linux-gnu-gcc 13.3.0, QEMU 8.2.2,
+strace 6.8, expect. xv6-riscv at /opt/xv6-riscv, commit
+fa2ddcb7ca87a77af579380a6eafd5aff163b44f (2026-11-05).
+These are numbers from a VM, and the host's other work shows up in them.
+Your numbers will differ. Keep your own copy in NOTES.md.
+
+==============================================================================
+sh linux/run.sh, second run (podman run --cap-add SYS_PTRACE)
+==============================================================================
+
+== environment
+6.6.87.2-microsoft-standard-WSL2
+16
+gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+
+== exercise D: futex mutex vs pthread_mutex
+Online CPUs: 16. 0.25 s per cell. Critical section 40 LCG steps, private work 160 steps.
+
+One iteration without a lock: 193.0 ns (critical section about 20% of it)
+
+1. One lock shared by every thread
+  lock          threads   Mops/s    ns/op min/max   sys ms  user ms   vol csw    invol  waits/1k  wakes/1k
+  pthread             1     6.40    156.2    1.00        0      248         2        1         -         -
+  pthread             2     4.74    211.1    0.96      181      316       256        1         -         -
+  pthread             4     4.55    219.9    0.94      411      410     45960        1         -         -
+  pthread             8     4.07    245.9    0.92     1107      411    109257       20         -         -
+  pthread            16     4.04    247.5    0.86     2756      372    103040      596         -         -
+  pthread            32     4.28    233.6    0.84     3422      396    102455    43094         -         -
+
+  adaptive            1     6.26    159.7    1.00        0      252         2        1         -         -
+  adaptive            2     6.68    149.8    1.00        3      491       176        0         -         -
+  adaptive            4     5.34    187.1    0.96      108      821      6451        1         -         -
+  adaptive            8     4.93    202.8    0.97      309     1457     52760        1         -         -
+  adaptive           16     4.58    218.4    0.87     1432     1772    102044       52         -         -
+  adaptive           32     4.52    221.0    0.75     1828     1537     98326    32999         -         -
+
+  futex               1     6.36    157.2    1.00        0      252         2        2       0.0       0.0
+  futex               2     4.87    205.2    0.95      152      338       325        0     248.9     489.2
+  futex               4     4.70    212.9    0.95      436      399     42479        0     409.4     500.2
+  futex               8     4.74    210.8    0.94     1312      391     84703        1     416.6     506.3
+  futex              16     4.71    212.3    0.92     3213      401     80333       13     398.2     483.1
+  futex              32     4.76    210.1    0.85     3517      416     81608    40714     401.4     487.9
+
+  futex + spin        1     6.45    155.0    1.00        0      252         2        0       0.0       0.0
+  futex + spin        2     8.48    117.9    1.00        0      491       151        1       0.1       0.2
+  futex + spin        4     5.82    171.9    0.98        0      948       597        4       0.8       1.0
+  futex + spin        8     4.63    215.8    0.94        0     1914      1780        7      17.0      23.3
+  futex + spin       16     4.03    248.0    0.87      371     3129     37453       14     199.1     231.1
+  futex + spin       32     3.98    251.1    0.88      799     2826     48622    17475     222.5     246.8
+
+  spinlock            1     6.54    152.9    1.00        0      252         2        0         -         -
+  spinlock            2     9.69    103.2    0.98        0      496         2        1         -         -
+  spinlock            4     6.76    148.0    0.86        0      989         2       39         -         -
+  spinlock            8     6.38    156.8    0.75        0     2016         2        9         -         -
+  spinlock           16     5.39    185.7    0.48        3     3934         3      115         -         -
+  spinlock           32     2.98    335.6    0.10       76     4223         7      781         -         -
+
+2. Splitting the lock: one lock per thread instead of one for all
+  lock          threads   Mops/s    ns/op min/max   sys ms  user ms   vol csw    invol  waits/1k  wakes/1k
+  one lock:
+  pthread            16     4.10    244.2    0.88     2574      564    103787       23         -         -
+  one lock per thread:
+  pthread            16    63.41     15.8    0.58      153     3803         3      249         -         -
+  one lock:
+  futex              16     4.77    209.5    0.91     3247      343     81594       40     400.8     486.1
+  one lock per thread:
+  futex              16    70.41     14.2    0.55       70     3926         3      247       0.0       0.0
+
+== exercise D: futex system calls made by the pthread lock, 8 threads, 0.5 s, under strace
+  lock          threads   Mops/s    ns/op min/max   sys ms  user ms   vol csw    invol  waits/1k  wakes/1k
+  pthread             8     3.56    280.9    0.49      428      350     38535        3         -         -
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+100.00    1.402849          72     19228      5930 futex
+------ ----------- ----------- --------- --------- ----------------
+100.00    1.402849          72     19228      5930 total
+
+== exercise D: futex system calls made by the futex lock, 8 threads, 0.5 s, under strace
+  lock          threads   Mops/s    ns/op min/max   sys ms  user ms   vol csw    invol  waits/1k  wakes/1k
+  futex               8     3.22    310.1    0.45      411      287     41655        2       4.7       8.1
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+100.00    1.358409          65     20792      7654 futex
+------ ----------- ----------- --------- --------- ----------------
+100.00    1.358409          65     20792      7654 total
+
+== exercise E: lost wakeups
+20000 rounds per mode, 5.0 us race window, 50 ms wait timeout, stop after 20 lost wakeups
+
+  mode                                                 rounds  timeouts     lost    elapsed
+  1. pthread_cond, test outside the mutex (BROKEN)        146        26       20      823 ms  (stopped early)
+  2. pthread_cond, test under the mutex                 20000         0        0      987 ms
+  3. futex wait with the value seen                     20000         0        0       13 ms
+  4. futex, wake before publish (BROKEN)                   70        33       20     1065 ms  (stopped early)
+20000 rounds per mode, 0.0 us race window, 50 ms wait timeout, stop after 20 lost wakeups
+
+  mode                                                 rounds  timeouts     lost    elapsed
+  1. pthread_cond, test outside the mutex (BROKEN)       1025        33       20     1021 ms  (stopped early)
+  2. pthread_cond, test under the mutex                 20000         0        0      887 ms
+  3. futex wait with the value seen                     20000         0        0      438 ms
+  4. futex, wake before publish (BROKEN)                  699        30       20     1077 ms  (stopped early)
+
+== exercise F: lock order
+One thread after the other:
+  thread 1: took A then B
+  thread 2: took B then A
+Both threads at once:
+  thread 2: holds B, gave up waiting 1 s for A (Connection timed out): deadlock
+  thread 1: holds A, gave up waiting 1 s for B (Connection timed out): deadlock
+-- under ThreadSanitizer
+   (FATAL: ThreadSanitizer: unexpected memory mapping 0x5c998c045000-0x5c998c046000); vm.mmap_rnd_bits is 32
+   retrying with address-space randomization off (setarch -R)
+setarch: failed to set personality to x86_64: Function not implemented
+
+build outputs are in /tmp/lab05-linux.rcwCqm
+
+==============================================================================
+First run, exercise E only (made a few minutes earlier with a version of run.sh that filtered the strace output differently)
+==============================================================================
+
+== exercise D: futex mutex vs pthread_mutex
+Online CPUs: 16. 0.25 s per cell. Critical section 40 LCG steps, private work 160 steps.
+
+One iteration without a lock: 188.1 ns (critical section about 20% of it)
+
+1. One lock shared by every thread
+  lock          threads   Mops/s    ns/op min/max   sys ms  user ms   vol csw    invol  waits/1k  wakes/1k
+  pthread             1     6.42    155.8    1.00        0      248         2        1         -         -
+  pthread             2     5.47    182.7    0.96      103      396       656        1         -         -
+  pthread             4     5.01    199.7    0.90      384      436     43495        0         -         -
+  pthread             8     4.18    239.3    0.84     1035      454     94135        2         -         -
+  pthread            16     4.14    241.7    0.55     2289      482     86874     1824         -         -
+  pthread            32     4.15    241.0    0.81     2894      486     92192    32902         -         -
+
+  adaptive            1     6.29    159.0    1.00        0      252         2        1         -         -
+  adaptive            2     7.84    127.5    1.00        0      495       141        1         -         -
+  adaptive            4     5.70    175.6    0.96      112      814      6577        1         -         -
+  adaptive            8     5.01    199.6    0.96      473     1273     49051        0         -         -
+  adaptive           16     4.77    209.4    0.76     1177     1502     61471      876         -         -
+  adaptive           32     4.50    222.1    0.84     1710     1466    101267    30566         -         -
+
+  futex               1     6.55    152.6    1.00        0      252         2        1       0.0       0.0
+  futex               2     5.63    177.7    0.94      117      376       228        0     221.7     431.1
+  futex               4     5.01    199.5    0.98      456      410     43803        2     444.3     533.7
+  futex               8     4.83    207.1    0.95     1315      372     80180        3     400.0     492.6
+  futex              16     4.81    207.7    0.84     2690      430     73234     2468     367.0     456.0
+  futex              32     4.83    207.2    0.78     3191      386     75404    27889     370.3     460.2
+
+  futex + spin        1     6.49    154.2    1.00        0      252         2        1       0.0       0.0
+  futex + spin        2     9.30    107.5    0.99        0      496       119        1       0.1       0.1
+  futex + spin        4     6.35    157.5    0.98        0      980       464        5       0.6       0.8
+  futex + spin        8     5.03    199.0    0.91       20     1848      2348        4      20.9      27.8
+  futex + spin       16     4.29    233.2    0.87      363     2778     22081      568     128.9     154.6
+  futex + spin       32     4.26    234.7    0.77      456     2823     28489     8870     146.4     169.7
+
+  spinlock            1     6.67    149.9    1.00        0      252         2        1         -         -
+  spinlock            2     9.93    100.7    1.00        0      496         2        0         -         -
+  spinlock            4     6.93    144.4    0.87        0     1008         2        2         -         -
+  spinlock            8     6.34    157.7    0.88        0     2016         2       16         -         -
+  spinlock           16     5.04    198.5    0.36        0     3719         3      632         -         -
+  spinlock           32     3.30    302.7    0.14        0     3746         4      748         -         -
+
+2. Splitting the lock: one lock per thread instead of one for all
+  lock          threads   Mops/s    ns/op min/max   sys ms  user ms   vol csw    invol  waits/1k  wakes/1k
+  one lock:
+  pthread            16     4.09    244.5    0.84     2430      493    100350     2466         -         -
+  one lock per thread:
+  pthread            16    70.03     14.3    0.47       13     3719         2      112         -         -
+  one lock:
+  futex              16     4.72    211.7    0.87     2636      504     71415     3349     366.1     455.6
+  one lock per thread:
+  futex              16    78.04     12.8    0.54        0     3727         2      225       0.0       0.0

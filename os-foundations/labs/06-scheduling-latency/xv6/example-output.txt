@@ -1,0 +1,266 @@
+Recorded 2026-11-16 in an Ubuntu 24.04.5 container (image oslab:24.04) under
+podman on Windows 11 Pro build 26300. podman runs in a podman machine on
+WSL 2 and reported itself as rootful. QEMU 8.2.2, riscv64-linux-gnu-gcc
+13.3.0, expect. xv6-riscv commit fa2ddcb7ca87a77af579380a6eafd5aff163b44f
+(2026-11-05). The host (Intel Core i7-11700, 16 logical processors) was
+running other work at the same time. Your numbers will differ.
+
+The main record below is the third run, started 03:40 UTC:
+  SOLUTION_DIR=<reference patch> sh xv6/run.sh /opt/xv6-riscv
+The prio variant used a reference priority scheduler that is not shipped
+with this lab. The rr variant comes from files in this folder only.
+Two earlier runs are summarized at the end: one with a buggy first version
+of the reference scheduler, and one with the fixed version.
+
+==============================================================================
+SOLUTION_DIR=... sh xv6/run.sh /opt/xv6-riscv, third run (main record)
+==============================================================================
+
+===== rr =====
+--- applying lab06-schedstat.patch
+--- booting with CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ schedtest 3 50 same
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode same
+  interactive (priority 1): 17 rounds of pause(1)
+    17 wakeups, mean wait for the CPU 195066 us, max 201224 us
+    100 - 200 ms 1 ##
+         > 200 ms 16 #####################################
+  cpu-bound 0 (priority 1): 6864 units of work
+  cpu-bound 1 (priority 1): 7005 units of work
+  cpu-bound 2 (priority 1): 6658 units of work
+$ schedtest 3 50 inter
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode inter
+  interactive (priority 5): 17 rounds of pause(1)
+    17 wakeups, mean wait for the CPU 195137 us, max 201315 us
+    100 - 200 ms 1 ##
+         > 200 ms 16 #####################################
+  cpu-bound 0 (priority 1): 7025 units of work
+  cpu-bound 1 (priority 1): 6931 units of work
+  cpu-bound 2 (priority 1): 6518 units of work
+$ schedtest 3 50 starve
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode starve
+  interactive (priority 5): 17 rounds of pause(1)
+    17 wakeups, mean wait for the CPU 195110 us, max 201223 us
+    100 - 200 ms 1 ##
+         > 200 ms 16 #####################################
+  cpu-bound 0 (priority 9): 7159 units of work
+  cpu-bound 1 (priority 1): 7300 units of work
+  cpu-bound 2 (priority 1): 6864 units of work
+$
+XV6RUN: done
+QEMU: Terminated
+
+--- booting with CPUS=3
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 2 starting
+hart 1 starting
+init: starting sh
+$ schedtest 3 50 same
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode same
+  interactive (priority 1): 50 rounds of pause(1)
+    50 wakeups, mean wait for the CPU 120 us, max 643 us
+          < 10 us 3 ##
+     10 - 100 us 31 ########################
+    100 us - 1 ms 16 ############
+  cpu-bound 0 (priority 1): 20132 units of work
+  cpu-bound 1 (priority 1): 19336 units of work
+  cpu-bound 2 (priority 1): 19888 units of work
+$ schedtest 3 50 inter
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode inter
+  interactive (priority 5): 49 rounds of pause(1)
+    49 wakeups, mean wait for the CPU 145 us, max 497 us
+          < 10 us 1
+     10 - 100 us 23 ##################
+    100 us - 1 ms 25 ####################
+  cpu-bound 0 (priority 1): 19232 units of work
+  cpu-bound 1 (priority 1): 18599 units of work
+  cpu-bound 2 (priority 1): 18802 units of work
+$
+XV6RUN: done
+QEMU: Terminated
+
+===== prio =====
+--- applying lab06-schedstat.patch
+--- applying priority-sched.patch
+--- booting with CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ schedtest 3 50 same
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode same
+  interactive (priority 1): 17 rounds of pause(1)
+    17 wakeups, mean wait for the CPU 195193 us, max 202153 us
+    100 - 200 ms 1 ##
+         > 200 ms 16 #####################################
+  cpu-bound 0 (priority 1): 6977 units of work
+  cpu-bound 1 (priority 1): 7367 units of work
+  cpu-bound 2 (priority 1): 6727 units of work
+$ schedtest 3 50 inter
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode inter
+  interactive (priority 5): 50 rounds of pause(1)
+    50 wakeups, mean wait for the CPU 246 us, max 628 us
+    100 us - 1 ms 50 ########################################
+  cpu-bound 0 (priority 1): 7052 units of work
+  cpu-bound 1 (priority 1): 7310 units of work
+  cpu-bound 2 (priority 1): 7057 units of work
+$ schedtest 3 50 starve
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode starve
+  interactive (priority 5): 1 rounds of pause(1)
+    1 wakeups, mean wait for the CPU 4919737 us, max 4919737 us
+         > 200 ms 1 ########################################
+  cpu-bound 0 (priority 9): 18696 units of work
+  cpu-bound 1 (priority 1): 0 units of work
+  cpu-bound 2 (priority 1): 0 units of work
+$
+XV6RUN: done
+QEMU: Terminated
+
+--- booting with CPUS=3
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 1 starting
+hart 2 starting
+init: starting sh
+$ schedtest 3 50 same
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode same
+  interactive (priority 1): 48 rounds of pause(1)
+    48 wakeups, mean wait for the CPU 2305 us, max 101153 us
+     10 - 100 us 7 #####
+    100 us - 1 ms 40 #################################
+    100 - 200 ms 1
+  cpu-bound 0 (priority 1): 17128 units of work
+  cpu-bound 1 (priority 1): 17153 units of work
+  cpu-bound 2 (priority 1): 17137 units of work
+$ schedtest 3 50 inter
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode inter
+  interactive (priority 5): 50 rounds of pause(1)
+    50 wakeups, mean wait for the CPU 182 us, max 619 us
+     10 - 100 us 5 ####
+    100 us - 1 ms 45 ####################################
+  cpu-bound 0 (priority 1): 19048 units of work
+  cpu-bound 1 (priority 1): 18368 units of work
+  cpu-bound 2 (priority 1): 18354 units of work
+$
+XV6RUN: done
+QEMU: Terminated
+
+build trees are in /tmp/lab06.EN1OWh
+
+==============================================================================
+Earlier runs, summary
+==============================================================================
+
+First run (about 03:14 UTC), prio variant only: the reference scheduler
+kept ONE round-robin cursor for all priority levels (since fixed), and
+schedtest still printed from every child, so lines from several CPUs
+interleave in the CPUS=3 boot and are left out here:
+--- booting with CPUS=1
+xv6 kernel is booting
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode same
+  cpu-bound 2 (priority 1): 6618 units of work
+  interactive (priority 1): 17 rounds of pause(1)
+    17 wakeups, mean wait for the CPU 195561 us, max 201072 us
+  cpu-bound 0 (priority 1): 6615 units of work
+  cpu-bound 1 (priority 1): 6990 units of work
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode inter
+  interactive (priority 5): 50 rounds of pause(1)
+    50 wakeups, mean wait for the CPU 229 us, max 307 us
+  cpu-bound 0 (priority 1): 20338 units of work
+  cpu-bound 1 (priority 1): 0 units of work
+  cpu-bound 2 (priority 1): 0 units of work
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode starve
+  cpu-bound 0 (priority 9): 20431 units of work
+  interactive (priority 5): 1 rounds of pause(1)
+    1 wakeups, mean wait for the CPU 4922722 us, max 4922722 us
+  cpu-bound 1 (priority 1): 0 units of work
+  cpu-bound 2 (priority 1): 0 units of work
+
+--- booting with CPUS=3
+
+Second run (about 03:16 UTC), the fixed scheduler, the same commands as the main record:
+===== rr =====
+--- booting with CPUS=1
+xv6 kernel is booting
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode same
+  interactive (priority 1): 17 rounds of pause(1)
+    17 wakeups, mean wait for the CPU 194853 us, max 200832 us
+  cpu-bound 0 (priority 1): 7406 units of work
+  cpu-bound 1 (priority 1): 7724 units of work
+  cpu-bound 2 (priority 1): 7429 units of work
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode inter
+  interactive (priority 5): 17 rounds of pause(1)
+    17 wakeups, mean wait for the CPU 194861 us, max 200919 us
+  cpu-bound 0 (priority 1): 7437 units of work
+  cpu-bound 1 (priority 1): 7689 units of work
+  cpu-bound 2 (priority 1): 7533 units of work
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode starve
+  interactive (priority 5): 17 rounds of pause(1)
+    17 wakeups, mean wait for the CPU 194822 us, max 200871 us
+  cpu-bound 0 (priority 9): 7561 units of work
+  cpu-bound 1 (priority 1): 7999 units of work
+  cpu-bound 2 (priority 1): 7453 units of work
+--- booting with CPUS=3
+xv6 kernel is booting
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode same
+  interactive (priority 1): 50 rounds of pause(1)
+    50 wakeups, mean wait for the CPU 105 us, max 497 us
+  cpu-bound 0 (priority 1): 19101 units of work
+  cpu-bound 1 (priority 1): 18992 units of work
+  cpu-bound 2 (priority 1): 19160 units of work
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode inter
+  interactive (priority 5): 49 rounds of pause(1)
+    49 wakeups, mean wait for the CPU 115 us, max 305 us
+  cpu-bound 0 (priority 1): 20828 units of work
+  cpu-bound 1 (priority 1): 20437 units of work
+  cpu-bound 2 (priority 1): 20168 units of work
+===== prio =====
+--- booting with CPUS=1
+xv6 kernel is booting
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode same
+  interactive (priority 1): 17 rounds of pause(1)
+    17 wakeups, mean wait for the CPU 194857 us, max 200913 us
+  cpu-bound 0 (priority 1): 7638 units of work
+  cpu-bound 1 (priority 1): 8171 units of work
+  cpu-bound 2 (priority 1): 7512 units of work
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode inter
+  interactive (priority 5): 50 rounds of pause(1)
+    50 wakeups, mean wait for the CPU 209 us, max 382 us
+  cpu-bound 0 (priority 1): 7287 units of work
+  cpu-bound 1 (priority 1): 7728 units of work
+  cpu-bound 2 (priority 1): 7477 units of work
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode starve
+  interactive (priority 5): 1 rounds of pause(1)
+    1 wakeups, mean wait for the CPU 4914108 us, max 4914108 us
+  cpu-bound 0 (priority 9): 22423 units of work
+  cpu-bound 1 (priority 1): 0 units of work
+  cpu-bound 2 (priority 1): 0 units of work
+--- booting with CPUS=3
+xv6 kernel is booting
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode same
+  interactive (priority 1): 50 rounds of pause(1)
+    50 wakeups, mean wait for the CPU 187 us, max 1189 us
+  cpu-bound 0 (priority 1): 19190 units of work
+  cpu-bound 1 (priority 1): 19051 units of work
+  cpu-bound 2 (priority 1): 18838 units of work
+schedtest: 3 cpu-bound + 1 interactive for 50 ticks, mode inter
+  interactive (priority 5): 50 rounds of pause(1)
+    50 wakeups, mean wait for the CPU 190 us, max 375 us
+  cpu-bound 0 (priority 1): 18832 units of work
+  cpu-bound 1 (priority 1): 18639 units of work
+  cpu-bound 2 (priority 1): 18816 units of work

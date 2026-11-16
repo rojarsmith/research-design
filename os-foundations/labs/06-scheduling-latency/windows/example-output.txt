@@ -1,0 +1,251 @@
+Recorded 2026-11-16 (UTC times below) on the machine this lab was written on.
+Windows 11 Pro, build 26300; hypervisor present (Win32_ComputerSystem.HypervisorPresent = True).
+CPU: 11th Gen Intel(R) Core(TM) i7-11700 @ 2.50GHz, 16 logical processors. Power plan: Balanced.
+Compiler: gcc 16.2.0 (MinGW-W64 x86_64-ucrt-posix-seh, WinLibs).
+Other work was running on the machine at the same time. Each run records the
+total CPU load, sampled once a second, for 3 s before it started and after it
+ended. Your numbers will differ. Keep your own copy in NOTES.md.
+
+Built with (output went to a scratch directory outside the repository):
+> gcc -O2 -Wall -o latency.exe latency.c
+
+WPR was not run (wpr -start needs an elevated prompt, and WPA is not
+installed on this machine). Only the profile list, which needs no elevation:
+> wpr -profiles     (first lines)
+Microsoft Windows Performance Recorder Version 10.0.26100 (CoreSystem)
+	GeneralProfile              First level triage
+	CPU                         CPU usage
+
+==============================================================================
+latency.exe 4, run 1
+==============================================================================
+
+date: 2026-11-16 03:20:48 UTC
+before: total CPU busy over 3 s before this run started or after it ended, sampled each second: 24%, 28%, 26%
+> latency.exe 4
+pid 25332, 16 logical processors, QPC 10000000 Hz, process priority class 0x20
+
+1. idle, NORMAL, high-resolution timer: 0 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 19452, priority 0
+         < 50 us      9  ####
+    50 - 100 us     16  #######
+   100 - 200 us     45  ##################
+   200 - 500 us    132  ##################################################
+  0.5 - 1 ms        37  ###############
+    1 - 2 ms         1  #
+    2 - 4 ms         0
+    4 - 8 ms         0
+  8 - 16.7 ms        0
+      > 16.7 ms      0
+  min 23.4 us, median 336.4 us, mean 326.2 us, p99 631.6 us, max 1148.9 us
+  later than 1 ms: 1, 2 ms: 0, 4 ms: 0, 8 ms: 0; whole periods missed: 0
+
+2. idle, NORMAL, ordinary waitable timer: 0 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 19452, priority 0
+         < 50 us      1  #
+    50 - 100 us      1  #
+   100 - 200 us      1  #
+   200 - 500 us      4  ##
+  0.5 - 1 ms         9  ####
+    1 - 2 ms        15  #######
+    2 - 4 ms        29  #############
+    4 - 8 ms        64  ############################
+  8 - 16.7 ms      116  ##################################################
+      > 16.7 ms      0
+  min 29.3 us, median 7770.3 us, mean 7711.2 us, p99 15103.0 us, max 15177.1 us
+  later than 1 ms: 224, 2 ms: 209, 4 ms: 180, 8 ms: 116; whole periods missed: 0
+
+3. load, NORMAL: 16 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 19452, priority 0
+         < 50 us      0
+    50 - 100 us      0
+   100 - 200 us      1  #
+   200 - 500 us      1  #
+  0.5 - 1 ms         1  #
+    1 - 2 ms         1  #
+    2 - 4 ms        12  ######
+    4 - 8 ms        39  ##################
+  8 - 16.7 ms      113  ##################################################
+      > 16.7 ms     72  ################################
+  min 120.7 us, median 13053.8 us, mean 13718.3 us, p99 35280.5 us, max 36117.9 us
+  later than 1 ms: 237, 2 ms: 236, 4 ms: 224, 8 ms: 185; whole periods missed: 77
+
+4. load, NORMAL, priority boosts disabled: 16 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 19452, priority 0
+         < 50 us      0
+    50 - 100 us      0
+   100 - 200 us      0
+   200 - 500 us      0
+  0.5 - 1 ms         2  #
+    1 - 2 ms         7  ###
+    2 - 4 ms        15  #######
+    4 - 8 ms        24  ##########
+  8 - 16.7 ms      122  ##################################################
+      > 16.7 ms     70  #############################
+  min 674.4 us, median 13044.6 us, mean 13932.5 us, p99 35230.1 us, max 49975.5 us
+  later than 1 ms: 238, 2 ms: 231, 4 ms: 216, 8 ms: 192; whole periods missed: 75
+
+5. load, ABOVE_NORMAL: 16 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 19452, priority 1
+         < 50 us      9  ####
+    50 - 100 us     28  ##########
+   100 - 200 us     52  ###################
+   200 - 500 us    144  ##################################################
+  0.5 - 1 ms         7  ###
+    1 - 2 ms         0
+    2 - 4 ms         0
+    4 - 8 ms         0
+  8 - 16.7 ms        0
+      > 16.7 ms      0
+  min 14.2 us, median 276.3 us, mean 271.5 us, p99 511.2 us, max 515.7 us
+  later than 1 ms: 0, 2 ms: 0, 4 ms: 0, 8 ms: 0; whole periods missed: 0
+
+6. load, HIGHEST: 16 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 19452, priority 2
+         < 50 us     12  ####
+    50 - 100 us     26  #########
+   100 - 200 us     44  ###############
+   200 - 500 us    151  ##################################################
+  0.5 - 1 ms         7  ###
+    1 - 2 ms         0
+    2 - 4 ms         0
+    4 - 8 ms         0
+  8 - 16.7 ms        0
+      > 16.7 ms      0
+  min 16.9 us, median 275.0 us, mean 274.4 us, p99 511.0 us, max 520.3 us
+  later than 1 ms: 0, 2 ms: 0, 4 ms: 0, 8 ms: 0; whole periods missed: 0
+
+7. load, TIME_CRITICAL: 16 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 19452, priority 15
+         < 50 us     23  #########
+    50 - 100 us     25  ##########
+   100 - 200 us     51  ####################
+   200 - 500 us    130  ##################################################
+  0.5 - 1 ms        11  #####
+    1 - 2 ms         0
+    2 - 4 ms         0
+    4 - 8 ms         0
+  8 - 16.7 ms        0
+      > 16.7 ms      0
+  min 9.8 us, median 262.1 us, mean 258.8 us, p99 519.8 us, max 886.5 us
+  later than 1 ms: 0, 2 ms: 0, 4 ms: 0, 8 ms: 0; whole periods missed: 0
+
+(exit code 0)
+after: total CPU busy over 3 s before this run started or after it ended, sampled each second: 31%, 48%, 33%
+
+==============================================================================
+latency.exe 4, run 2
+==============================================================================
+
+date: 2026-11-16 03:23:22 UTC
+before: total CPU busy over 3 s before this run started or after it ended, sampled each second: 34%, 28%, 25%
+> latency.exe 4
+pid 25780, 16 logical processors, QPC 10000000 Hz, process priority class 0x20
+
+1. idle, NORMAL, high-resolution timer: 0 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 27240, priority 0
+         < 50 us      5  ##
+    50 - 100 us     22  ########
+   100 - 200 us     34  #############
+   200 - 500 us    138  ##################################################
+  0.5 - 1 ms        40  ###############
+    1 - 2 ms         1  #
+    2 - 4 ms         0
+    4 - 8 ms         0
+  8 - 16.7 ms        0
+      > 16.7 ms      0
+  min 24.5 us, median 327.8 us, mean 334.0 us, p99 660.9 us, max 1276.4 us
+  later than 1 ms: 1, 2 ms: 0, 4 ms: 0, 8 ms: 0; whole periods missed: 0
+
+2. idle, NORMAL, ordinary waitable timer: 0 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 27240, priority 0
+         < 50 us      1  #
+    50 - 100 us      0
+   100 - 200 us      0
+   200 - 500 us     11  #####
+  0.5 - 1 ms         6  ###
+    1 - 2 ms        16  ########
+    2 - 4 ms        28  #############
+    4 - 8 ms        64  #############################
+  8 - 16.7 ms      114  ##################################################
+      > 16.7 ms      0
+  min -5.6 us, median 7652.1 us, mean 7709.1 us, p99 15242.0 us, max 15338.2 us
+  later than 1 ms: 222, 2 ms: 206, 4 ms: 178, 8 ms: 114; whole periods missed: 0
+
+3. load, NORMAL: 16 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 27240, priority 0
+         < 50 us      0
+    50 - 100 us      0
+   100 - 200 us      0
+   200 - 500 us      3  ##
+  0.5 - 1 ms         0
+    1 - 2 ms         6  ###
+    2 - 4 ms        22  #########
+    4 - 8 ms        68  ############################
+  8 - 16.7 ms      123  ##################################################
+      > 16.7 ms     18  ########
+  min 279.2 us, median 9211.0 us, mean 9401.6 us, p99 20891.6 us, max 22450.9 us
+  later than 1 ms: 237, 2 ms: 231, 4 ms: 209, 8 ms: 141; whole periods missed: 18
+
+4. load, NORMAL, priority boosts disabled: 16 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 27240, priority 0
+         < 50 us      0
+    50 - 100 us      0
+   100 - 200 us      0
+   200 - 500 us      2  #
+  0.5 - 1 ms         0
+    1 - 2 ms         5  ##
+    2 - 4 ms        11  ####
+    4 - 8 ms        15  #####
+  8 - 16.7 ms       29  #########
+      > 16.7 ms    178  ##################################################
+  min 246.8 us, median 34185.2 us, mean 31741.6 us, p99 91231.2 us, max 97228.3 us
+  later than 1 ms: 238, 2 ms: 233, 4 ms: 222, 8 ms: 207; whole periods missed: 346
+
+5. load, ABOVE_NORMAL: 16 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 27240, priority 1
+         < 50 us      7  ###
+    50 - 100 us     12  ####
+   100 - 200 us     51  #################
+   200 - 500 us    157  ##################################################
+  0.5 - 1 ms        13  #####
+    1 - 2 ms         0
+    2 - 4 ms         0
+    4 - 8 ms         0
+  8 - 16.7 ms        0
+      > 16.7 ms      0
+  min 24.9 us, median 302.7 us, mean 292.8 us, p99 523.7 us, max 878.3 us
+  later than 1 ms: 0, 2 ms: 0, 4 ms: 0, 8 ms: 0; whole periods missed: 0
+
+6. load, HIGHEST: 16 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 27240, priority 2
+         < 50 us     16  ######
+    50 - 100 us     18  ######
+   100 - 200 us     46  ################
+   200 - 500 us    150  ##################################################
+  0.5 - 1 ms        10  ####
+    1 - 2 ms         0
+    2 - 4 ms         0
+    4 - 8 ms         0
+  8 - 16.7 ms        0
+      > 16.7 ms      0
+  min 22.2 us, median 270.7 us, mean 273.8 us, p99 516.0 us, max 524.9 us
+  later than 1 ms: 0, 2 ms: 0, 4 ms: 0, 8 ms: 0; whole periods missed: 0
+
+7. load, TIME_CRITICAL: 16 load thread(s), 240 wakeups at 60 Hz
+  measuring thread: tid 27240, priority 15
+         < 50 us     18  #######
+    50 - 100 us     19  #######
+   100 - 200 us     46  ################
+   200 - 500 us    149  ##################################################
+  0.5 - 1 ms         8  ###
+    1 - 2 ms         0
+    2 - 4 ms         0
+    4 - 8 ms         0
+  8 - 16.7 ms        0
+      > 16.7 ms      0
+  min 20.7 us, median 288.3 us, mean 274.5 us, p99 520.8 us, max 534.1 us
+  later than 1 ms: 0, 2 ms: 0, 4 ms: 0, 8 ms: 0; whole periods missed: 0
+
+(exit code 0)
+after: total CPU busy over 3 s before this run started or after it ended, sampled each second: 39%, 28%, 35%

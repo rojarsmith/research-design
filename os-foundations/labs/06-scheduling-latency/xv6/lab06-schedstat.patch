@@ -1,0 +1,227 @@
+# Lab 06: per-process wakeup-latency statistics, a priority field, and the
+# setprio() and schedinfo() system calls, plus schedtest in UPROGS. The
+# round-robin scheduler is unchanged and ignores the priority. Applies to a
+# clean xv6-riscv commit fa2ddcb7ca87a77af579380a6eafd5aff163b44f with:
+# patch -p1 < lab06-schedstat.patch (or git apply). Not meant to be stacked
+# on the lab 05 patches. Copy schedtest.c to user/ as well.
+diff -ruN a/Makefile b/Makefile
+--- a/Makefile
++++ b/Makefile
+@@ -151,6 +151,7 @@
+ 	$U/_forphan\
+ 	$U/_dorphan\
+ 	$U/_sync\
++	$U/_schedtest\
+ 
+ fs.img: mkfs/mkfs README $(UPROGS)
+ 	mkfs/mkfs fs.img README $(UPROGS)
+diff -ruN a/kernel/proc.c b/kernel/proc.c
+--- a/kernel/proc.c
++++ b/kernel/proc.c
+@@ -124,6 +124,9 @@
+ found:
+   p->pid = allocpid();
+   p->state = USED;
++  p->prio = PRIO_DEFAULT; // Lab 06
++  p->readytime = 0;
++  memset(&p->si, 0, sizeof(p->si));
+ 
+   // Allocate a trapframe page.
+   if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
+@@ -418,6 +421,27 @@
+   }
+ }
+ 
++// Lab 06: called with p->lock held just before p runs. If p was
++// woken up, record how long it waited between wakeup() and now.
++static void
++lat_account(struct proc *p)
++{
++  static const uint64 limits[NLATHIST - 1] = LATHIST_LIMITS;
++
++  if (p->readytime == 0)
++    return;
++  uint64 lat = r_time() - p->readytime;
++  p->readytime = 0;
++  p->si.nwake++;
++  p->si.latsum += lat;
++  if (lat > p->si.latmax)
++    p->si.latmax = lat;
++  int b = 0;
++  while (b < NLATHIST - 1 && lat >= limits[b])
++    b++;
++  p->si.hist[b]++;
++}
++
+ // Per-CPU process scheduler.
+ // Each CPU calls scheduler() after setting itself up.
+ // Scheduler never returns.  It loops, doing:
+@@ -450,6 +474,7 @@
+         // before jumping back to us.
+         p->state = RUNNING;
+         c->proc = p;
++        lat_account(p); // Lab 06
+         swtch(&c->context, &p->context);
+ 
+         // Don't re-enable interrupts on release.
+@@ -588,6 +613,7 @@
+       // go to sleep, also set it back to RUNNING.
+       if (p->state == SLEEPING) {
+         p->state = RUNNABLE;
++        p->readytime = r_time(); // Lab 06
+       }
+     }
+     release(&p->lock);
+diff -ruN a/kernel/proc.h b/kernel/proc.h
+--- a/kernel/proc.h
++++ b/kernel/proc.h
+@@ -78,6 +78,8 @@
+ 
+ enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+ 
++#include "schedinfo.h"
++
+ // Per-process state
+ struct proc {
+   struct spinlock lock;
+@@ -101,4 +103,9 @@
+   struct file *ofile[NOFILE];  // Open files
+   struct inode *cwd;           // Current directory
+   char name[16];               // Process name (debugging)
++
++  // Lab 06. p->lock must be held when using these:
++  int prio;            // priority, PRIO_DEFAULT .. PRIO_MAX
++  uint64 readytime;    // r_time() when wakeup() made it RUNNABLE, or 0
++  struct schedinfo si; // wakeup-latency statistics
+ };
+diff -ruN a/kernel/schedinfo.h b/kernel/schedinfo.h
+--- a/kernel/schedinfo.h
++++ b/kernel/schedinfo.h
+@@ -0,0 +1,24 @@
++// Lab 06: scheduling statistics for one process. The kernel keeps them
++// in struct proc and the schedinfo() system call copies them out.
++// Latencies are in ticks of the RISC-V time CSR, which QEMU's virt
++// machine runs at 10 MHz, so 10 ticks are 1 microsecond.
++#ifndef SCHEDINFO_H
++#define SCHEDINFO_H
++
++#define PRIO_DEFAULT 1 // every new process starts here
++#define PRIO_MAX     9 // higher numbers run first
++
++// Histogram buckets: below 10 us, 100 us, 1 ms, 10 ms, 50 ms, 100 ms,
++// 200 ms, and everything above 200 ms.
++#define NLATHIST 8
++#define LATHIST_LIMITS {100, 1000, 10000, 100000, 500000, 1000000, 2000000}
++
++struct schedinfo {
++  uint64 nwake;  // wakeups measured: SLEEPING -> RUNNABLE -> RUNNING
++  uint64 latsum; // sum of the wakeup-to-run latencies
++  uint64 latmax; // the largest one
++  uint64 hist[NLATHIST];
++  int prio;      // the process's priority now
++};
++
++#endif
+diff -ruN a/kernel/syscall.c b/kernel/syscall.c
+--- a/kernel/syscall.c
++++ b/kernel/syscall.c
+@@ -103,6 +103,8 @@
+ extern uint64 sys_mkdir(void);
+ extern uint64 sys_close(void);
+ extern uint64 sys_sync(void);
++extern uint64 sys_setprio(void);
++extern uint64 sys_schedinfo(void);
+ 
+ // An array mapping syscall numbers from syscall.h
+ // to the function that handles the system call.
+@@ -130,6 +132,8 @@
+   [SYS_mkdir]   = sys_mkdir,
+   [SYS_close]   = sys_close,
+   [SYS_sync]    = sys_sync,
++  [SYS_setprio] = sys_setprio,
++  [SYS_schedinfo] = sys_schedinfo,
+   // clang-format on
+ };
+ 
+diff -ruN a/kernel/syscall.h b/kernel/syscall.h
+--- a/kernel/syscall.h
++++ b/kernel/syscall.h
+@@ -21,3 +21,5 @@
+ #define SYS_mkdir  20
+ #define SYS_close  21
+ #define SYS_sync   22
++#define SYS_setprio   23
++#define SYS_schedinfo 24
+diff -ruN a/kernel/sysproc.c b/kernel/sysproc.c
+--- a/kernel/sysproc.c
++++ b/kernel/sysproc.c
+@@ -110,3 +110,40 @@
+   release(&tickslock);
+   return xticks;
+ }
++
++// Lab 06: setprio(prio) sets the calling process's priority and returns
++// the old one. The round-robin scheduler ignores it.
++uint64
++sys_setprio(void)
++{
++  int prio, old;
++  struct proc *p = myproc();
++
++  argint(0, &prio);
++  if (prio < 0 || prio > PRIO_MAX)
++    return -1;
++  acquire(&p->lock);
++  old = p->prio;
++  p->prio = prio;
++  release(&p->lock);
++  return old;
++}
++
++// Lab 06: schedinfo(struct schedinfo *si) copies out the calling
++// process's wakeup-latency statistics.
++uint64
++sys_schedinfo(void)
++{
++  uint64 addr;
++  struct schedinfo si;
++  struct proc *p = myproc();
++
++  argaddr(0, &addr);
++  acquire(&p->lock);
++  si = p->si;
++  si.prio = p->prio;
++  release(&p->lock);
++  if (copyout(p->pagetable, p->sz, addr, (char *)&si, sizeof(si)) < 0)
++    return -1;
++  return 0;
++}
+diff -ruN a/user/user.h b/user/user.h
+--- a/user/user.h
++++ b/user/user.h
+@@ -1,6 +1,7 @@
+ #define SBRK_ERROR ((char *)-1)
+ 
+ struct stat;
++struct schedinfo;
+ 
+ // system calls
+ int fork(void);
+@@ -25,6 +26,8 @@
+ int pause(int);
+ int uptime(void);
+ int sync(void);
++int setprio(int);
++int schedinfo(struct schedinfo *);
+ 
+ // ulib.c
+ int stat(const char *, struct stat *);
+diff -ruN a/user/usys.pl b/user/usys.pl
+--- a/user/usys.pl
++++ b/user/usys.pl
+@@ -43,3 +43,5 @@
+ entry("pause");
+ entry("uptime");
+ entry("sync");
++entry("setprio");
++entry("schedinfo");

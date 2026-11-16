@@ -1,0 +1,13 @@
+# Build outputs, logs and traces of the companion programs; labs/.gitignore
+# covers build/, *.exe, *.o and *.obj already.
+*.gch
+*.d
+*.log
+*.etl
+fs.img
+kernel/kernel
+latency
+
+# Your scheduler from exercise B (for run.sh's SOLUTION_DIR) stays out of
+# the repository.
+xv6/solution/

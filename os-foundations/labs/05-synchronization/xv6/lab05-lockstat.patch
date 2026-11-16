@@ -1,0 +1,186 @@
+# Lab 05: per-lock statistics and the lockstat() system call, plus
+# kmemstress and lostwake in UPROGS. Applies to xv6-riscv commit
+# fa2ddcb7ca87a77af579380a6eafd5aff163b44f with: patch -p1 < lab05-lockstat.patch
+# (or git apply). Copy kmemstress.c and lostwake.c to user/ as well.
+diff -ruN a/Makefile b/Makefile
+--- a/Makefile
++++ b/Makefile
+@@ -151,6 +151,8 @@
+ 	$U/_forphan\
+ 	$U/_dorphan\
+ 	$U/_sync\
++	$U/_kmemstress\
++	$U/_lostwake\
+ 
+ fs.img: mkfs/mkfs README $(UPROGS)
+ 	mkfs/mkfs fs.img README $(UPROGS)
+diff -ruN a/kernel/spinlock.c b/kernel/spinlock.c
+--- a/kernel/spinlock.c
++++ b/kernel/spinlock.c
+@@ -8,12 +8,27 @@
+ #include "proc.h"
+ #include "defs.h"
+ 
++// Lab 05: a table of the statically allocated locks, for lockstat().
++// Locks in kalloc()ed memory, such as pipe locks, are left out,
++// because they are freed while the table would still point at them.
++#define NLOCKSTAT 256
++static struct spinlock *lockstat_locks[NLOCKSTAT];
++static int lockstat_n;
++extern char end[]; // first address after kernel, defined by kernel.ld.
++
+ void
+ initlock(struct spinlock *lk, char *name)
+ {
+   lk->name = name;
+   lk->locked = 0;
+   lk->cpu = 0;
++  lk->nacquire = 0;
++  lk->nspin = 0;
++  if ((char *)lk < end) {
++    int i = __atomic_fetch_add(&lockstat_n, 1, __ATOMIC_RELAXED);
++    if (i < NLOCKSTAT)
++      lockstat_locks[i] = lk;
++  }
+ }
+ 
+ // Acquire the lock.
+@@ -21,6 +36,8 @@
+ void
+ acquire(struct spinlock *lk)
+ {
++  uint64 spins = 0;
++
+   push_off(); // disable interrupts to avoid deadlock.
+   if (holding(lk))
+     panic("acquire");
+@@ -35,10 +52,14 @@
+   // past this point, to ensure that the critical section's memory
+   // references happen strictly after the lock is acquired.
+   while (__atomic_exchange_n(&lk->locked, 1, __ATOMIC_ACQUIRE) != 0)
+-    ;
++    spins++;
+ 
+   // Record info about lock acquisition for holding() and debugging.
+   lk->cpu = mycpu();
++
++  // Lab 05: this CPU holds the lock, so plain updates are safe.
++  lk->nacquire++;
++  lk->nspin += spins;
+ }
+ 
+ // Release the lock.
+@@ -114,3 +135,55 @@
+   if (c->noff == 0 && c->intena)
+     intr_on();
+ }
++
++// Lab 05: lockstat(0) prints the statistics of the registered locks,
++// summed over all locks with the same name. lockstat(1) zeroes them
++// instead. Each lock is read or reset while it is held, one at a time,
++// so this never holds two locks at once.
++uint64
++sys_lockstat(void)
++{
++  int reset;
++  int n = lockstat_n < NLOCKSTAT ? lockstat_n : NLOCKSTAT;
++  uint64 total = 0;
++
++  argint(0, &reset);
++  for (int i = 0; i < n; i++) {
++    struct spinlock *lk = lockstat_locks[i];
++    if (reset) {
++      acquire(lk);
++      lk->nacquire = 0;
++      lk->nspin = 0;
++      release(lk);
++      continue;
++    }
++
++    // Print each name once, at its first lock in the table.
++    int first = 1;
++    for (int j = 0; j < i; j++)
++      if (strncmp(lockstat_locks[j]->name, lk->name, 32) == 0)
++        first = 0;
++    if (!first)
++      continue;
++
++    int nlocks = 0;
++    uint64 nacq = 0, nspin = 0;
++    for (int j = i; j < n; j++) {
++      struct spinlock *l = lockstat_locks[j];
++      if (strncmp(l->name, lk->name, 32) != 0)
++        continue;
++      acquire(l);
++      nacq += l->nacquire;
++      nspin += l->nspin;
++      release(l);
++      nlocks++;
++    }
++    total += nspin;
++    if (nacq > 0)
++      printk("lock %s: %d lock(s), #acquire() %lu, #spin %lu\n", lk->name,
++             nlocks, nacq, nspin);
++  }
++  if (!reset)
++    printk("lockstat: %d locks registered, total #spin %lu\n", n, total);
++  return 0;
++}
+diff -ruN a/kernel/spinlock.h b/kernel/spinlock.h
+--- a/kernel/spinlock.h
++++ b/kernel/spinlock.h
+@@ -5,4 +5,8 @@
+   // For debugging:
+   char *name;      // Name of lock.
+   struct cpu *cpu; // The cpu holding the lock.
++
++  // Lab 05 statistics. acquire() updates them while it holds the lock.
++  uint64 nacquire; // acquire() calls that got this lock
++  uint64 nspin;    // amoswaps that found the lock already held
+ };
+diff -ruN a/kernel/syscall.c b/kernel/syscall.c
+--- a/kernel/syscall.c
++++ b/kernel/syscall.c
+@@ -103,6 +103,7 @@
+ extern uint64 sys_mkdir(void);
+ extern uint64 sys_close(void);
+ extern uint64 sys_sync(void);
++extern uint64 sys_lockstat(void);
+ 
+ // An array mapping syscall numbers from syscall.h
+ // to the function that handles the system call.
+@@ -130,6 +131,7 @@
+   [SYS_mkdir]   = sys_mkdir,
+   [SYS_close]   = sys_close,
+   [SYS_sync]    = sys_sync,
++  [SYS_lockstat] = sys_lockstat,
+   // clang-format on
+ };
+ 
+diff -ruN a/kernel/syscall.h b/kernel/syscall.h
+--- a/kernel/syscall.h
++++ b/kernel/syscall.h
+@@ -21,3 +21,4 @@
+ #define SYS_mkdir  20
+ #define SYS_close  21
+ #define SYS_sync   22
++#define SYS_lockstat 23
+diff -ruN a/user/user.h b/user/user.h
+--- a/user/user.h
++++ b/user/user.h
+@@ -25,6 +25,7 @@
+ int pause(int);
+ int uptime(void);
+ int sync(void);
++int lockstat(int);
+ 
+ // ulib.c
+ int stat(const char *, struct stat *);
+diff -ruN a/user/usys.pl b/user/usys.pl
+--- a/user/usys.pl
++++ b/user/usys.pl
+@@ -43,3 +43,4 @@
+ entry("pause");
+ entry("uptime");
+ entry("sync");
++entry("lockstat");

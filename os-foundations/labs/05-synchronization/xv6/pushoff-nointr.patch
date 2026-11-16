@@ -1,0 +1,15 @@
+# Lab 05, exercise B, break it (1): push_off() records the interrupt state
+# but no longer turns interrupts off. Applies to xv6-riscv fa2ddcb7, alone
+# or on top of lab05-lockstat.patch. Undo with patch -R -p1.
+diff -ruN a/kernel/spinlock.c b/kernel/spinlock.c
+--- a/kernel/spinlock.c
++++ b/kernel/spinlock.c
+@@ -94,7 +94,7 @@
+ {
+   // disable interrupts to prevent an involuntary context
+   // switch while using mycpu().
+-  uint64 flags = rc_sstatus(SSTATUS_SIE);
++  uint64 flags = r_sstatus(); // Lab 05: BROKEN, reads SIE but leaves it set
+   int old = !!(flags & SSTATUS_SIE);
+ 
+   if (mycpu()->noff == 0)
