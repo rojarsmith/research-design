@@ -1,0 +1,23 @@
+# Schematic export: sensor board, rev B
+part U1   pins=32 MCU
+part U11  pins=8  EEPROM
+part R1   pins=2  4k7
+part R2   pins=2  4k7
+part R10  pins=2  330R
+part C1   pins=2  100n
+part C2   pins=2  100n
+part J1   pins=4  UART-HEADER
+part LED1 pins=2  RED
+part TP1  pins=1  TESTPOINT
+
+net VCC     U1.1 U11.8 R1.1 R2.1 C1.1 J1.1
+net GND     U1.8 U11.4 C1.2 C2.2 J1.4 LED1.2
+net NRST    U1.4 C2.1
+net UART_TX U1.10 J1.2
+net UART_RX U1.11 J1.3
+net SDA     U1.12 U11.5 R1.2
+net SCL     U1.13 U11.6 R2.2
+net LED     U1.20 R10.1
+net LED_K   R10.2 LED1.1
+net TEST    U1.30 TP1.1
+net SWO     U1.31

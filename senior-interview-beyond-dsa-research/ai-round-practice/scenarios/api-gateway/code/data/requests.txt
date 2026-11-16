@@ -1,0 +1,14 @@
+GET /users/me
+GET /users/42?expand=orders
+DELETE /users/42
+POST /users/42
+PATCH /users/42/orders
+GET /users/42/orders/7
+GET /files/q3%2Freport.pdf
+GET /files
+GET /docs/api/v2
+GET /docs/api/v2/auth
+GET //health/
+HEAD /health
+GET /nope
+GET /bad%zz

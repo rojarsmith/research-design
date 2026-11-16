@@ -25,7 +25,7 @@
         },
         {
             "label": "drill: 情境清單",
-            "detail": "三個情境與過去的練習紀錄",
+            "detail": "六個情境與過去的練習紀錄",
             "type": "process",
             "command": "${workspaceFolder}/build/drill.exe",
             "args": ["list"],
@@ -52,7 +52,10 @@
             "options": [
                 { "label": "build-planner：建置排程器", "value": "build-planner" },
                 { "label": "log-alerts：日誌告警", "value": "log-alerts" },
-                { "label": "room-booking：會議室分配", "value": "room-booking" }
+                { "label": "room-booking：會議室分配", "value": "room-booking" },
+                { "label": "api-gateway：API 閘道路由", "value": "api-gateway" },
+                { "label": "netlist-check：電路板連線檢查", "value": "netlist-check" },
+                { "label": "team-match：實習生分組配對", "value": "team-match" }
             ],
             "default": "build-planner"
         },

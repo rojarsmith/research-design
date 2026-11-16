@@ -1,0 +1,31 @@
+# Internship matching, spring cohort
+team payments cap=2
+team search   cap=1
+team infra    cap=2
+team mobile   cap=0     # hiring freeze
+
+intern ava  applied=2026-09-01T09:30  prefs=payments,search
+intern ben  applied=2026-09-03T14:10  prefs=payments,infra
+intern cal  applied=2026-09-02T11:00  prefs=search,payments,infra
+intern dan  applied=2026-09-04T16:45  prefs=search,infra
+intern eve  applied=2026-09-02T08:15  prefs=payments,infra,mobile
+intern fay  applied=2026-09-05T10:00  prefs=infra,search
+intern gus  applied=2026-09-01T12:00  prefs=mobile,payments
+
+# One mark per interviewer, 1.0 to 5.0
+marks payments ava 4.1,4.3
+marks payments ben 3.6,4.8
+marks payments cal 4.5,4.6,4.7
+marks payments eve 3.9,4.1
+marks payments gus 3.0,3.5
+marks search   cal 3.3,4.5
+marks search   dan 3.4,4.4
+marks search   ava 4.8
+marks search   fay 3.1
+marks infra    ben 4.0
+marks infra    cal 4.4,4.0
+marks infra    dan 4.2,4.6
+marks infra    eve 4.5
+marks infra    fay 3.8,4.2
+marks mobile   eve 5.0
+marks mobile   gus 4.9

@@ -1,0 +1,25 @@
+# Copper export from the layout tool: sensor board, rev B
+trace U1.1   V1
+trace V1     U11.8
+trace V1     R1.1
+trace R1.1   R2.1
+trace R2.1   C1.1
+trace C1.1   J1.1
+trace U1.8   V2
+trace V2     U11.4
+trace V2     C1.2
+trace C1.2   C2.2
+trace C2.2   J1.4
+trace U1.4   C2.1
+trace U1.10  J1.2
+trace U1.11  J1.3
+trace J1.2   V3
+trace V3     J1.3
+trace U1.12  U11.5
+trace U11.5  R1.2
+trace U1.13  U11.6
+trace U11.6  R2.2
+trace U1.20  R10.1
+trace R10.2  LED1.1
+trace U1.30  TP1.1
+trace U1.31  V4

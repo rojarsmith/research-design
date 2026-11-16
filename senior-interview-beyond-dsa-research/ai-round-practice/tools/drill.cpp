@@ -560,7 +560,7 @@ static int cmd_list() {
                   << (last.count(s.id) ? last[s.id] : "還沒練過") << "\n";
     }
     std::cout << "\n開始：drill start <情境> [--mode chat|open|none]\n"
-                 "三個情境都做過之後，改用自己挑的開源專案練習，見 README 的「自己帶程式庫」。\n";
+                 "情境都做過之後，改用自己挑的開源專案練習，見 README 的「自己帶程式庫」。\n";
     return 0;
 }
 

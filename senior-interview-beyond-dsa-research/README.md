@@ -59,7 +59,7 @@ This topic follows [HackerRank and LeetCode practice for senior engineers](../co
 
 [ai-round-practice/](ai-round-practice/README.md) is a VS Code workspace for the weekly drill. It needs only VS Code, the C/C++ extension and WinLibs GCC, the same as the coding report's cpp-practice.
 
-- **Scenarios:** 3 original multi-file C++ codebases. Each runs in three phases: fix a bug, implement a feature, then optimize against large generated data.
+- **Scenarios:** 6 original multi-file C++ codebases. Each runs in three phases: fix a bug, implement a feature, then optimize against large generated data.
 - **The `drill` CLI:**
   - reveals one phase at a time and times each phase
   - opens each session in its own folder and window, so the AI assistant sees only that codebase
