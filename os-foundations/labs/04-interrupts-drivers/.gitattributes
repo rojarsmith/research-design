@@ -1,0 +1,5 @@
+# The xv6 and Linux files are read inside Linux (patch, sh, expect, gdb,
+# make, kbuild), so keep them LF even where git converts line endings to
+# CRLF. A Makefile with CRLF line endings breaks make.
+xv6/** text eol=lf
+linux/** text eol=lf

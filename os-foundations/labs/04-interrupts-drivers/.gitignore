@@ -1,0 +1,27 @@
+# Build outputs of this lab's programs; never commit them.
+# The run scripts build in /tmp, and the Windows commands build in build/.
+build/
+*.exe
+*.o
+*.obj
+*.d
+*.asm
+*.sym
+# kbuild outputs, if the module is built in place
+*.ko
+*.mod
+*.mod.c
+*.cmd
+.*.cmd
+Module.symvers
+modules.order
+.tmp_versions/
+linux/tickread
+linux/timerfd_ticks
+# an xv6 tree or image copied here by mistake
+xv6-riscv/
+fs.img
+kernel/kernel
+# Your own xv6 patches, which run-xv6.sh reads (see the README).
+# Reference solutions are not shipped; anything kept here stays out of git.
+xv6/solution/

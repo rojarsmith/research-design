@@ -1,0 +1,82 @@
+Recorded 2026-11-16 on the machine this lab was written on.
+Windows 11 Pro, build 26300; hypervisor present (Win32_ComputerSystem.HypervisorPresent = True).
+CPU: 11th Gen Intel(R) Core(TM) i7-11700 @ 2.50GHz, 16 logical processors; 64 GiB RAM.
+Compiler: gcc 16.2.0 (MinGW-W64 x86_64-ucrt-posix-seh, WinLibs).
+Your numbers will differ. Keep your own copy in NOTES.md.
+The podman machine (a WSL 2 VM, used for this lab's Linux parts) was running at the time.
+
+> gcc -O2 -Wall -o build\nt_reserve_commit.exe nt_reserve_commit.c -lpsapi
+
+> build\nt_reserve_commit.exe
+Page size 4096 bytes, allocation granularity 64 KiB
+
+1. One region through its states (MiB and faults relative to the start)
+  step                                 process    system   working     page   VirtualQuery at the base
+                                        commit    commit       set   faults
+  start                                   +0.0      +0.0      +0.0       +1   
+  reserve 1 GiB                           +0.0      +0.0      +0.1      +14   MEM_RESERVE, 1024 MiB run
+  commit the first 256 MiB              +256.5    +256.6      +0.1     +147   MEM_COMMIT, 256 MiB run
+  write one byte in each page           +256.5    +258.1    +256.1   +65683   MEM_COMMIT, 256 MiB run
+  decommit the 256 MiB                    +0.0      +1.6      +0.1   +65684   MEM_RESERVE, 1024 MiB run
+  release the region                      +0.0      +1.6      +0.1   +65684   MEM_FREE, 1038 MiB run
+
+2. Commit on demand: reserve 64 MiB, write 16 pages, commit each page in the fault handler
+  16 pages 4 MiB apart:  handler committed 16 pages; commit charge  +132 KiB (33 pages); read back: ok
+                          the page after the first is still MEM_RESERVE (a 4.00 MiB run)
+  16 pages side by side: handler committed 16 pages; commit charge   +72 KiB (18 pages); read back: ok
+
+3. This process's address space, one line per image or mapped allocation
+  allocation base      size KiB  type        file
+  0000024B40E70000          8  MEM_MAPPED  
+  0000024B40E80000         64  MEM_MAPPED  
+  0000024B40E90000        168  MEM_MAPPED  
+  0000024B40EC0000         16  MEM_MAPPED  
+  0000024B40ED0000          4  MEM_MAPPED  
+  0000024B40EF0000        196  MEM_MAPPED  C_950.NLS
+  0000024B40F30000         12  MEM_MAPPED  l_intl.nls
+  0000024B40F40000         72  MEM_MAPPED  
+  0000024B40F60000         72  MEM_MAPPED  
+  0000024B40F80000         20  MEM_MAPPED  
+  0000024B40F90000         44  MEM_MAPPED  
+  0000024B41010000         12  MEM_MAPPED  l_intl.nls
+  0000024B41020000          4  MEM_MAPPED  zh-TW.nlx
+  0000024B41150000        844  MEM_MAPPED  locale.nls
+  0000024B41230000        196  MEM_MAPPED  C_950.NLS
+  00007FF4A9660000       1024  MEM_MAPPED  
+  00007FF5AB790000          4  MEM_MAPPED  
+  00007FF6B1710000         92  MEM_IMAGE   nt_reserve_commit.exe
+  00007FFB97460000        656  MEM_IMAGE   apphelp.dll
+  00007FFB9A6A0000       4120  MEM_IMAGE   KernelBase.dll
+  00007FFB9AF30000       1348  MEM_IMAGE   ucrtbase.dll
+  00007FFB9C330000        832  MEM_IMAGE   kernel32.dll
+  00007FFB9D380000       2484  MEM_IMAGE   ntdll.dll
+  totals: 6 image allocations (9.3 MiB), 17 mapped (2.7 MiB), 10 private (4135.5 MiB, reserved or committed)
+
+> gcc -O2 -Wall -municode -o build\nt_section.exe nt_section.c -lpsapi
+
+> build\nt_section.exe
+1. A page-file-backed section named Local\oslab03-2316, shared by two processes
+  A after A writes page 0          view 00000213F02B0000: [A wrote page 0      ] [                    ] [                    ]
+  B after opening by name          view 000001BB35820000: [A wrote page 0      ] [                    ] [                    ]
+  B after B writes page 1          view 000001BB35820000: [A wrote page 0      ] [B wrote page 1      ] [                    ]
+  B copy view, before writing      view 000001BB355E0000: [A wrote page 0      ] [B wrote page 1      ] [                    ]
+  B copy view, after writing 0     view 000001BB355E0000: [B private write     ] [B wrote page 1      ] [                    ]
+  B shared view, same moment       view 000001BB35820000: [A wrote page 0      ] [B wrote page 1      ] [                    ]
+  B commit charge: +0.012 MiB for mapping a 3-page copy view
+  B copy view page 0: PAGE_READWRITE  resident, private
+  B copy view page 1: PAGE_WRITECOPY  resident, shared
+  B copy view page 2: PAGE_WRITECOPY  resident, shared
+  A after B exited                 view 00000213F02B0000: [A wrote page 0      ] [B wrote page 1      ] [                    ]
+  child exit code 0
+
+2. System commit charge for a 256 MiB page-file-backed section
+  SEC_COMMIT  create  +256.6 MiB, map a view    +0.5 MiB, (nothing more)           +0.0 MiB
+  SEC_RESERVE create    +0.0 MiB, map a view    +0.5 MiB, VirtualAlloc 16 MiB     +16.0 MiB
+  (the system total also moves with every other process; run it twice)
+
+3. Shrink a mapped data file from 3 pages to 1
+  mapped 12288 bytes; byte at page 2 reads 'x'
+  with a view mapped (same handle):            SetEndOfFile -> FALSE, error 1224 (The requested operation cannot be performed on a file with a user-mapped section open.), file size now 12288
+  with a view mapped (second handle):          SetEndOfFile -> FALSE, error 1224 (The requested operation cannot be performed on a file with a user-mapped section open.), file size now 12288
+  view unmapped, section handle still open:    SetEndOfFile -> FALSE, error 1224 (The requested operation cannot be performed on a file with a user-mapped section open.), file size now 12288
+  view unmapped and section closed:            SetEndOfFile -> TRUE, file size now 4096

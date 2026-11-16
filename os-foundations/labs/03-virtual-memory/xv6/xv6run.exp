@@ -1,0 +1,59 @@
+#!/usr/bin/expect -f
+# xv6run.exp - boot xv6 from the current directory, type each argument at
+# the xv6 shell prompt and wait for the next prompt, then quit QEMU.
+#
+# usage: expect xv6run.exp <timeout-seconds> <cpus> "cmd1" ["cmd2" ...]
+#
+# An argument that starts with "<" is input for the command before it:
+# the driver does not wait for a prompt after that command, waits one
+# second, types the rest of the argument and Enter, and then waits for
+# the prompt. Exit status: 0 done, 2 timeout at boot, 3 timeout in a
+# command, 4 QEMU exited early. On a timeout QEMU is stopped as well.
+set timeout [lindex $argv 0]
+set cpus [lindex $argv 1]
+set steps [lrange $argv 2 end]
+log_user 1
+
+# Quit QEMU before giving up. Ctrl-a x reaches QEMU's console multiplexer
+# even when the guest kernel has panicked.
+proc bail {code msg} {
+  puts "\nXV6RUN: $msg"
+  catch {send "\x01x"}
+  set ::timeout 10
+  catch {expect eof}
+  catch {wait}
+  exit $code
+}
+
+spawn make CPUS=$cpus qemu
+expect {
+  "init: starting sh" {}
+  timeout { bail 2 "timeout waiting for boot" }
+  eof     { puts "\nXV6RUN: make or QEMU exited before boot"; exit 4 }
+}
+expect {
+  -re {\$ $} {}
+  timeout { bail 2 "timeout waiting for the first prompt" }
+}
+
+set n [llength $steps]
+for {set i 0} {$i < $n} {incr i} {
+  set s [lindex $steps $i]
+  if {[string index $s 0] eq "<"} {
+    sleep 1
+    send -- "[string range $s 1 end]\r"
+  } else {
+    send -- "$s\r"
+  }
+  if {$i + 1 < $n && [string index [lindex $steps [expr {$i + 1}]] 0] eq "<"} {
+    continue
+  }
+  expect {
+    -re {\n\$ $} {}
+    timeout { bail 3 "timeout running: $s" }
+    eof     { puts "\nXV6RUN: QEMU exited while running: $s"; exit 4 }
+  }
+}
+send "\x01x"
+expect eof
+puts "\nXV6RUN: done"

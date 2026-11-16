@@ -1,0 +1,231 @@
+Recorded 2026-11-16 in an Ubuntu 24.04 container (image oslab:24.04) under
+podman 5.8.3 on Windows 11 build 26300 (Intel Core i7-11700). The podman
+machine is a WSL 2 VM, so the kernel is WSL's 6.6.87.2-microsoft-standard-WSL2
+and every timing here is a VM number. This is not WSL 2 Ubuntu itself.
+Tools in the image: QEMU 8.2.2, riscv64-linux-gnu-gcc 13.3.0, gdb-multiarch
+15.1, gcc 13.3.0, expect. xv6-riscv at fa2ddcb7ca87a77af579380a6eafd5aff163b44f
+(2026-11-05), copied to /tmp in the container before patching.
+The lab folder was mounted read-only at /work. SOLUTION_DIR pointed at the
+reference solutions, which are not shipped. Your numbers will differ.
+Command: SOLUTION_DIR=/solutions/04 sh /work/os-foundations/labs/04-interrupts-drivers/xv6/run-xv6.sh /opt/xv6-riscv /tmp/l4
+
+=== 1. interrupt counts and preemption ===
+riscv64-linux-gnu-ld: warning: kernel/kernel has a LOAD segment with RWX permissions
+riscv64-linux-gnu-ld: warning: user/_forktest has a LOAD segment with RWX permissions
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ intrcount
+interrupts since boot: uart 46, virtio 50, timer 1, ticks 1
+---------------------------------------------------------------
+  1. write() of 64 bytes : uart 64, virtio 0, timer 0 (in user mode 0), chars received 0, ticks 0
+2. type a line and press Enter: hello xv6
+     read() of a typed line: uart 2, virtio 0, timer 7 (in user mode 0), chars received 10, ticks 7
+   read() returned 10 bytes
+  3. pause(10)            : uart 0, virtio 0, timer 10 (in user mode 0), chars received 0, ticks 10
+$ preempt
+calibrated: 65840000 iterations per tick; each child does 20 ticks of work
+  child 0: ran from tick 0 to 34 (34 ticks), preempted 17 times
+  child 1: ran from tick 1 to 34 (33 ticks), preempted 17 times
+both done after 34 ticks
+$ QEMU: Terminated
+
+XV6RUN: done
+
+=== 2. a received character, under GDB ===
+spawn make CPUS=1 qemu-gdb
+sed "s/:1234/:25000/" < .gdbinit.tmpl-riscv > .gdbinit
+*** Now run 'gdb' in another window.
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 -S -gdb tcp::25000
+
+xv6 kernel is booting
+
+init: starting sh
+$ echo x
+x
+$ QEMU: Terminated
+
+XV6GDB: done
+--- GDB output ---
+The target architecture is set to "riscv:rv64".
+0x0000000000001000 in ?? ()
+Breakpoint 1 at 0x800002ba: file kernel/console.c, line 148.
+
+Breakpoint 1, consoleintr (c=101) at kernel/console.c:148
+148	{
+=== one received character ===
+#0  consoleintr (c=101) at kernel/console.c:148
+#1  0x0000000080000a1a in uartintr () at kernel/uart.c:164
+#2  0x000000008000259c in devintr () at kernel/trap.c:211
+#3  0x000000008000273a in kerneltrap () at kernel/trap.c:158
+#4  0x00000000800056a8 in kernelvec () at kernel/kernelvec.S:38
+Backtrace stopped: frame did not save the PC
+character: 101 'e'
+scause  0x8000000000000009  (interrupt bit set, cause 9: supervisor external)
+sstatus 0x0000000200000120  SPP=1, so the trap came from supervisor mode
+sepc    0x000000008000437e
+fileread + 16 in section .text
+this hart's current process: 0x800128f8
+PLIC pending word 0x0c001000: 0x00000400 (bit 10 is the UART)
+UART LSR 0x10000005: 0x61 (bit 0: more input waiting, bit 5: transmitter idle)
+Breakpoint 2 at 0x80005750: file kernel/plic.c, line 45.
+
+Breakpoint 2, plic_complete (irq=irq@entry=10) at kernel/plic.c:45
+45	{
+=== devintr() completes the interrupt it claimed ===
+#0  plic_complete (irq=irq@entry=10) at kernel/plic.c:45
+#1  0x00000000800025ca in devintr () at kernel/trap.c:223
+#2  0x000000008000273a in kerneltrap () at kernel/trap.c:158
+#3  0x00000000800056a8 in kernelvec () at kernel/kernelvec.S:38
+Backtrace stopped: frame did not save the PC
+irq 10
+[Inferior 1 (process 1) detached]
+
+=== 3. the timer interrupt that preempts, under GDB ===
+spawn make CPUS=1 qemu-gdb
+*** Now run 'gdb' in another window.
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 -S -gdb tcp::25000
+
+xv6 kernel is booting
+
+init: starting sh
+$ preempt 10
+calibrated: 71920000 iterations per tick; each child does 10 ticks of work
+  child 0: ran from tick 0 to 16 (16 ticks), preempted 8 times
+  child 1: ran from tick 1 to 16 (15 ticks), preempted 8 times
+both done after 16 ticks
+$ QEMU: Terminated
+
+XV6GDB: done
+--- GDB output ---
+The target architecture is set to "riscv:rv64".
+0x0000000000001000 in ?? ()
+add symbol table from file "user/_preempt"
+Breakpoint 1 at 0x80001ed8: file kernel/proc.c, line 503.
+
+Breakpoint 1, yield () at kernel/proc.c:503
+503	{
+=== a timer interrupt preempts a user process ===
+#0  yield () at kernel/proc.c:503
+#1  0x000000008000270c in usertrap () at kernel/trap.c:94
+#2  0x0000003ffffff09c in ?? ()
+process preempt, pid 3, interrupted at user pc 0x476:
+uptime + 6 in section .text of /tmp/l4/intr/user/_preempt
+scause  0x8000000000000005  (interrupt bit set, cause 5: supervisor timer)
+ticks   3
+preempted so far: 2
+Breakpoint 2 at 0x800024ee: file kernel/trap.c, line 179.
+
+Breakpoint 2, clockintr () at kernel/trap.c:179
+179	{
+=== the next timer interrupt, inside clockintr() ===
+#0  clockintr () at kernel/trap.c:179
+#1  0x00000000800025e6 in devintr () at kernel/trap.c:229
+#2  0x0000000080002628 in usertrap () at kernel/trap.c:75
+#3  0x0000003ffffff09c in ?? ()
+time 5370211
+sip 0x20 before clockintr() runs (bit 5, STIP: timer interrupt pending)
+devintr () at kernel/trap.c:230
+230	    return 2;
+sip 0x0 after clockintr() wrote the next deadline into stimecmp
+ticks 4
+[Inferior 1 (process 1) detached]
+
+=== 4. break it: no yield() on a timer interrupt from user mode ===
+riscv64-linux-gnu-ld: warning: kernel/kernel has a LOAD segment with RWX permissions
+riscv64-linux-gnu-ld: warning: user/_forktest has a LOAD segment with RWX permissions
+usertrap() after the edit:
+91:  if (which_dev == 2) {
+92-    COUNT(timer_user);
+93-  }
+94-
+95-  prepare_return();
+riscv64-linux-gnu-ld: warning: kernel/kernel has a LOAD segment with RWX permissions
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ preempt
+calibrated: 79980000 iterations per tick; each child does 20 ticks of work
+  child 0: ran from tick 0 to 17 (17 ticks), preempted 0 times
+  child 1: ran from tick 17 to 35 (18 ticks), preempted 0 times
+both done after 35 ticks
+$ QEMU: Terminated
+
+XV6RUN: done
+
+########################################################################
+# The same script again without SOLUTION_DIR, so it finds no patches:
+# sh /work/os-foundations/labs/04-interrupts-drivers/xv6/run-xv6.sh /opt/xv6-riscv /tmp/l4b
+########################################################################
+
+=== 1. interrupt counts and preemption ===
+SKIPPED: step 1 (intrcount and preempt call intrstat()) needs 0001-intrstat.patch in SOLUTION_DIR (/work/os-foundations/labs/04-interrupts-drivers/xv6/solution).
+         Reference solutions are not shipped. Write your own patch, save
+         it under that name, or point SOLUTION_DIR at your patches.
+riscv64-linux-gnu-ld: warning: kernel/kernel has a LOAD segment with RWX permissions
+riscv64-linux-gnu-ld: warning: user/_forktest has a LOAD segment with RWX permissions
+
+=== 2. a received character, under GDB ===
+spawn make CPUS=1 qemu-gdb
+sed "s/:1234/:25000/" < .gdbinit.tmpl-riscv > .gdbinit
+*** Now run 'gdb' in another window.
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 -S -gdb tcp::25000
+
+xv6 kernel is booting
+
+init: starting sh
+$ echo x
+x
+$ QEMU: Terminated
+
+XV6GDB: done
+--- GDB output ---
+The target architecture is set to "riscv:rv64".
+0x0000000000001000 in ?? ()
+Breakpoint 1 at 0x800002ba: file kernel/console.c, line 148.
+
+Breakpoint 1, consoleintr (c=101) at kernel/console.c:148
+148	{
+=== one received character ===
+#0  consoleintr (c=101) at kernel/console.c:148
+#1  0x0000000080000a04 in uartintr () at kernel/uart.c:160
+#2  0x000000008000256e in devintr () at kernel/trap.c:199
+#3  0x00000000800026cc in kerneltrap () at kernel/trap.c:149
+#4  0x0000000080005598 in kernelvec () at kernel/kernelvec.S:38
+Backtrace stopped: frame did not save the PC
+character: 101 'e'
+scause  0x8000000000000009  (interrupt bit set, cause 9: supervisor external)
+sstatus 0x0000000200000120  SPP=1, so the trap came from supervisor mode
+sepc    0x0000000080001dee
+scheduler + 162 in section .text
+this hart's current process: (nil)
+PLIC pending word 0x0c001000: 0x00000400 (bit 10 is the UART)
+UART LSR 0x10000005: 0x61 (bit 0: more input waiting, bit 5: transmitter idle)
+Breakpoint 2 at 0x80005640: file kernel/plic.c, line 45.
+
+Breakpoint 2, plic_complete (irq=irq@entry=10) at kernel/plic.c:45
+45	{
+=== devintr() completes the interrupt it claimed ===
+#0  plic_complete (irq=irq@entry=10) at kernel/plic.c:45
+#1  0x000000008000258a in devintr () at kernel/trap.c:210
+#2  0x00000000800026cc in kerneltrap () at kernel/trap.c:149
+#3  0x0000000080005598 in kernelvec () at kernel/kernelvec.S:38
+Backtrace stopped: frame did not save the PC
+irq 10
+[Inferior 1 (process 1) detached]
+
+=== 3. the timer interrupt that preempts, under GDB ===
+SKIPPED: step 3 (timer.gdb runs preempt and reads p->preempted) needs 0001-intrstat.patch in SOLUTION_DIR (/work/os-foundations/labs/04-interrupts-drivers/xv6/solution).
+         Reference solutions are not shipped. Write your own patch, save
+         it under that name, or point SOLUTION_DIR at your patches.
+
+=== 4. break it: no yield() on a timer interrupt from user mode ===
+SKIPPED: step 4 needs 0001-intrstat.patch in SOLUTION_DIR (/work/os-foundations/labs/04-interrupts-drivers/xv6/solution).
+         Reference solutions are not shipped. Write your own patch, save
+         it under that name, or point SOLUTION_DIR at your patches.
