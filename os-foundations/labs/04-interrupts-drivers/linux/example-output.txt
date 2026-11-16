@@ -1,0 +1,41 @@
+Recorded 2026-11-16 in an Ubuntu 24.04 container (image oslab:24.04) under
+podman 5.8.3 on Windows 11 build 26300 (Intel Core i7-11700). The podman
+machine is a WSL 2 VM, so the kernel is WSL's 6.6.87.2-microsoft-standard-WSL2
+and every timing here is a VM number. This is not WSL 2 Ubuntu itself.
+Tools in the image: QEMU 8.2.2, riscv64-linux-gnu-gcc 13.3.0, gdb-multiarch
+15.1, gcc 13.3.0, expect. xv6-riscv at fa2ddcb7ca87a77af579380a6eafd5aff163b44f
+(2026-11-05), copied to /tmp in the container before patching.
+The lab folder was mounted read-only at /work. Your numbers will differ.
+Command: sh /work/os-foundations/labs/04-interrupts-drivers/linux/run-linux.sh
+The tickdev module itself could not be built or loaded there (no kernel headers;
+the container shares the WSL 2 kernel). Only tickread.c was compiled.
+
+6.6.87.2-microsoft-standard-WSL2
+tickread.c compiles
+
+=== timerfd_ticks -n 10 ===
+period 100 ms, 10 ticks, reader sleeps 0 ms after each read
+     seq          wake ns      dt us  missed   latency us
+  [observer] main thread 1284 during read(): state 'S', wchan 'do_wait_intr_irq'
+       1 1996792204392544          -       0         53.1
+       2 1996792304380934    99988.4       0         41.5
+       3 1996792404378090    99997.2       0         38.6
+       4 1996792504384352   100006.3       0         44.9
+       5 1996792604430410   100046.1       0         91.0
+       6 1996792704382347    99951.9       0         42.9
+       7 1996792804387211   100004.9       0         47.8
+       8 1996792904388070   100000.9       0         48.6
+       9 1996793004402180   100014.1       0         62.7
+      10 1996793104375973    99973.8       0         36.5
+softirqs on all CPUs during the run: TIMER +53, HRTIMER +0
+
+=== timerfd_ticks -n 5 -s 250 (a slow reader) ===
+period 100 ms, 5 ticks, reader sleeps 250 ms after each read
+     seq          wake ns      dt us  missed   latency us
+  [observer] main thread 1286 during read(): state 'S', wchan 'do_wait_intr_irq'
+       1 1996793206197892          -       0         50.4
+       3 1996793456708635   250510.7       1      50561.1
+       6 1996793707096642   250388.0       2        949.1
+       8 1996793957495462   250398.8       1      51348.0
+      11 1996794207928288   250432.8       2       1780.8
+softirqs on all CPUs during the run: TIMER +74, HRTIMER +0

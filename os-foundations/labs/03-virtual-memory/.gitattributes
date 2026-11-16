@@ -1,0 +1,4 @@
+# The xv6 and Linux files are read inside Linux (patch, sh, expect, gdb,
+# make), so keep them LF even where git converts line endings to CRLF.
+xv6/** text eol=lf
+linux/** text eol=lf

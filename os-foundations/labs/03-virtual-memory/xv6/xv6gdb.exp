@@ -1,0 +1,84 @@
+#!/usr/bin/expect -f
+# xv6gdb.exp - run xv6 under "make qemu-gdb" with one hart, attach
+# gdb-multiarch in batch mode with a script, type commands at the xv6
+# shell, then wait for GDB to finish and quit QEMU.
+#
+# usage: expect xv6gdb.exp <timeout-seconds> <gdb-script> <gdb-log> "cmd1" ...
+#
+# The GDB script must connect itself (target remote), set its breakpoints,
+# continue, and end with "detach" so that xv6 keeps running. GDB's output
+# goes to <gdb-log>; the xv6 console goes to standard output. An argument
+# that starts with "<" is input for the command before it, as in
+# xv6run.exp. On a timeout GDB and QEMU are stopped as well.
+set timeout [lindex $argv 0]
+set script [lindex $argv 1]
+set gdblog [lindex $argv 2]
+set steps [lrange $argv 3 end]
+log_user 1
+
+proc bail {code msg} {
+  global qemu gdb
+  puts "\nXV6GDB: $msg"
+  if {[info exists gdb]} {
+    catch {close -i $gdb}
+    catch {wait -i $gdb}
+  }
+  catch {send -i $qemu "\x01x"}
+  set ::timeout 10
+  catch {expect -i $qemu eof}
+  catch {wait -i $qemu}
+  exit $code
+}
+
+spawn make CPUS=1 qemu-gdb
+set qemu $spawn_id
+expect {
+  "Now run 'gdb'" {}
+  timeout { bail 2 "timeout waiting for qemu-gdb" }
+  eof     { puts "\nXV6GDB: make exited"; exit 4 }
+}
+sleep 1
+
+# GDB writes to the log file, so nothing arrives on its terminal and it
+# can never block on output that nobody reads. Its end of file tells us
+# when it has finished, and wait reaps it.
+spawn -noecho sh -c "exec gdb-multiarch -q -nx -batch -x $script > $gdblog 2>&1"
+set gdb $spawn_id
+set spawn_id $qemu
+
+expect {
+  "init: starting sh" {}
+  timeout { bail 2 "timeout waiting for boot" }
+  eof     { puts "\nXV6GDB: QEMU exited before boot"; exit 4 }
+}
+expect {
+  -re {\$ $} {}
+  timeout { bail 2 "timeout waiting for the first prompt" }
+}
+set n [llength $steps]
+for {set i 0} {$i < $n} {incr i} {
+  set s [lindex $steps $i]
+  if {[string index $s 0] eq "<"} {
+    sleep 1
+    send -- "[string range $s 1 end]\r"
+  } else {
+    send -- "$s\r"
+  }
+  if {$i + 1 < $n && [string index [lindex $steps [expr {$i + 1}]] 0] eq "<"} {
+    continue
+  }
+  expect {
+    -re {\n\$ $} {}
+    timeout { bail 3 "timeout running: $s" }
+    eof     { puts "\nXV6GDB: QEMU exited while running: $s"; exit 4 }
+  }
+}
+
+expect {
+  -i $gdb eof {}
+  -i $gdb timeout { bail 3 "timeout waiting for GDB to finish" }
+}
+wait -i $gdb
+send "\x01x"
+expect eof
+puts "\nXV6GDB: done"

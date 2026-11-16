@@ -1,0 +1,55 @@
+Recorded 2026-11-16 on the machine this lab was written on.
+Windows 11 Pro, build 26300; hypervisor present (Win32_ComputerSystem.HypervisorPresent = True).
+CPU: 11th Gen Intel(R) Core(TM) i7-11700 @ 2.50GHz, 16 logical processors; 64 GiB RAM.
+Compiler: gcc 16.2.0 (MinGW-W64 x86_64-ucrt-posix-seh, WinLibs).
+Your numbers will differ. Keep your own copy in NOTES.md.
+The podman machine (a WSL 2 VM, used for this lab's Linux parts) was running at the time.
+
+> gcc -O2 -Wall -o build\nt_timer_res.exe nt_timer_res.c -lwinmm
+
+> build\nt_timer_res.exe
+1. What the APIs report
+  timeGetDevCaps: wPeriodMin 1 ms, wPeriodMax 1000000 ms
+  GetSystemTimeAdjustment: increment 156250 x 100 ns (15.6250 ms), adjustment 156248, adjustment disabled FALSE
+  QueryPerformanceFrequency: 10000000 Hz
+
+2. Sleep(1), 100 times
+  without timeBeginPeriod                      min   2476.7  median  15361.7  max  16326.6 us  (100 samples)
+  with timeBeginPeriod(1)                      min   1012.0  median   1525.2  max   2537.8 us  (100 samples)
+  after timeEndPeriod(1)                       min   5913.1  median  15286.1  max  16228.0 us  (100 samples)
+
+3. A thread blocked on a periodic waitable timer, 200 periods
+  normal timer, 10 ms period: 200 wake-ups while 308 periods passed
+      time between wake-ups                    min  14623.5  median  15366.9  max  16451.0 us  (200 samples)
+  high-resolution timer, 10 ms period: 200 wake-ups while 205 periods passed
+      time between wake-ups                    min  10017.3  median  10209.9  max  10662.0 us  (200 samples)
+
+> build\nt_timer_res.exe
+1. What the APIs report
+  timeGetDevCaps: wPeriodMin 1 ms, wPeriodMax 1000000 ms
+  GetSystemTimeAdjustment: increment 156250 x 100 ns (15.6250 ms), adjustment 156248, adjustment disabled FALSE
+  QueryPerformanceFrequency: 10000000 Hz
+
+2. Sleep(1), 100 times
+  without timeBeginPeriod                      min   3515.7  median  15419.1  max  16592.7 us  (100 samples)
+  with timeBeginPeriod(1)                      min   1012.9  median   1531.0  max   2517.3 us  (100 samples)
+  after timeEndPeriod(1)                       min   7890.0  median  15361.6  max  16066.7 us  (100 samples)
+
+3. A thread blocked on a periodic waitable timer, 200 periods
+  normal timer, 10 ms period: 200 wake-ups while 308 periods passed
+      time between wake-ups                    min  12616.3  median  15326.2  max  18029.7 us  (200 samples)
+  high-resolution timer, 10 ms period: 200 wake-ups while 205 periods passed
+      time between wake-ups                    min  10005.7  median  10207.1  max  11231.2 us  (200 samples)
+
+> gcc -O2 -Wall -o build\nt_intr_rates.exe nt_intr_rates.c -lpdh -lwinmm
+
+> build\nt_intr_rates.exe
+Processor(_Total) counters, 3 s per phase
+  phase                              Interrupts/sec DPCs Queued/sec % Interrupt Time   % DPC Time
+  a) quiet                               116807.8      49666.3          0.5          0.8
+      Interrupts/sec by CPU:         0:9899 1:13238 10:645 11:591 12:5047 13:7140 14:5833 15:9214 2:11847 3:14671 4:7440 5:14950 6:7143 7:5638 8:2878 9:635
+  b) Sleep(1) loop at 1 ms resolution     113062.3      47319.5          1.0          0.8
+      Interrupts/sec by CPU:         0:8901 1:17785 10:597 11:525 12:3407 13:10730 14:4449 15:10779 2:9352 3:16438 4:3785 5:10399 6:4136 7:8208 8:2938 9:633
+                                     1952 Sleep(1) calls returned in phase b
+  c) quiet again                         120785.5      47477.1          1.0          0.8
+      Interrupts/sec by CPU:         0:10473 1:15075 10:1014 11:893 12:5790 13:8827 14:6920 15:9344 2:8899 3:14199 4:6884 5:13023 6:6734 7:8014 8:3595 9:1102

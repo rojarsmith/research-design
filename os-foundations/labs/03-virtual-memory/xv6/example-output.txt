@@ -1,0 +1,268 @@
+Recorded 2026-11-16 in an Ubuntu 24.04 container (image oslab:24.04) under
+podman 5.8.3 on Windows 11 build 26300 (Intel Core i7-11700). The podman
+machine is a WSL 2 VM, so the kernel is WSL's 6.6.87.2-microsoft-standard-WSL2
+and every timing here is a VM number. This is not WSL 2 Ubuntu itself.
+Tools in the image: QEMU 8.2.2, riscv64-linux-gnu-gcc 13.3.0, gdb-multiarch
+15.1, gcc 13.3.0, expect. xv6-riscv at fa2ddcb7ca87a77af579380a6eafd5aff163b44f
+(2026-11-05), copied to /tmp in the container before patching.
+The lab folder was mounted read-only at /work. SOLUTION_DIR pointed at the
+reference solutions, which are not shipped. Your numbers will differ.
+Command: SOLUTION_DIR=/solutions/03 BREAKIT=1 USERTESTS=1 sh /work/os-foundations/labs/03-virtual-memory/xv6/run-xv6.sh /opt/xv6-riscv /tmp/l3
+
+=== 1. stock fork, with vmprint() and vmstat() ===
+riscv64-linux-gnu-ld: warning: kernel/kernel has a LOAD segment with RWX permissions
+riscv64-linux-gnu-ld: warning: user/_forktest has a LOAD segment with RWX permissions
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ vmprinttest
+text   main    0x0000000000000000
+data   marker  0x0000000000001000
+stack  local   0x0000000000004F9C
+heap   eager   0x0000000000005000  (1 page from sbrk)
+heap   lazy    0x0000000000006000  (3 pages from sbrklazy, only the 2nd touched)
+size   sbrk(0) 0x0000000000009000
+page table 0x0000000087f25000
+ ..0x0000000000000000: pte 0x0000000021fc8401 pa 0x0000000087f21000 V--------
+ .. ..0x0000000000000000: pte 0x0000000021fc8001 pa 0x0000000087f20000 V--------
+ .. .. ..0x0000000000000000: pte 0x0000000021fc885b pa 0x0000000087f22000 VR-XU-A--
+ .. .. ..0x0000000000001000: pte 0x0000000021fc7c17 pa 0x0000000087f1f000 VRW-U----
+ .. .. ..0x0000000000002000: pte 0x0000000021fc7817 pa 0x0000000087f1e000 VRW-U----
+ .. .. ..0x0000000000003000: pte 0x0000000021fc7407 pa 0x0000000087f1d000 VRW------
+ .. .. ..0x0000000000004000: pte 0x0000000021fc70d7 pa 0x0000000087f1c000 VRW-U-AD-
+ .. .. ..0x0000000000005000: pte 0x0000000021fc98d7 pa 0x0000000087f26000 VRW-U-AD-
+ .. .. ..0x0000000000007000: pte 0x0000000021fd50d7 pa 0x0000000087f54000 VRW-U-AD-
+ ..0x0000003fc0000000: pte 0x0000000021fc9001 pa 0x0000000087f24000 V--------
+ .. ..0x0000003fffe00000: pte 0x0000000021fc8c01 pa 0x0000000087f23000 V--------
+ .. .. ..0x0000003fffffe000: pte 0x0000000021fd08c7 pa 0x0000000087f42000 VRW---AD-
+ .. .. ..0x0000003ffffff000: pte 0x000000002000184b pa 0x0000000080006000 VR-X--A--
+$ cowtest
+1. fork a process with a 64-page heap; the child reads every heap page, then writes 4
+  process size 71 pages
+  the fork itself     : fork copied 71, fork shared 0, cow copied 0, cow reused 0
+  child read 64 pages : fork copied 0, fork shared 0, cow copied 0, cow reused 0
+  child wrote 4 pages : fork copied 0, fork shared 0, cow copied 0, cow reused 0
+  free pages: 32465 before the fork, 32388 in the child just after it
+  parent, after wait  : fork copied 71, fork shared 0, cow copied 0, cow reused 0
+  child status 0; the parent still sees its own heap: ok
+  free pages: 32465 before the fork, 32465 after the child exited: ok
+2. fork a process that holds 2/3 of the free memory (21686 of 32529 pages)
+  fork failed: a full copy needs more pages than are free
+3. the kernel writes into a copy-on-write page: pipe() in the child
+  child: pipe() stored fds 3 and 4
+  parent: child status 0; its own copy still holds -7 and -7: ok
+$ vmprinttest fork
+text   main    0x0000000000000000
+data   marker  0x0000000000001000
+stack  local   0x0000000000004F7C
+heap   eager   0x0000000000005000  (1 page from sbrk)
+heap   lazy    0x0000000000006000  (3 pages from sbrklazy, only the 2nd touched)
+size   sbrk(0) 0x0000000000009000
+the child's page table, just after fork:
+page table 0x0000000087f34000
+ ..0x0000000000000000: pte 0x00000000215c9c01 pa 0x0000000085727000 V--------
+ .. ..0x0000000000000000: pte 0x0000000021549801 pa 0x0000000085526000 V--------
+ .. .. ..0x0000000000000000: pte 0x0000000020bc4c5b pa 0x0000000082f13000 VR-XU-A--
+ .. .. ..0x0000000000001000: pte 0x00000000214c9417 pa 0x0000000085325000 VRW-U----
+ .. .. ..0x0000000000002000: pte 0x0000000021449017 pa 0x0000000085124000 VRW-U----
+ .. .. ..0x0000000000003000: pte 0x00000000213c8c07 pa 0x0000000084f23000 VRW------
+ .. .. ..0x0000000000004000: pte 0x00000000213488d7 pa 0x0000000084d22000 VRW-U-AD-
+ .. .. ..0x0000000000005000: pte 0x00000000212c84d7 pa 0x0000000084b21000 VRW-U-AD-
+ .. .. ..0x0000000000007000: pte 0x00000000212480d7 pa 0x0000000084920000 VRW-U-AD-
+ ..0x0000003fc0000000: pte 0x0000000021fcd801 pa 0x0000000087f36000 V--------
+ .. ..0x0000003fffe00000: pte 0x0000000020b44801 pa 0x0000000082d12000 V--------
+ .. .. ..0x0000003fffffe000: pte 0x0000000021fcccc7 pa 0x0000000087f33000 VRW---AD-
+ .. .. ..0x0000003ffffff000: pte 0x000000002000184b pa 0x0000000080006000 VR-X--A--
+$ QEMU: Terminated
+
+XV6RUN: done
+
+=== 2. hand translation, confirmed in GDB ===
+spawn make CPUS=1 qemu-gdb
+sed "s/:1234/:25000/" < .gdbinit.tmpl-riscv > .gdbinit
+*** Now run 'gdb' in another window.
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 -S -gdb tcp::25000
+
+xv6 kernel is booting
+
+init: starting sh
+$ vmprinttest
+text   main    0x0000000000000000
+data   marker  0x0000000000001000
+stack  local   0x0000000000004F9C
+heap   eager   0x0000000000005000  (1 page from sbrk)
+heap   lazy    0x0000000000006000  (3 pages from sbrklazy, only the 2nd touched)
+size   sbrk(0) 0x0000000000009000
+page table 0x0000000087f25000
+ ..0x0000000000000000: pte 0x0000000021fc8401 pa 0x0000000087f21000 V--------
+ .. ..0x0000000000000000: pte 0x0000000021fc8001 pa 0x0000000087f20000 V--------
+ .. .. ..0x0000000000000000: pte 0x0000000021fc885b pa 0x0000000087f22000 VR-XU-A--
+ .. .. ..0x0000000000001000: pte 0x0000000021fc7c17 pa 0x0000000087f1f000 VRW-U----
+ .. .. ..0x0000000000002000: pte 0x0000000021fc7817 pa 0x0000000087f1e000 VRW-U----
+ .. .. ..0x0000000000003000: pte 0x0000000021fc7407 pa 0x0000000087f1d000 VRW------
+ .. .. ..0x0000000000004000: pte 0x0000000021fc70d7 pa 0x0000000087f1c000 VRW-U-AD-
+ .. .. ..0x0000000000005000: pte 0x0000000021fc98d7 pa 0x0000000087f26000 VRW-U-AD-
+ .. .. ..0x0000000000007000: pte 0x0000000021fd50d7 pa 0x0000000087f54000 VRW-U-AD-
+ ..0x0000003fc0000000: pte 0x0000000021fc9001 pa 0x0000000087f24000 V--------
+ .. ..0x0000003fffe00000: pte 0x0000000021fc8c01 pa 0x0000000087f23000 V--------
+ .. .. ..0x0000003fffffe000: pte 0x0000000021fd08c7 pa 0x0000000087f42000 VRW---AD-
+ .. .. ..0x0000003ffffff000: pte 0x000000002000184b pa 0x0000000080006000 VR-X--A--
+$ QEMU: Terminated
+
+XV6GDB: done
+--- GDB output ---
+The target architecture is set to "riscv:rv64".
+0x0000000000001000 in ?? ()
+add symbol table from file "user/_vmprinttest"
+Breakpoint 1 at 0x80002a84: file kernel/sysproc.c, line 16.
+
+Breakpoint 1, sys_vmprint () at kernel/sysproc.c:16
+16	{
+process vmprinttest, pid 3
+va of marker       0x0000000000001000
+root page table    0x0000000087f25000  (its satp value: 0x8000000000087f25)
+satp right now     0x8000000000087fff  (the kernel's page table)
+indexes            L2 0, L1 0, L0 1, offset 0x0
+L2 PTE at 0x87f25000  0x0000000021fc8401  flags 0x001
+L1 PTE at 0x87f21000  0x0000000021fc8001  flags 0x001
+L0 PTE at 0x87f20008  0x0000000021fc7c17  flags 0x017
+physical address   0x0000000087f1f000
+string at that physical address:
+0x87f1f000:	"lab03 marker: translate my address by hand"
+
+va of TRAPFRAME    0x0000003fffffe000  indexes L2 255, L1 511, L0 510
+PTEs               0x0000000021fc9001  0x0000000021fc8c01  0x0000000021fd08c7
+leaf flags 0x0c7: U is clear
+physical address   0x0000000087f42000
+p->trapframe       0x0000000087f42000
+[Inferior 1 (process 1) detached]
+
+=== 3. copy-on-write fork ===
+riscv64-linux-gnu-ld: warning: kernel/kernel has a LOAD segment with RWX permissions
+riscv64-linux-gnu-ld: warning: user/_forktest has a LOAD segment with RWX permissions
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ cowtest
+1. fork a process with a 64-page heap; the child reads every heap page, then writes 4
+  process size 71 pages
+  the fork itself     : fork copied 0, fork shared 71, cow copied 1, cow reused 0
+  child read 64 pages : fork copied 0, fork shared 0, cow copied 0, cow reused 0
+  child wrote 4 pages : fork copied 0, fork shared 0, cow copied 4, cow reused 0
+  free pages: 32433 before the fork, 32426 in the child just after it
+  parent, after wait  : fork copied 0, fork shared 71, cow copied 5, cow reused 1
+  child status 0; the parent still sees its own heap: ok
+  free pages: 32433 before the fork, 32433 after the child exited: ok
+2. fork a process that holds 2/3 of the free memory (21664 of 32497 pages)
+  fork succeeded; child status 0
+3. the kernel writes into a copy-on-write page: pipe() in the child
+  child: pipe() stored fds 3 and 4
+  parent: child status 0; its own copy still holds -7 and -7: ok
+$ vmprinttest fork
+text   main    0x0000000000000000
+data   marker  0x0000000000001000
+stack  local   0x0000000000004F7C
+heap   eager   0x0000000000005000  (1 page from sbrk)
+heap   lazy    0x0000000000006000  (3 pages from sbrklazy, only the 2nd touched)
+size   sbrk(0) 0x0000000000009000
+the child's page table, just after fork:
+page table 0x0000000087f26000
+ ..0x0000000000000000: pte 0x0000000020b44801 pa 0x0000000082d12000 V--------
+ .. ..0x0000000000000000: pte 0x0000000021449001 pa 0x0000000085124000 V--------
+ .. .. ..0x0000000000000000: pte 0x000000002174a85b pa 0x0000000085d2a000 VR-XU-A--
+ .. .. ..0x0000000000001000: pte 0x00000000218cb513 pa 0x000000008632d000 VR--U---C
+ .. .. ..0x0000000000002000: pte 0x000000002194b913 pa 0x000000008652e000 VR--U---C
+ .. .. ..0x0000000000003000: pte 0x00000000219cbd03 pa 0x000000008672f000 VR------C
+ .. .. ..0x0000000000004000: pte 0x00000000213c8cd7 pa 0x0000000084f23000 VRW-U-AD-
+ .. .. ..0x0000000000005000: pte 0x00000000215499d3 pa 0x0000000085526000 VR--U-ADC
+ .. .. ..0x0000000000007000: pte 0x00000000214c95d3 pa 0x0000000085325000 VR--U-ADC
+ ..0x0000003fc0000000: pte 0x0000000021fc9001 pa 0x0000000087f24000 V--------
+ .. ..0x0000003fffe00000: pte 0x0000000020ac4401 pa 0x0000000082b11000 V--------
+ .. .. ..0x0000003fffffe000: pte 0x0000000021fc9cc7 pa 0x0000000087f27000 VRW---AD-
+ .. .. ..0x0000003ffffff000: pte 0x000000002000184b pa 0x0000000080006000 VR-X--A--
+$ QEMU: Terminated
+
+XV6RUN: done
+
+=== 4. break it: uvmcopy() forgets krefinc() ===
+riscv64-linux-gnu-ld: warning: kernel/kernel has a LOAD segment with RWX permissions
+riscv64-linux-gnu-ld: warning: user/_forktest has a LOAD segment with RWX permissions
+riscv64-linux-gnu-ld: warning: kernel/kernel has a LOAD segment with RWX permissions
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ cowtest
+1. fork a process with a 64-page heap; the child reads every heap page, then writes 4
+  process size 71 pages
+  the fork itself     : fork copied 0, fork shared 71, cow copied 0, cow reused 1
+  child read 64 pages : fork copied 0, fork shared 0, cow copied 0, cow reused 0
+  child wrote 4 pages : fork copied 0, fork shared 0, cow copied 0, cow reused 4
+  free pages: 32442 before the fork, 32436 in the child just after it
+usertrap(): unexpected scause 0x2 pid=3
+            sepc=0x1000 stval=0xb000
+usertrap(): unexpected scause 0x2 pid=2
+            sepc=0x1002 stval=0x87f3
+usertrap(): unexpected scause 0xc pid=1
+            sepc=0x1000 stval=0x1000
+panic: init exiting
+
+XV6RUN: timeout running: cowtest
+QEMU: Terminated
+
+(expect exit status 3)
+
+=== 5. usertests -q on the copy-on-write kernel ===
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+[... 349 lines of usertests output omitted here ...]
+            sepc=0x4a2e stval=0x3f014000
+OK
+test lazy_copy: OK
+test lazy_copyinstr: OK
+test lazy_sbrk: OK
+test partial_write: OK
+test unlinkcwd: OK
+ALL TESTS PASSED
+$ QEMU: Terminated
+
+XV6RUN: done
+
+########################################################################
+# The same script again without SOLUTION_DIR, so it finds no patches:
+# BREAKIT=1 USERTESTS=1 sh /work/os-foundations/labs/03-virtual-memory/xv6/run-xv6.sh /opt/xv6-riscv /tmp/l3b
+########################################################################
+
+=== 1. stock fork, with vmprint() and vmstat() ===
+SKIPPED: step 1 needs 0001-vmprint-vmstat.patch in SOLUTION_DIR (/work/os-foundations/labs/03-virtual-memory/xv6/solution).
+         Reference solutions are not shipped. Write your own patch, save
+         it under that name, or point SOLUTION_DIR at your patches.
+
+=== 2. hand translation, confirmed in GDB ===
+SKIPPED: step 2 (vmprinttest calls vmprint()) needs 0001-vmprint-vmstat.patch in SOLUTION_DIR (/work/os-foundations/labs/03-virtual-memory/xv6/solution).
+         Reference solutions are not shipped. Write your own patch, save
+         it under that name, or point SOLUTION_DIR at your patches.
+
+=== 3. copy-on-write fork ===
+SKIPPED: step 3 needs 0001-vmprint-vmstat.patch 0002-cow.patch in SOLUTION_DIR (/work/os-foundations/labs/03-virtual-memory/xv6/solution).
+         Reference solutions are not shipped. Write your own patch, save
+         it under that name, or point SOLUTION_DIR at your patches.
+
+=== 4. break it: uvmcopy() forgets krefinc() ===
+SKIPPED: step 4 needs 0001-vmprint-vmstat.patch 0002-cow.patch in SOLUTION_DIR (/work/os-foundations/labs/03-virtual-memory/xv6/solution).
+         Reference solutions are not shipped. Write your own patch, save
+         it under that name, or point SOLUTION_DIR at your patches.
+
+=== 5. usertests -q on the copy-on-write kernel ===
+SKIPPED: step 5 needs 0001-vmprint-vmstat.patch 0002-cow.patch in SOLUTION_DIR (/work/os-foundations/labs/03-virtual-memory/xv6/solution).
+         Reference solutions are not shipped. Write your own patch, save
+         it under that name, or point SOLUTION_DIR at your patches.

@@ -1,0 +1,60 @@
+Recorded 2026-11-16 in an Ubuntu 24.04 container (image oslab:24.04) under
+podman 5.8.3 on Windows 11 build 26300 (Intel Core i7-11700). The podman
+machine is a WSL 2 VM, so the kernel is WSL's 6.6.87.2-microsoft-standard-WSL2
+and every timing here is a VM number. This is not WSL 2 Ubuntu itself.
+Tools in the image: QEMU 8.2.2, riscv64-linux-gnu-gcc 13.3.0, gdb-multiarch
+15.1, gcc 13.3.0, expect. xv6-riscv at fa2ddcb7ca87a77af579380a6eafd5aff163b44f
+(2026-11-05), copied to /tmp in the container before patching.
+The lab folder was mounted read-only at /work. Your numbers will differ.
+Command: sh /work/os-foundations/labs/03-virtual-memory/linux/run-linux.sh
+
+6.6.87.2-microsoft-standard-WSL2
+
+=== mapshare ===
+Round 1: A and B both map mapshare.dat with MAP_SHARED
+  A /proc/self/maps: 7b04543c7000-7b04543c9000 rw-s 00000000 08:30 63677                      /tmp/lab03-linux/mapshare.dat
+  A after A writes page 0              map: [A wrote page 0  ] [page 1: original]   file: [A wrote page 0  ] [page 1: original]
+  B /proc/self/maps: 7b04543c7000-7b04543c9000 rw-s 00000000 08:30 63677                      /tmp/lab03-linux/mapshare.dat
+  B before B writes                    map: [A wrote page 0  ] [page 1: original]   file: [A wrote page 0  ] [page 1: original]
+  B after B writes page 1              map: [A wrote page 0  ] [B wrote page 1  ]   file: [A wrote page 0  ] [B wrote page 1  ]
+  A after B writes page 1              map: [A wrote page 0  ] [B wrote page 1  ]   file: [A wrote page 0  ] [B wrote page 1  ]
+
+Round 2: A maps with MAP_SHARED, B with MAP_PRIVATE
+  B /proc/self/maps: 7b04543c7000-7b04543c9000 rw-p 00000000 08:30 63677                      /tmp/lab03-linux/mapshare.dat
+  B after mapping (private)            map: [page 0: original] [page 1: original]   file: [page 0: original] [page 1: original]
+  A after A writes page 0              map: [A wrote page 0  ] [page 1: original]   file: [A wrote page 0  ] [page 1: original]
+  B after A writes page 0              map: [A wrote page 0  ] [page 1: original]   file: [A wrote page 0  ] [page 1: original]
+  B after B writes page 0              map: [B private write ] [page 1: original]   file: [A wrote page 0  ] [page 1: original]
+  A after B's private write            map: [A wrote page 0  ] [page 1: original]   file: [A wrote page 0  ] [page 1: original]
+  A after A writes both pages          map: [A wrote 0 again ] [A wrote page 1  ]   file: [A wrote 0 again ] [A wrote page 1  ]
+  B after A writes both pages          map: [B private write ] [A wrote page 1  ]   file: [A wrote 0 again ] [A wrote page 1  ]
+
+=== sigbus ===
+1. Truncate a mapped file from 3 pages to 1 page + 100 bytes
+  before: page 0 'a', page 1 'b', page 2 'c'
+  read page 0, offset 0             -> 0x61
+  read page 1, offset 50            -> 0x62
+  read page 1, offset 200 (past EOF) -> 0x00  (zero)
+  read page 2, offset 0             -> SIGBUS, si_code 2 (BUS_ADRERR), si_addr = map + 0x2000
+
+2. A client shrinks a file that a server has mapped
+  a) server without a SIGBUS handler
+  client: truncated the shared file to one page
+  server was killed by signal 7 (Bus error)
+  b) server with a SIGBUS handler
+  client: truncated the shared file to one page
+  server: SIGBUS at buffer + 0x1000; rejecting this client's buffer and carrying on
+  server exited with status 0
+
+3. A sealed memfd cannot shrink (the fix stage 08 builds on)
+  seals 0x2 (F_SEAL_SHRINK is 0x2)
+  ftruncate to one page -> -1, errno 1 (Operation not permitted)
+
+=== forkcow ===
+1. fork with 16384 written pages (64 MiB) in the parent
+  child: minor faults 10 at start, +0 after reading 16384 pages, +1000 after writing 1000 pages
+
+2. fork + _exit + wait, by size of the parent's written memory
+     1 MiB: best of 20 runs    167.7 us
+    64 MiB: best of 20 runs   1643.6 us
+   256 MiB: best of 20 runs   5827.9 us
