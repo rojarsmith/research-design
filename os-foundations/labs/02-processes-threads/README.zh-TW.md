@@ -2,10 +2,11 @@
 
 # 實驗 02：行程、執行緒與情境切換
 
-> **草稿，待審閱（2026-11-15）。哪些有執行、哪些沒有：**
-> - **xv6 部分（練習 A–D）：未執行。** 撰寫本實驗的機器沒有 RISC-V 工具鏈與 QEMU。標為「*預期*」的內容，都來自 2026-11-15 閱讀的 [xv6-riscv](https://github.com/mit-pdos/xv6-riscv) master。`xv6/pipeline.c` 只用主機的 gcc 搭配 xv6 標頭檔做過語法檢查。
-> - **Linux 部分（練習 E）：未執行。** `linux/pipeline.c` 與 `linux/procthread.c` 沒有編譯過。
-> - **Windows 部分（練習 F、G）：已建置並執行**，於 2026-11-15 在那台機器上以 WinLibs 的 gcc 16.2 完成。輸出在 [`windows/example-output.txt`](windows/example-output.txt)，下文的數字都取自該檔。
+> **草稿，待審閱（2026-11-15），xv6 與 Linux 部分於 2026-11-16 執行。哪些有執行、哪些沒有：**
+> - **xv6 部分（練習 A–D）：2026-11-16 已執行**，環境是 Windows 11 上 podman 中的 Ubuntu 24.04 容器，podman machine 跑在 WSL 2 上；這不是本課程要你使用的 WSL 2 Ubuntu 發行版。容器內有 QEMU 8.2.2、riscv64-linux-gnu-gcc 13.3.0 與 gdb-multiarch 15.1，[xv6-riscv](https://github.com/mit-pdos/xv6-riscv) master 的 commit 為 `fa2ddcb`（2026-11-05）。練習 B 由 expect 腳本同時在 xv6 主控台與 GDB 中輸入，練習 C 由批次 GDB 腳本驅動。練習 D 是用一份只為檢查而寫的 `uthread_win64.c` 移植版驗證，那份程式碼不在本資料夾中。輸出：[`xv6/example-output.txt`](xv6/example-output.txt)。
+> - **Linux 部分（練習 E）：2026-11-16 已執行**，在同一個容器中：podman machine 的核心 6.6.87.2-microsoft-standard-WSL2，有 16 顆線上 CPU，glibc 2.39、gcc 13.3.0，以及不需額外容器權限就能運作的 strace 6.8。請把它的計時當成虛擬機器的數字。輸出：[`linux/example-output.txt`](linux/example-output.txt)。
+> - **Windows 部分（練習 F、G）：已建置並執行**，於 2026-11-15 在撰寫本實驗的機器上以 WinLibs 的 gcc 16.2 完成。輸出在 [`windows/example-output.txt`](windows/example-output.txt)，下文的 Windows 數字都取自該檔。
+> - **未執行：** MIT 的 `xv6-labs-2025` 儲存庫及其 `util` 作業，以及練習 C 最後關於鎖的問題；那些問題靠閱讀程式碼回答。
 
 ## 目標
 
@@ -25,9 +26,11 @@ yield()、sleep() 或 kexit()
 
 | 檔案 | 內容 | 狀態 |
 | --- | --- | --- |
-| [`xv6/pipeline.c`](xv6/pipeline.c) | 用 `fork`、`exec`、`pipe`、`dup`、`wait` 組成 `cat README \| grep the \| wc`，附 `-leak` 開關 | 只做過語法檢查 |
-| [`linux/pipeline.c`](linux/pipeline.c) | Linux 上的同一條管線，給 `strace -f` 用 | 未在此編譯 |
-| [`linux/procthread.c`](linux/procthread.c) | `nt_procthread.c` 的 Linux 對應版：`fork`、`fork` 加 `exec`、`posix_spawn`、`pthread_create`、號誌來回傳遞、`swapcontext` | 未在此編譯 |
+| [`xv6/pipeline.c`](xv6/pipeline.c) | 用 `fork`、`exec`、`pipe`、`dup`、`wait` 組成 `cat README \| grep the \| wc`，附 `-leak` 開關 | 已在 xv6 中執行（容器） |
+| [`xv6/example-output.txt`](xv6/example-output.txt) | xv6 的輸出紀錄：管線、`fork()` 與 `swtch()` 的追蹤，以及使用者層級執行緒的檢查 | 2026-11-16 記錄 |
+| [`linux/pipeline.c`](linux/pipeline.c) | Linux 上的同一條管線，給 `strace -f` 用 | 已在 Linux 上建置並執行（容器） |
+| [`linux/procthread.c`](linux/procthread.c) | `nt_procthread.c` 的 Linux 對應版：`fork`、`fork` 加 `exec`、`posix_spawn`、`pthread_create`、號誌來回傳遞、`swapcontext` | 已在 Linux 上建置並執行（容器） |
+| [`linux/example-output.txt`](linux/example-output.txt) | 兩個 Linux 程式的輸出紀錄，含 `strace` 的執行 | 2026-11-16 記錄 |
 | [`windows/nt_procthread.c`](windows/nt_procthread.c) | 行程與執行緒的識別碼、`CreateProcess` 與 `CreateThread` 的成本、兩個執行緒之間的事件來回傳遞、`SwitchToFiber` | 已在此建置並執行 |
 | [`windows/uthread_win64.c`](windows/uthread_win64.c)、[`windows/uswitch_win64.S`](windows/uswitch_win64.S) | 以手寫 x64 情境切換實作的使用者層級執行緒：一張執行緒表、組合語言的切換，以及 yield | 已在此建置並執行 |
 | [`windows/example-output.txt`](windows/example-output.txt) | 輸出紀錄，包含 `-DSKIP_XMM` 版本的執行結果與 `worker` 的反組譯 | 2026-11-15 記錄 |
@@ -63,13 +66,24 @@ yield()、sleep() 或 kexit()
 - `sh.c` 建立 `a | b | c` 的方式不同：`parsepipe()` 是右遞迴，所以 shell 為 `a` 分出一個子行程，再分出另一個本身就是 `b | c` 管線的子行程。畫出兩種做法各自產生的行程樹。
 - 執行 `-leak` 時，按 Ctrl-p 查看每個行程與狀態。xv6 的 shell 沒有工作控制，請按 Ctrl-a 再按 x 離開 QEMU。
 
+<details>
+<summary>2026-11-16 的觀察結果。請在預測並執行之後再看。</summary>
+
+- `pipeline` 印出 `3 33 197`，和在 shell 輸入 `cat README | grep the | wc` 相同。
+- 五次執行中，不論一個或三個 hart，`pid N exited` 都依 cat、grep、wc 的順序出現，計數那一行則可能夾在任何位置。有一次在三個 hart 下，wc 的計數和一行 `pid N exited` 逐字元混在一起（`3 p3i3d  1129 ex7i t`），因為 xv6 的 `printf` 每個字元做一次 `write`。
+- `pipeline -leak` 印出 `cat` 的 `pid 4 exited with status 0` 之後就沒有下文。Ctrl-p 除了 `init` 與 `sh`，還列出 `3 sleep  pipeline`、`5 sleep  grep` 與 `6 sleep  wc`；幾秒後再按一次，清單不變。
+
+</details>
+
 ### B. 追蹤 `fork()`（xv6）
 
 ```
 (gdb) b kfork
-(gdb) c                      接著在 xv6 主控台執行 "pipeline"
-(gdb) p p->name
-(gdb) p p->pid
+(gdb) c                      第一次停下是 init 啟動 sh，此時你還沒輸入任何東西
+(gdb) c                      現在在 xv6 主控台輸入 "pipeline"：這次是 sh 為它 fork
+(gdb) c                      這次是 pipeline 自己的第一次 fork
+(gdb) p cpus[0].proc->name   在中斷點時 p 本身還沒設定
+(gdb) p cpus[0].proc->pid
 (gdb) next                   （重複；在 allocproc() 返回後停下）
 (gdb) p np->pid
 (gdb) p/x np->context        子行程核心執行緒的 ra 與 sp
@@ -83,7 +97,18 @@ yield()、sleep() 或 kexit()
 2. `uvmcopy()` 會複製幾頁？master 的 `uvmcopy` 會複製 `p->sz` 以下所有已映射的分頁、略過未映射的分頁，所以 `p->sz / 4096` 是上限。階段 03 的寫入時複製 fork 會降低這個數字，現在先記下來以便比較。
 3. 執行 `*(np->trapframe) = *(p->trapframe)` 與 `np->trapframe->a0 = 0` 之後，子行程會在使用者空間的哪裡繼續執行？`fork()` 在那裡會回傳什麼？
 
-用 `b forkret`、`c` 與 `p cpus[0].proc->pid` 檢查預測 1（只有一個 hart 時，`cpus[0]` 就是唯一的 CPU）。到 `user/pipeline.asm` 檢查預測 3：找出 `fork` stub 中的 `ecall` 與它的下一道指令。
+用 `disable 1`、`b forkret`、`c` 與 `p cpus[0].proc->pid` 檢查預測 1（只有一個 hart 時，`cpus[0]` 就是唯一的 CPU）。如果沒有 `disable`，下一次停下會是父行程的第二次 `fork`，因為父行程會一直執行到被阻塞為止。到 `user/pipeline.asm` 檢查預測 3：找出 `fork` stub 中的 `ecall` 與它的下一道指令。
+
+<details>
+<summary>觀察結果。請在預測並執行之後再看。</summary>
+
+- 三次停下依序是 `init`（pid 1）、`sh`（pid 2）與 `pipeline`（pid 3）。在中斷點時，`p p->name` 印出 `value has been optimized out`。
+- 三次 `next` 之後（第 271 行，呼叫 `uvmcopy` 處），`np->pid` 是 4；`np->context` 的 `ra = 0x80001912`，`info symbol` 說它是 `forkret`；`sp = 0x3fffff8000`，等於 `np->kstack`（`0x3fffff7000`）加 4096。所有 `s` 暫存器都是 0。
+- `p->sz / 4096` 是 4。
+- 中斷點 1 仍啟用時，`c` 又停在 `kfork`，這次是 pid 3。`disable 1` 之後，停在 `forkret`，`cpus[0].proc->pid` 是 4，名稱仍是 `pipeline`，因為 `exec` 還沒執行；`$sp` 是 `0x3fffff8000`。
+- 在 `user/pipeline.asm` 中，`fork` stub 的 `ecall` 在 `0x49e`，其後的 `ret` 在 `0x4a2`。
+
+</details>
 
 ### C. 追蹤 `swtch()`（xv6）
 
@@ -100,7 +125,7 @@ yield()、sleep() 或 kexit()
 把 `$a0`、`$a1` 和 `&cpus[0].context` 比較，判斷這次切換的方向：從行程到排程器，或從排程器到行程。**預測** `swtch` 最後的 `ret` 會落在哪裡、在哪個堆疊上，再單步走到那裡：
 
 ```
-(gdb) si                     （重複到 ret；約 28 道指令）
+(gdb) si                     （重複到 ret：從第一道指令起共 28 次）
 (gdb) p/x $ra
 (gdb) info symbol $ra
 (gdb) si
@@ -112,6 +137,17 @@ yield()、sleep() 或 kexit()
 
 也找出切換期間持有的是哪一把鎖。`yield()` 在 `sched()` 之前取得 `p->lock`，而另一邊有程式碼負責釋放它。找出 `scheduler()` 與 `forkret()` 中的 `release`。
 
+<details>
+<summary>開機後前四次停下的觀察結果。請在預測並執行之後再看。</summary>
+
+- 第 1 次，排程器到行程：`$a0` 是 `0x80012350`，即 `&cpus[0].context`；`$a1` 是 `0x800127a8`，第一個行程的 context。`bt` 顯示 `swtch` 由 `scheduler` 呼叫，`scheduler` 由 `main` 呼叫。28 次 `si` 走到 `ret`。`$ra` 是 `forkret`，`$sp` 從 `0x8000b1a0` 變成 `0x3fffffe000`，也就是 pid 1 的核心堆疊。
+- 第 2 次，行程到排程器：pid 1 在 `virtio_disk_rw()` 中睡眠，這是 `forkret()` 呼叫的 `fsinit()` 裡面。`$a0` 與 `$a1` 對調。`ret` 回到 `scheduler+130`，`$sp` 又變回 `0x8000b1a0`。
+- 第 3 次，又是排程器到行程：這次 `ret` 回到 `sched+112`，也就是第 2 次離開的那個 `sleep()` 裡面。第 4 次和第 2 次相同。
+- `scheduler()` 的 `$sp` 是 `0x8000b1a0`，位於 `stack0` 最前面 4096 位元組（`0x8000a220` 到 `0x8000b220`）之內：這是 `entry.S` 為 hart 0 設好的堆疊。
+- 剛切換進 `forkret` 時，`bt` 列出一個虛構的呼叫者 `myproc () at kernel/proc.c:89`。沒有任何函式呼叫 `forkret`，是 `swtch` 的 `ret` 跳過去的。
+
+</details>
+
 ### D. xv6 的使用者層級執行緒
 
 把 [`windows/uthread_win64.c`](windows/uthread_win64.c) 移植到 xv6，成為 `user/uthread.c`，並為 RISC-V 撰寫切換程式 `user/uthread_switch.S`：
@@ -120,9 +156,19 @@ yield()、sleep() 或 kexit()
 - **新執行緒的情境：** 把 `ra` 設為 `thread_entry`，`sp` 設為該執行緒堆疊的頂端。堆疊可以是以 `__attribute__((aligned(16)))` 宣告的靜態 `char` 陣列，讓 `sp` 符合 RISC-V psABI 要求的 16 位元組對齊。在 RISC-V 上，`ret` 跳到 `ra`，所以堆疊上不必預先放任何東西。在 x64 上，`uswitch_win64.S` 必須把 `thread_entry` 的位址放在新堆疊上，讓 `ret` 彈出。請對照 Windows 檔案中的 `thread_create()`。
 - **移除 Windows 的部分：** Windows 與 C 函式庫的標頭檔（改用 `kernel/types.h`、`kernel/stat.h`、`user/user.h`）、`VirtualAlloc`、`VirtualProtect`、防護頁、`QueryPerformanceCounter` 與 `setvbuf`。把 `int64_t` 換成 `uint64` 或 `long`。xv6 有 `printf`，`main` 以 `exit(0)` 結束。
 - **先只用整數總和。** xv6 的 `printf` 本來就沒有 `%f`。之後再做個實驗：把 `double` 總和加回來，轉成整數比較。如果 xv6 終止了程式，記下 `scause` 並解釋。提示：讀 RISC-V 特權規格中 `sstatus` 的 `FS` 欄位，再到 xv6 中 grep 它。
-- **Makefile：** 使用者程式由 `_%` 規則從單一目的檔連結。新增一條 `$U/_uthread` 規則，複製那條規則的指令，並一起連結 `$U/uthread_switch.o`；再新增一條規則，用 `$(CC) $(CFLAGS) -c` 從 `.S` 建出 `$U/uthread_switch.o`。指令行必須以 tab 開頭。
+- **Makefile：** 使用者程式由 `_%` 規則從單一目的檔連結。新增一條 `$U/_uthread` 規則，複製那條規則的指令，並一起連結 `$U/uthread_switch.o`；再新增一條規則，用 `$(CC) $(CFLAGS) -c` 從 `.S` 建出 `$U/uthread_switch.o`。指令行必須以 tab 開頭。把 `$U/_uthread` 加進 `UPROGS`，再用 `make qemu` 或 `make fs.img` 重新建置；只執行 `make` 只會建置核心。
 
-**先預測，再執行：** 第一部分的輸出應該像 Windows 上一樣交錯出現：`thread_a round 0`、`thread_b round 0`、`thread_c round 0`、`thread_a round 1`，依此類推（練習 F）。**刻意弄壞：** 讓 `thread_switch` 只保存 `ra` 與 `sp`。先預測哪些總和會出錯、原因為何：xv6 以 `-O` 編譯使用者程式，`worker` 的迴圈變數一定放在某處。讀 `user/uthread.asm` 找出位置，再執行。
+**先預測，再執行：** 第一部分的輸出應該像 Windows 上一樣交錯出現：`thread_a round 0`、`thread_b round 0`、`thread_c round 0`、`thread_a round 1`，依此類推（練習 F）。**刻意弄壞：** 讓 `thread_switch` 只保存 `ra` 與 `sp`。先預測會壞掉什麼、原因為何：xv6 以 `-O` 編譯使用者程式，`worker` 的迴圈變數一定放在某處。讀 `user/uthread.asm` 找出位置，再執行。
+
+<details>
+<summary>參考用移植版（不在本資料夾中）的觀察結果。請在預測並執行你自己的版本之後再看。</summary>
+
+- 第一部分完全如預測般交錯，共 16 次切換，每個整數總和都正確。兩個執行緒各 1,000,000 回合，總和也正確。
+- 在那份移植版的 `user/uthread.asm` 中，`worker` 把 `i` 放在 `s1`、`isum` 放在 `s3`、`w` 放在 `s2`，`current` 的位址放在 `s4`。
+- 只保存 `ra` 與 `sp` 時，一個總和都沒印出來。`thread_c round 0` 之後，xv6 印出 `usertrap(): unexpected scause 0xf pid=3`，以及 `sepc=0x252 stval=0x800e022e40611b1`，並終止程式。`0x252` 在 `main` 自己的迴圈中，也就是內聯後的 `current->state = RUNNABLE`。`main` 以為 `s3` 存著 `&current`，但它恢復執行時拿到的是某個 worker 留在 `s3` 的值，於是寫到了垃圾位址。
+- 把 `double` 總和加回來後，xv6 在第一行輸出之前就終止程式：`scause 0x2`（illegal instruction）、`sepc=0x396`、`stval=0xa422`。`0xa422` 是 `worker` prologue 中 `fsd fs0,8(sp)` 的編碼。xv6 從不設定 `sstatus` 的 `FS` 欄位，grep 也找不到任何使用它的地方。
+
+</details>
 
 ### E. 在 Linux 上問同樣的問題（WSL 2）
 
@@ -146,7 +192,18 @@ strace -c -f ./procthread switch > /dev/null
 2. `pthread_create` 傳入了哪些 `fork` 沒有的 clone 旗標？找找 `CLONE_VM`、`CLONE_FILES`、`CLONE_SIGHAND` 與 `CLONE_THREAD`（[clone(2)](https://man7.org/linux/man-pages/man2/clone.2.html)）。較新的 glibc 可能呼叫 `clone3`，strace 會把它的參數印成一個結構。
 3. 主執行緒的 `tid` 等於 `pid` 嗎？新建的執行緒呢？子行程呢？
 4. `swapcontext` 會進入核心嗎？用 `strace -c` 計數。提示：`ucontext_t` 包含訊號遮罩（[getcontext(3)](https://man7.org/linux/man-pages/man3/getcontext.3.html)）。把它的成本和下面的 `SwitchToFiber`、`uswitch` 比較。
-5. 用你自己的數字填入練習 F 表格中的 Linux 欄。WSL 2 在虛擬機器中執行，請只做相對比較。
+5. 把你的數字和練習 F 表格中的 Linux 欄比較；那一欄是在開頭說明的容器中記錄的。WSL 2 同樣在虛擬機器中執行，兩者都只做相對比較。
+
+<details>
+<summary>容器中的觀察結果。請在預測並執行之後再看。</summary>
+
+- `./pipeline` 印出 12，和 `cat pipeline.c | grep pipe | wc -l` 相同。`./pipeline --leak` 在 `cat` 結束後卡住，最後由 `timeout` 終止。
+1. `fork()` 在追蹤紀錄中是 `clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, ...)`。紀錄中也看得到 `execvp` 沿著 `PATH` 搜尋：`execve("/usr/local/sbin/cat", ...)` 以 `ENOENT` 失敗，依此類推，直到 `/usr/bin/cat`。
+2. `pthread_create` 呼叫 `clone3`，旗標為 `CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID`，`exit_signal=0`，並帶有自己的堆疊。
+3. 主執行緒的 tid 等於 pid（35）；新建的執行緒 pid 相同、tid 是新的（36）；子行程有新的 pid，且 tid 等於 pid（37）。
+4. 會。`strace -c -f ./procthread switch` 算到 4,000,010 次 `rt_sigprocmask`，4,000,000 次 `swapcontext` 各一次；另有號誌來回傳遞產生的 861,958 次 `futex`。這次執行花了好幾分鐘，因為每個被追蹤的系統呼叫都很慢。
+
+</details>
 
 ### F. Windows 上的行程、執行緒與切換（已在此執行）
 
@@ -162,14 +219,18 @@ gcc -O2 -Wall -o uthread_win64.exe uthread_win64.c uswitch_win64.S
 
 2026-11-15 的觀察結果（Windows 組建 26300、16 個邏輯處理器的 Intel Core i7-11700、有 hypervisor；[完整輸出](windows/example-output.txt)）。當天跑了兩次，先列記錄下來的那一次，方括號內是較早的一次。
 
-| 項目 | Windows，觀察值 | Linux（你的數字） |
+Linux 欄於 2026-11-16 在本實驗開頭說明的容器中記錄，容器看到的是同一款 i7-11700、16 個邏輯 CPU（[完整輸出](linux/example-output.txt)）。先列第一次執行 `./procthread` 的結果，方括號內是第二次。那是虛擬機器，請比較同一欄內的比例，不要跨欄比較數值。
+
+| 項目 | Windows，觀察值 | Linux，在容器中的觀察值 |
 | --- | ---: | ---: |
-| 建立一個行程並等它結束（以 `--child` 對本程式呼叫 `CreateProcess`） | 43,594 µs [20,717 µs] | `fork` + `exec` + `wait`： |
-| 建立一個執行緒並等它結束 | 85.2 µs [82.8 µs] | `pthread_create` + `join`： |
-| 兩個核心執行緒之間交接，同一個邏輯 CPU | 1,277 ns [1,301 ns] | |
-| 兩個核心執行緒之間交接，不固定 CPU | 3,264 ns [3,280 ns] | |
-| `SwitchToFiber` | 27.1 ns [28.8 ns] | `swapcontext`： |
-| `uswitch` 輪流執行，含排程迴圈 | 12.5 ns [12.1 ns] | |
+| 建立一個行程並等它結束（以 `--child` 對本程式呼叫 `CreateProcess`） | 43,594 µs [20,717 µs] | `fork` + `exec` + `wait`：554 µs [613 µs] |
+| 建立一個執行緒並等它結束 | 85.2 µs [82.8 µs] | `pthread_create` + `join`：73.9 µs [76.2 µs] |
+| 兩個核心執行緒之間交接，同一個邏輯 CPU | 1,277 ns [1,301 ns] | 1,189 ns [1,322 ns] |
+| 兩個核心執行緒之間交接，不固定 CPU | 3,264 ns [3,280 ns] | 18,803 ns [19,316 ns] |
+| `SwitchToFiber` | 27.1 ns [28.8 ns] | `swapcontext`：199.7 ns [218.3 ns] |
+| `uswitch` 輪流執行，含排程迴圈 | 12.5 ns [12.1 ns] | 未量測 |
+
+在 Linux 上，只有 `fork` + `_exit` + `wait` 是 254.5 µs [201.9 µs]，`posix_spawn` + `wait` 是 437.0 µs [487.3 µs]。
 
 這些執行顯示了什麼、沒有顯示什麼：
 
@@ -177,6 +238,7 @@ gcc -O2 -Wall -o uthread_win64.exe uthread_win64.c uswitch_win64.S
 - **一次核心交接約等於 50 次 fiber 切換、100 次 `uswitch`**（1,277 ns 對 27.1 ns 與 12.5 ns）。核心路徑是等待一個事件、設定另一個事件，各是一次系統呼叫，再加上排程器。使用者層級的路徑只是一次函式呼叫。
 - **不固定 CPU 的交接比固定時貴 2.5 倍。** 說明為何喚醒另一個邏輯 CPU 上的執行緒，可能比在同一個 CPU 上切換更久，再設計一個測試。
 - **`SwitchToFiber` 的成本是 `uswitch` 的兩倍。** Learn 說明系統為 fiber 保存的狀態只有它的堆疊、函式呼叫之間通常會保留的那些暫存器，以及 fiber 資料，而 fiber local storage 會隨 fiber 一起切換（[Fibers](https://learn.microsoft.com/en-us/windows/win32/procthread/fibers)）。讀 `uthread_win64.c` 開頭的警告：為了讓例外在 fiber 的堆疊上仍能運作，Windows 還必須更新什麼？
+- **在 Linux 虛擬機器中，不固定 CPU 的交接約為固定時的 16 倍**（18,803 ns 對 1,189 ns），遠高於 Windows 上的 2.5 倍。`swapcontext` 約為 `SwitchToFiber` 的 7 倍，練習 E 第 4 題找到的系統呼叫可以解釋其中一部分。和你自己的數字比較之前，先提出為何不固定 CPU 的情況在虛擬機器中這麼慢。
 
 識別碼那一部分呈現了建置計畫描述的劃分：主執行緒與新建執行緒回報相同的 pid、不同的 tid，子行程則有新的 pid 與新的 tid。用 Learn 的說法，行程提供執行程式所需的資源，執行緒是行程中被排程的實體（[processes and threads](https://learn.microsoft.com/en-us/windows/win32/procthread/about-processes-and-threads)）。
 
@@ -237,10 +299,14 @@ add    rdi,rax                         isum += ...
 - **`exec cat failed`。** xv6 的程式放在 `/`，而 `exec("cat", ...)` 是相對於目前目錄，所以請從 `/` 執行 `pipeline`，或把路徑改成 `/cat`。
 - **輸出順序很怪。** 父行程與子行程都寫到主控台。`pid N exited` 的順序取決於排程器。
 - **`b swtch` 每個計時器 tick 都觸發。** xv6 就是這麼頻繁地切換。用 `CPUS=1`，並一直 `c`，直到抓到你要的方向。
+- **在 `kfork` 中 `p p->name` 印出 `value has been optimized out`。** 中斷點時 `p` 還沒被設定，而且核心以 `-O` 建置。只有一個 hart 時改用 `cpus[0].proc`，或先 `next`。
+- **`b forkret` 沒有觸發，又停在 `kfork`。** 父行程會一直執行到被阻塞，所以它的下一次 `fork` 先到。先 `disable` `kfork` 的中斷點。
+- **使用者執行緒以 `scause 0x2` 被終止。** 它執行了浮點指令，而 xv6 讓 `sstatus` 的 `FS` 欄位維持關閉。
 - **使用者執行緒一啟動就當掉。** 確認 `sp` 指向堆疊頂端而不是底端（堆疊往下長）、有 16 位元組對齊，而且 `ra` 是 `thread_entry`。
 - **執行緒函式返回後程式當掉。** 它沒有可以返回的地方。一律經由 `thread_entry` 進入；它會把執行緒標成 `FREE` 並切換出去。
 - **`make: *** missing separator`。** Makefile 的指令行是用空白而不是 tab 開頭。
 - **`strace -f` 印出太多東西。** 用 `-e trace=...` 過濾，並用 `-o` 寫到檔案。
+- **`strace -c -f ./procthread switch` 要跑好幾分鐘。** 它會發出將近五百萬次系統呼叫，而每次被追蹤的呼叫都很慢。
 - **Windows：`uthread_win64.exe` 沒有訊息就結束。** 在 uthread 堆疊上引發的例外無法被分派（見原始碼中的警告）。執行緒內容只寫單純的 C。
 - **Windows：你的 `SKIP_XMM` 版本沒有壞掉。** 你的編譯器把總和放在別的地方。下結論前先看 `worker` 的反組譯。
 - **Windows：每次執行的時間差很多。** 回報多次執行的範圍，而不是單一數字。

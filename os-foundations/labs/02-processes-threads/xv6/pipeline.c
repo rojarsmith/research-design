@@ -1,8 +1,8 @@
 // pipeline.c - Stage 02, exercise A: run "cat README | grep the | wc"
 // with fork, exec, pipe and wait, the way user/sh.c would.
 //
-// NOT compiled or run on the machine where this lab was written (no RISC-V
-// toolchain or QEMU there).
+// Compiled and run on 2026-11-16 against xv6-riscv master (commit fa2ddcb)
+// in an Ubuntu 24.04 container; output in xv6/example-output.txt.
 //
 // Install: copy to user/pipeline.c, add $U/_pipeline to UPROGS, make qemu.
 // Run:     pipeline          (compare with: cat README | grep the | wc)

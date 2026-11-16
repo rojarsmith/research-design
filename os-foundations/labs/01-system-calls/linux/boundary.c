@@ -1,14 +1,15 @@
 /*
  * boundary.c - Stage 01 companion for Linux (WSL 2 or a Linux VM, x86-64).
  *
- * NOT compiled or run on the machine where this lab was written: it had no
- * Linux distribution or Linux toolchain. Treat every expectation in the lab
- * README as a prediction until you have run this yourself.
+ * Built and run on 2026-11-16 in an Ubuntu 24.04 container (gcc 13.3.0,
+ * glibc 2.39, strace 6.8); see linux/example-output.txt. It was not run on
+ * WSL 2 itself, so treat the lab's numbers as one VM's numbers.
  *
  * Build:  gcc -O2 -Wall -o boundary boundary.c
  * Run:    ./boundary
- *         strace -o boundary.trace ./boundary     (then read boundary.trace)
- *         strace -c ./boundary > /dev/null        (count system calls)
+ *         strace -o boundary.trace ./boundary > /dev/null   (then read boundary.trace)
+ *         strace -c ./boundary > /dev/null                  (count system calls)
+ *         strace -o /dev/null ./boundary                    (part 3 under strace)
  *
  * 1. The same write(2) three ways: the libc wrapper, libc's generic
  *    syscall(2), and a raw `syscall` instruction.
@@ -88,8 +89,11 @@ int main(int argc, char **argv)
     errno = 0;
     ssize_t r = write(1, kernel_ptr, 8);
     printf("  write(1, kernel address, 8) = %zd, errno %d (%s)\n", r, errno, strerror(errno));
+    /* Through a volatile pointer, so that gcc cannot see the NULL and warn
+     * (-Wnonnull) about a call that is wrong on purpose. */
+    const void *volatile null_ptr = NULL;
     errno = 0;
-    r = write(1, NULL, 8);
+    r = write(1, null_ptr, 8);
     printf("  write(1, NULL, 8)           = %zd, errno %d (%s)\n", r, errno, strerror(errno));
 
     printf("\n3. Cost per call\n");
