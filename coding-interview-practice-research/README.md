@@ -55,6 +55,7 @@ Research date: 2026-11-15. The full report is in [README.zh-TW.md](README.zh-TW.
   - spaced reviews at 1, 3, 7, 14 and 30 days
   - interleaving with the pattern hidden
   - a report of weak patterns
+  - timed mock interviews (`pp mock`) that record nothing until you score a self-review against what interviewers assess, and a readiness report (`pp ready`) against the standard in sections 4.2 and 9
 
 It was verified on Windows 11 with g++ 16.2.0:
 - All 74 stubs fail their tests.

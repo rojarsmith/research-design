@@ -113,6 +113,46 @@
             "problemMatcher": []
         },
         {
+            "label": "pp: 模擬面試",
+            "detail": "預設 2 題 45 分鐘，一次給一題，模式和難度隱藏，沒有提示；這個面板會倒數。進行中再執行：顯示狀態並接著倒數",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["mock", "--clock"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "panel": "dedicated", "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "pp: 模擬面試下一題",
+            "detail": "這題沒通過就記為未通過，接著給下一題的空白檔",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["mock", "next"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "pp: 結束模擬面試",
+            "detail": "第一次執行：停止計時、打開檢討表。填好評分表後再執行一次：記錄結果並排進複習",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["mock", "end"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "pp: 準備度",
+            "detail": "依研究報告的標準：模擬面試至少 5 場、最近連續通過 3 場、Medium 七成在 25 分鐘內通過",
+            "type": "process",
+            "command": "${workspaceFolder}/build/pp.exe",
+            "args": ["ready"],
+            "dependsOn": "pp: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
             "label": "pp: 題目清單",
             "type": "process",
             "command": "${workspaceFolder}/build/pp.exe",
