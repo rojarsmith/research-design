@@ -1,0 +1,19 @@
+# Build outputs, logs and frames of the harness; labs/.gitignore covers
+# build/, *.exe, *.o and *.obj already. run.sh builds and writes under
+# /tmp, so these only appear if you build or run here by hand.
+*.d
+*.log
+*.ppm
+*.sock
+harness/good-anim
+harness/good-alpha
+harness/bad-crash
+harness/bad-noread
+harness/bad-damage
+harness/bad-unsealed
+__pycache__/
+frames/
+work/
+
+# Your server (run.sh's default SOLUTION_DIR) stays out of the repository.
+solution/
