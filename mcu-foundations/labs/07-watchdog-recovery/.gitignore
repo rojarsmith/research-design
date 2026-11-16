@@ -1,0 +1,2 @@
+# 建置產物不進版本控制。.exe、.o、.bin 已列在上一層的 .gitignore，這裡補上沒有副檔名的執行檔
+recovery_sim
