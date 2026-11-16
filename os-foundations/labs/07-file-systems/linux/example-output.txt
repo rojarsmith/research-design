@@ -1,0 +1,167 @@
+Recorded 2026-11-16 (07:11-07:13 UTC) in an Ubuntu 24.04.5 container (image
+oslab:24.04) under podman on Windows 11 Pro build 26300. podman runs in a
+podman machine on WSL 2 and reported itself as rootful. Kernel
+6.6.87.2-microsoft-standard-WSL2, 16 vCPUs, gcc 13.3.0.
+The test files were on a podman named volume, which is ext4 (/dev/sdd in
+the podman machine), mounted at /data:
+  podman volume create lab07-data
+  podman run --rm [--cap-add SYS_PTRACE] -v <repository>:/work:ro \
+    -v lab07-data:/data oslab:24.04 \
+    sh /work/os-foundations/labs/07-file-systems/linux/run.sh /data 4096 60
+Not the container's own root: podman mounts it as overlayfs with the
+"volatile" option, which skips fsync.
+Run 1 used podman's default capabilities; run 2 added --cap-add SYS_PTRACE,
+which kcmp(2) needed. Other containers (two other labs, and this lab's xv6
+usertests run) were using the same VM and the same disk at the same time;
+/proc/meminfo's Dirty and Writeback count all of them.
+These are numbers from a VM. Your numbers will differ.
+
+==============================================================================
+sh linux/run.sh /data 4096 60, run 1 (podman run -v lab07-data:/data ...)
+==============================================================================
+
+date: 2026-11-16 07:11:42 UTC
+CapEff:	00000000800405fb
+CapBnd:	00000000800405fb
+== environment
+6.6.87.2-microsoft-standard-WSL2
+16
+gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+/dev/sdd       ext4 1055762868 9623380 992436016   1% /data
+
+== exercise G: ./ofd /data
+1. dup(): two descriptors, one open file description
+  write AAAA via fd a, then BBBB via its dup b:        file: "AAAABBBB"
+    after F_SETFL O_APPEND and F_SETFD FD_CLOEXEC on fd 3 only:
+    fd 3: O_APPEND on, FD_CLOEXEC on
+    fd 4: O_APPEND on, FD_CLOEXEC off
+    fdinfo/3:  pos:	8  flags:	02102002  ino:	64092
+    fdinfo/4:  pos:	8  flags:	0102002  ino:	64092
+    kcmp(KCMP_FILE, 3, 4): Operation not permitted
+2. open() twice: two open file descriptions, one inode
+  write cccc via fd c, then dd via fd d:               file: "ddccBBBB"
+    fdinfo/3:  pos:	4  flags:	0100002  ino:	64092
+    fdinfo/4:  pos:	2  flags:	0100002  ino:	64092
+    kcmp(KCMP_FILE, 3, 4): Operation not permitted
+3. fork(): the child's descriptor shares the parent's offset
+  child writes child. and exits, then parent writes:   file: "child.parent"
+    the parent's offset is now 12
+4. open("/proc/self/fd/3"): a new description or the same?
+    reopened as fd 4; its offset is 0, fd 3's is 12
+    kcmp(KCMP_FILE, 3, 4): Operation not permitted
+5. locks: OFD locks belong to the description, POSIX locks to the process
+    F_OFD_SETLK write lock via fd a:              granted
+    F_OFD_SETLK write lock via its dup b:         granted
+    F_OFD_SETLK write lock via a second open() c: refused (EAGAIN)
+    after close(a), via c:                        refused (EAGAIN)
+    after close(b) too, via c:                    granted
+    F_SETLK (POSIX) write lock via fd a:          granted
+    child, F_SETLK on its own open():             refused (EAGAIN)
+    parent opened and closed an unrelated fd c for the same file
+    child, again after the parent closed fd c:    granted
+
+== exercise H: ./pagecache /data 4096 60
+file /data/pagecache.dat on a ext2/3/4 file system (f_type 0xef53), 4096 pages of 4096 bytes
+vm.dirty_expire_centisecs 3000, vm.dirty_writeback_centisecs 500, vm.dirty_background_ratio 10, vm.dirty_ratio 20
+1. one page cache: a store through the mapping and pread()
+  store 'M' at byte 5 of the mapping; pread() of byte 5 on another fd gives 'M'
+  pwrite() 'W' at byte 6 on that fd; the mapping shows 'W'
+2. dirty every page through the mapping, then msync()
+  clean, after a first msync(MS_SYNC):         mapping dirty      0 kB | system Dirty   77332 kB, Writeback     0 kB
+  stores to 4096 pages took 9.6 ms
+  after the stores:                            mapping dirty  16384 kB | system Dirty   94076 kB, Writeback     0 kB
+  msync(MS_ASYNC) returned after 0.001 ms
+  after msync(MS_ASYNC):                       mapping dirty  16384 kB | system Dirty   94076 kB, Writeback     0 kB
+  msync(MS_SYNC) returned after 29.5 ms
+  after msync(MS_SYNC):                        mapping dirty      0 kB | system Dirty   77792 kB, Writeback   312 kB
+3. dirty every page, munmap() and close() without msync(), map again
+  after the stores:                            mapping dirty  16384 kB | system Dirty   94172 kB, Writeback   312 kB
+  after munmap() and close():                  mapping dirty     -1 kB | system Dirty   94172 kB, Writeback   312 kB
+  mapped again and read every page (byte 0 is 'c')
+  the new mapping, read only:                  mapping dirty  16384 kB | system Dirty   94172 kB, Writeback   312 kB
+  fsync(fd) returned after 6.0 ms
+  after fsync(fd):                             mapping dirty      0 kB | system Dirty   77792 kB, Writeback   308 kB
+4. dirty every page and call nothing: who writes them back?
+  after the stores:                            mapping dirty  16384 kB | system Dirty   94172 kB, Writeback   308 kB
+  10 s later:                                  mapping dirty  16384 kB | system Dirty   23480 kB, Writeback     0 kB
+  20 s later:                                  mapping dirty  16384 kB | system Dirty   23240 kB, Writeback     0 kB
+  30 s later:                                  mapping dirty  16384 kB | system Dirty   19660 kB, Writeback     0 kB
+  31 s later:                                  mapping dirty      0 kB | system Dirty    3332 kB, Writeback     0 kB
+  the flusher wrote them back 31.0 s after the stores
+
+build outputs are in /tmp/lab07-linux.YcBVAA
+
+==============================================================================
+sh linux/run.sh /data 4096 60, run 2 (podman run --cap-add SYS_PTRACE -v lab07-data:/data ...)
+==============================================================================
+
+date: 2026-11-16 07:12:14 UTC
+CapEff:	00000000800c05fb
+CapBnd:	00000000800c05fb
+== environment
+6.6.87.2-microsoft-standard-WSL2
+16
+gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+/dev/sdd       ext4 1055762868 9638688 992420708   1% /data
+
+== exercise G: ./ofd /data
+1. dup(): two descriptors, one open file description
+  write AAAA via fd a, then BBBB via its dup b:        file: "AAAABBBB"
+    after F_SETFL O_APPEND and F_SETFD FD_CLOEXEC on fd 3 only:
+    fd 3: O_APPEND on, FD_CLOEXEC on
+    fd 4: O_APPEND on, FD_CLOEXEC off
+    fdinfo/3:  pos:	8  flags:	02102002  ino:	64211
+    fdinfo/4:  pos:	8  flags:	0102002  ino:	64211
+    kcmp(KCMP_FILE, 3, 4) = 0 (the same open file description)
+2. open() twice: two open file descriptions, one inode
+  write cccc via fd c, then dd via fd d:               file: "ddccBBBB"
+    fdinfo/3:  pos:	4  flags:	0100002  ino:	64211
+    fdinfo/4:  pos:	2  flags:	0100002  ino:	64211
+    kcmp(KCMP_FILE, 3, 4) = 1 (different ones)
+3. fork(): the child's descriptor shares the parent's offset
+  child writes child. and exits, then parent writes:   file: "child.parent"
+    the parent's offset is now 12
+4. open("/proc/self/fd/3"): a new description or the same?
+    reopened as fd 4; its offset is 0, fd 3's is 12
+    kcmp(KCMP_FILE, 3, 4) = 2 (different ones)
+5. locks: OFD locks belong to the description, POSIX locks to the process
+    F_OFD_SETLK write lock via fd a:              granted
+    F_OFD_SETLK write lock via its dup b:         granted
+    F_OFD_SETLK write lock via a second open() c: refused (EAGAIN)
+    after close(a), via c:                        refused (EAGAIN)
+    after close(b) too, via c:                    granted
+    F_SETLK (POSIX) write lock via fd a:          granted
+    child, F_SETLK on its own open():             refused (EAGAIN)
+    parent opened and closed an unrelated fd c for the same file
+    child, again after the parent closed fd c:    granted
+
+== exercise H: ./pagecache /data 4096 60
+file /data/pagecache.dat on a ext2/3/4 file system (f_type 0xef53), 4096 pages of 4096 bytes
+vm.dirty_expire_centisecs 3000, vm.dirty_writeback_centisecs 500, vm.dirty_background_ratio 10, vm.dirty_ratio 20
+1. one page cache: a store through the mapping and pread()
+  store 'M' at byte 5 of the mapping; pread() of byte 5 on another fd gives 'M'
+  pwrite() 'W' at byte 6 on that fd; the mapping shows 'W'
+2. dirty every page through the mapping, then msync()
+  clean, after a first msync(MS_SYNC):         mapping dirty      0 kB | system Dirty    7484 kB, Writeback     0 kB
+  stores to 4096 pages took 13.3 ms
+  after the stores:                            mapping dirty  16384 kB | system Dirty   23868 kB, Writeback     0 kB
+  msync(MS_ASYNC) returned after 0.001 ms
+  after msync(MS_ASYNC):                       mapping dirty  16384 kB | system Dirty   23868 kB, Writeback     0 kB
+  msync(MS_SYNC) returned after 29.0 ms
+  after msync(MS_SYNC):                        mapping dirty      0 kB | system Dirty    7868 kB, Writeback     0 kB
+3. dirty every page, munmap() and close() without msync(), map again
+  after the stores:                            mapping dirty  16384 kB | system Dirty   24248 kB, Writeback     0 kB
+  after munmap() and close():                  mapping dirty     -1 kB | system Dirty   24248 kB, Writeback     0 kB
+  mapped again and read every page (byte 0 is 'c')
+  the new mapping, read only:                  mapping dirty  16384 kB | system Dirty   24248 kB, Writeback     0 kB
+  fsync(fd) returned after 6.8 ms
+  after fsync(fd):                             mapping dirty      0 kB | system Dirty    7868 kB, Writeback     0 kB
+4. dirty every page and call nothing: who writes them back?
+  after the stores:                            mapping dirty  16384 kB | system Dirty   24252 kB, Writeback     0 kB
+  10 s later:                                  mapping dirty  16384 kB | system Dirty   30880 kB, Writeback     0 kB
+  20 s later:                                  mapping dirty  16384 kB | system Dirty   30152 kB, Writeback     0 kB
+  26 s later:                                  mapping dirty      0 kB | system Dirty   15724 kB, Writeback     0 kB
+  the flusher wrote them back 26.0 s after the stores
+
+build outputs are in /tmp/lab07-linux.kPcNIy
+

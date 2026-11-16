@@ -1,0 +1,1415 @@
+Recorded 2026-11-16 in an Ubuntu 24.04.5 container (image oslab:24.04) under
+podman on Windows 11 Pro build 26300. podman runs in a podman machine on
+WSL 2 and reported itself as rootful. QEMU 8.2.2, riscv64-linux-gnu-gcc
+13.3.0, gcc 13.3.0 for fsinspect, expect. xv6-riscv commit
+fa2ddcb7ca87a77af579380a6eafd5aff163b44f (2026-11-05). The host (Intel Core
+i7-11700, 16 logical processors) was running other work at the same time,
+including two other labs in the same podman machine.
+
+Main record: one run of
+  SOLUTION_DIR=<reference patches> sh xv6/run.sh /opt/xv6-riscv
+started from Git Bash as
+  MSYS_NO_PATHCONV=1 podman run --rm -v <repository>:/work:ro \
+    -v <reference patches>:/sol:ro oslab:24.04 sh -c \
+    'WORK=/tmp/lab07 SOLUTION_DIR=/sol sh /work/os-foundations/labs/07-file-systems/xv6/run.sh /opt/xv6-riscv'
+The bigfile, symlink and mmap parts used reference solutions that are not
+shipped with this lab. The stock, crash, random and break parts use only
+files in this folder. With one hart, the block numbers come out the same on
+every run; the random kills land somewhere else every time. "pid" in the
+XV6CRASH lines is QEMU's process id in the container.
+
+==============================================================================
+SOLUTION_DIR=... sh xv6/run.sh /opt/xv6-riscv (main record)
+==============================================================================
+
+started 2026-11-16 07:04:39 UTC
+
+====================================================================
+===== stock
+====================================================================
+nmeta 47 (boot, super, log blocks 31, inode blocks 13, bitmap blocks 1) blocks 1953 total 2000
+--- host: fsinspect fs.img 
+fs.img: 2000 blocks of 1024 bytes
+  superblock: size 2000, nblocks 1953, ninodes 200, nlog 31
+  layout: 0 boot | 1 super | 2-32 log (header + 30) | 33-45 inodes (16 per block) | 46-46 bitmap | 47-1999 data
+  log header: n = 0
+  data blocks in use (bitmap): 994 of 1953; inodes in use: 24 of 199
+--- host: fsinspect fs.img file /README
+/README: inode 2, type 2 (file), nlink 1, size 2441 bytes (3 blocks)
+  inode lives in block 33; struct dinode is 64 bytes, 13 addrs (NDIRECT 12)
+  direct (3 of 12 used): 48-50
+  singly indirect: none
+  index blocks (indirect and doubly indirect) for this file: 0
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ ofdtest
+1. dup(): two descriptors, one struct file
+  fd 3 and fd 4, inode 26 and 26
+  write AAAA via fd a, then BBBB via fd b:
+    the file is now "AAAABBBB"
+2. open() twice: two struct files, one inode
+  fd 3 and fd 4, inode 26 and 26
+  write cccc via fd c, then dd via fd d:
+    the file is now "ddccBBBB"
+3. fork(): the child's descriptor is the parent's struct file
+  the child writes child. and exits, then the parent writes parent:
+    the file is now "child.parent"
+4. the access mode lives in the struct file, so a dup has it too
+  write via the O_RDONLY fd: -1, via its dup: -1
+$ bigfile
+bigfile: MAXFILE = 268 blocks (NDIRECT 12, NINDIRECT 256), 274432 bytes
+wrote 268 blocks (274432 bytes); the write of block 268 was refused
+  7 ticks for the writes
+read back 268 blocks: every block holds its own data
+unlinked big.file
+$ bigfile 268 keep
+bigfile: MAXFILE = 268 blocks (NDIRECT 12, NINDIRECT 256), 274432 bytes
+wrote 268 blocks (274432 bytes)
+  7 ticks for the writes
+read back 268 blocks: every block holds its own data
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img file /big.file
+/big.file: inode 26, type 2 (file), nlink 1, size 274432 bytes (268 blocks)
+  inode lives in block 34; struct dinode is 64 bytes, 13 addrs (NDIRECT 12)
+  direct (12 of 12 used): 1041-1052
+  singly indirect, block 1053 (256 of 256 entries used): 1054-1309
+  index blocks (indirect and doubly indirect) for this file: 1
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 26 inodes in use (0 orphaned), 1263 data blocks in use, 690 free
+
+====================================================================
+===== crash
+====================================================================
+--- applying lab07-crashpoint.patch
+nmeta 47 (boot, super, log blocks 31, inode blocks 13, bitmap blocks 1) blocks 1953 total 2000
+
+=== append, crash point 1: the log is written, the header is not
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite prepare
+crashwrite: /crashfile has 12 blocks of generation 1
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img file /crashfile
+/crashfile: inode 27, type 2 (file), nlink 1, size 12288 bytes (12 blocks)
+  inode lives in block 34; struct dinode is 64 bytes, 13 addrs (NDIRECT 12)
+  direct (12 of 12 used): 1093-1104
+  singly indirect: none
+  index blocks (indirect and doubly indirect) for this file: 0
+--- boot, CPUS=1, then kill QEMU (marker)
+spawn qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite append 1
+crashwrite: crash point 1 armed (k = 0) for the next commit
+crashwrite: appending blocks 12-14 in one write()
+lab07: crash point 1, a transaction of 6 blocks: 46 1105 1106 1107 1108 34
+lab07: all 6 written to the log; the header on the disk says n = 0; 0 of 6 installed at home
+lab07: waiting to be killed
+
+XV6CRASH: the kernel stopped at its crash point: killed QEMU (pid 1083) with SIGKILL
+--- host: fsinspect fs.img log
+log header at block 2: n = 0. Recovery will install nothing.
+The log blocks still hold whatever write_log() put there last, but no header names them:
+  log block   3: ff ff ff ff ff ff ff ff ...
+  log block   4: 52 04 00 00 53 04 00 00 ...
+  log block   5: "blk   12 gen    2 cr"
+  log block   6: "blk   13 gen    2 cr"
+  log block   7: "blk   14 gen    2 cr"
+  log block   8: 02 00 00 00 00 00 01 00 ...
+  log block   9: 00 00 00 00 00 00 00 00 ...
+  log block  10: 00 00 00 00 00 00 00 00 ...
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 27 inodes in use (0 orphaned), 1058 data blocks in use, 895 free
+--- next boot: recover_from_log() runs in fsinit(), before init starts
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite check
+check: /crashfile is 12288 bytes, 12 blocks
+check:   blocks 0-11: generation 1
+check: every block holds its own line
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 27 inodes in use (0 orphaned), 1058 data blocks in use, 895 free
+
+=== append, crash point 2, k = 3: committed, 3 of 6 blocks installed
+--- boot, CPUS=1, then kill QEMU (marker)
+spawn qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite append 2 3
+crashwrite: crash point 2 armed (k = 3) for the next commit
+crashwrite: appending blocks 12-14 in one write()
+lab07: crash point 2, a transaction of 6 blocks: 46 1105 1106 1107 1108 34
+lab07: all 6 written to the log; the header on the disk says n = 6; 3 of 6 installed at home
+lab07: waiting to be killed
+
+XV6CRASH: the kernel stopped at its crash point: killed QEMU (pid 1129) with SIGKILL
+--- host: fsinspect fs.img log
+log header at block 2: n = 6. A committed transaction: recovery will copy these 6 blocks home.
+  log block   3 -> home    46  same as home bitmap block (bits for blocks 0-8191)
+                               log copy starts ff ff ff ff ff ff ff ff ...
+  log block   4 -> home  1105  same as home indirect block of inode 27 /crashfile
+                               log copy starts 52 04 00 00 53 04 00 00 ...
+  log block   5 -> home  1106  same as home data block 12 of inode 27 /crashfile
+                               log copy starts "blk   12 gen    2 cr"
+  log block   6 -> home  1107  differs      data block 13 of inode 27 /crashfile
+                               log copy starts "blk   13 gen    2 cr"
+  log block   7 -> home  1108  differs      data block 14 of inode 27 /crashfile
+                               log copy starts "blk   14 gen    2 cr"
+  log block   8 -> home    34  differs      inode block (inodes 16-31)
+                               log copy starts 02 00 00 00 00 00 01 00 ...
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  PROBLEM: block 1105 is marked in use in the bitmap but no inode points to it (leaked)
+  PROBLEM: block 1106 is marked in use in the bitmap but no inode points to it (leaked)
+  PROBLEM: block 1107 is marked in use in the bitmap but no inode points to it (leaked)
+  PROBLEM: block 1108 is marked in use in the bitmap but no inode points to it (leaked)
+  4 problem(s); 27 inodes in use, 1062 data blocks in use, 891 free
+the image as recovery will leave it (6 logged blocks installed):
+  consistent: 27 inodes in use (0 orphaned), 1062 data blocks in use, 891 free
+--- next boot: recover_from_log() runs in fsinit(), before init starts
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+recovering tail 0 dst 46
+recovering tail 1 dst 1105
+recovering tail 2 dst 1106
+recovering tail 3 dst 1107
+recovering tail 4 dst 1108
+recovering tail 5 dst 34
+init: starting sh
+$ crashwrite check
+check: /crashfile is 15360 bytes, 15 blocks
+check:   blocks 0-11: generation 1
+check:   blocks 12-14: generation 2
+check: every block holds its own line
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 27 inodes in use (0 orphaned), 1062 data blocks in use, 891 free
+
+=== append, crash point 3: committed and installed, header not cleared
+--- boot, CPUS=1, then kill QEMU (marker)
+spawn qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite append 3
+crashwrite: crash point 3 armed (k = 0) for the next commit
+crashwrite: appending blocks 12-14 in one write()
+lab07: crash point 3, a transaction of 6 blocks: 46 1105 1106 1107 1108 34
+lab07: all 6 written to the log; the header on the disk says n = 6; 6 of 6 installed at home
+lab07: waiting to be killed
+
+XV6CRASH: the kernel stopped at its crash point: killed QEMU (pid 1175) with SIGKILL
+--- host: fsinspect fs.img log
+log header at block 2: n = 6. A committed transaction: recovery will copy these 6 blocks home.
+  log block   3 -> home    46  same as home bitmap block (bits for blocks 0-8191)
+                               log copy starts ff ff ff ff ff ff ff ff ...
+  log block   4 -> home  1105  same as home indirect block of inode 27 /crashfile
+                               log copy starts 52 04 00 00 53 04 00 00 ...
+  log block   5 -> home  1106  same as home data block 12 of inode 27 /crashfile
+                               log copy starts "blk   12 gen    2 cr"
+  log block   6 -> home  1107  same as home data block 13 of inode 27 /crashfile
+                               log copy starts "blk   13 gen    2 cr"
+  log block   7 -> home  1108  same as home data block 14 of inode 27 /crashfile
+                               log copy starts "blk   14 gen    2 cr"
+  log block   8 -> home    34  same as home inode block (inodes 16-31)
+                               log copy starts 02 00 00 00 00 00 01 00 ...
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 27 inodes in use (0 orphaned), 1062 data blocks in use, 891 free
+the image as recovery will leave it (6 logged blocks installed):
+  consistent: 27 inodes in use (0 orphaned), 1062 data blocks in use, 891 free
+--- next boot: recover_from_log() runs in fsinit(), before init starts
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+recovering tail 0 dst 46
+recovering tail 1 dst 1105
+recovering tail 2 dst 1106
+recovering tail 3 dst 1107
+recovering tail 4 dst 1108
+recovering tail 5 dst 34
+init: starting sh
+$ crashwrite check
+check: /crashfile is 15360 bytes, 15 blocks
+check:   blocks 0-11: generation 1
+check:   blocks 12-14: generation 2
+check: every block holds its own line
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 27 inodes in use (0 orphaned), 1062 data blocks in use, 891 free
+
+=== truncate, crash point 2, k = 1: committed, the bitmap block installed
+--- boot, CPUS=1, then kill QEMU (marker)
+spawn qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite trunc 2 1
+crashwrite: crash point 2 armed (k = 1) for the next commit
+crashwrite: truncating /crashfile with open(O_TRUNC)
+lab07: crash point 2, a transaction of 2 blocks: 46 34
+lab07: all 2 written to the log; the header on the disk says n = 2; 1 of 2 installed at home
+lab07: waiting to be killed
+
+XV6CRASH: the kernel stopped at its crash point: killed QEMU (pid 1221) with SIGKILL
+--- host: fsinspect fs.img log
+log header at block 2: n = 2. A committed transaction: recovery will copy these 2 blocks home.
+  log block   3 -> home    46  same as home bitmap block (bits for blocks 0-8191)
+                               log copy starts ff ff ff ff ff ff ff ff ...
+  log block   4 -> home    34  differs      inode block (inodes 16-31)
+                               log copy starts 02 00 00 00 00 00 01 00 ...
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  PROBLEM: block 1093 is in use (data block 0 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1094 is in use (data block 1 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1095 is in use (data block 2 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1096 is in use (data block 3 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1097 is in use (data block 4 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1098 is in use (data block 5 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1099 is in use (data block 6 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1100 is in use (data block 7 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1101 is in use (data block 8 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1102 is in use (data block 9 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1103 is in use (data block 10 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1104 is in use (data block 11 of inode 27 /crashfile) but marked free in the bitmap
+  12 problem(s); 27 inodes in use, 1046 data blocks in use, 907 free
+the image as recovery will leave it (2 logged blocks installed):
+  consistent: 27 inodes in use (0 orphaned), 1046 data blocks in use, 907 free
+--- next boot: recover_from_log() runs in fsinit(), before init starts
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+recovering tail 0 dst 46
+recovering tail 1 dst 34
+init: starting sh
+$ crashwrite check
+check: /crashfile is 0 bytes, 0 blocks
+check: every block holds its own line
+$ crashwrite other
+crashwrite: /other has 4 blocks
+$ crashwrite check
+check: /crashfile is 0 bytes, 0 blocks
+check: every block holds its own line
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 28 inodes in use (0 orphaned), 1050 data blocks in use, 903 free
+
+====================================================================
+===== random
+====================================================================
+
+=== kill QEMU 2 s into crashwrite loop (no crash point armed)
+--- boot, CPUS=1, then kill QEMU (2)
+spawn qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite loop
+crashwrite: rewriting /crashfile until killed
+
+XV6CRASH: 2 s after the last command: killed QEMU (pid 1267) with SIGKILL
+--- host: fsinspect fs.img log
+log header at block 2: n = 6. A committed transaction: recovery will copy these 6 blocks home.
+  log block   3 -> home    46  same as home bitmap block (bits for blocks 0-8191)
+                               log copy starts ff ff ff ff ff ff ff ff ...
+  log block   4 -> home  1113  same as home data block 18 of inode 28 /crashfile
+                               log copy starts "blk   18 gen   23 cr"
+  log block   5 -> home  1106  same as home indirect block of inode 28 /crashfile
+                               log copy starts 53 04 00 00 54 04 00 00 ...
+  log block   6 -> home  1114  same as home data block 19 of inode 28 /crashfile
+                               log copy starts "blk   19 gen   23 cr"
+  log block   7 -> home  1115  differs      data block 20 of inode 28 /crashfile
+                               log copy starts "blk   20 gen   23 cr"
+  log block   8 -> home    34  differs      inode block (inodes 16-31)
+                               log copy starts 02 00 00 00 00 00 01 00 ...
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 28 inodes in use (0 orphaned), 1069 data blocks in use, 884 free
+the image as recovery will leave it (6 logged blocks installed):
+  consistent: 28 inodes in use (0 orphaned), 1069 data blocks in use, 884 free
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+recovering tail 0 dst 46
+recovering tail 1 dst 1113
+recovering tail 2 dst 1106
+recovering tail 3 dst 1114
+recovering tail 4 dst 1115
+recovering tail 5 dst 34
+init: starting sh
+$ crashwrite check
+check: /crashfile is 21504 bytes, 21 blocks
+check:   blocks 0-20: generation 23
+check: every block holds its own line
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 28 inodes in use (0 orphaned), 1069 data blocks in use, 884 free
+
+=== kill QEMU 3 s into crashwrite loop (no crash point armed)
+--- boot, CPUS=1, then kill QEMU (3)
+spawn qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite loop
+crashwrite: rewriting /crashfile until killed
+
+XV6CRASH: 3 s after the last command: killed QEMU (pid 1314) with SIGKILL
+--- host: fsinspect fs.img log
+log header at block 2: n = 5. A committed transaction: recovery will copy these 5 blocks home.
+  log block   3 -> home    46  differs      bitmap block (bits for blocks 0-8191)
+                               log copy starts ff ff ff ff ff ff ff ff ...
+  log block   4 -> home  1103  differs      data block 9 of inode 28 /crashfile
+                               log copy starts "blk    9 gen   35 cr"
+  log block   5 -> home  1104  differs      data block 10 of inode 28 /crashfile
+                               log copy starts "blk   10 gen   35 cr"
+  log block   6 -> home  1105  differs      data block 11 of inode 28 /crashfile
+                               log copy starts "blk   11 gen   35 cr"
+  log block   7 -> home    34  differs      inode block (inodes 16-31)
+                               log copy starts 02 00 00 00 00 00 01 00 ...
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 28 inodes in use (0 orphaned), 1056 data blocks in use, 897 free
+the image as recovery will leave it (5 logged blocks installed):
+  consistent: 28 inodes in use (0 orphaned), 1059 data blocks in use, 894 free
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+recovering tail 0 dst 46
+recovering tail 1 dst 1103
+recovering tail 2 dst 1104
+recovering tail 3 dst 1105
+recovering tail 4 dst 34
+init: starting sh
+$ crashwrite check
+check: /crashfile is 12288 bytes, 12 blocks
+check:   blocks 0-11: generation 35
+check: every block holds its own line
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 28 inodes in use (0 orphaned), 1059 data blocks in use, 894 free
+
+=== kill QEMU 4 s into crashwrite loop (no crash point armed)
+--- boot, CPUS=1, then kill QEMU (4)
+spawn qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite loop
+crashwrite: rewriting /crashfile until killed
+
+XV6CRASH: 4 s after the last command: killed QEMU (pid 1361) with SIGKILL
+--- host: fsinspect fs.img log
+log header at block 2: n = 0. Recovery will install nothing.
+The log blocks still hold whatever write_log() put there last, but no header names them:
+  log block   3: ff ff ff ff ff ff ff ff ...
+  log block   4: "blk   15 gen   45 cr"
+  log block   5: 53 04 00 00 54 04 00 00 ...
+  log block   6: "blk   16 gen   45 cr"
+  log block   7: "blk   17 gen   45 cr"
+  log block   8: 02 00 00 00 00 00 01 00 ...
+  log block   9: 00 00 00 00 00 00 00 00 ...
+  log block  10: 00 00 00 00 00 00 00 00 ...
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 28 inodes in use (0 orphaned), 1066 data blocks in use, 887 free
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite check
+check: /crashfile is 18432 bytes, 18 blocks
+check:   blocks 0-17: generation 45
+check: every block holds its own line
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 28 inodes in use (0 orphaned), 1066 data blocks in use, 887 free
+
+=== kill QEMU 5 s into crashwrite loop (no crash point armed)
+--- boot, CPUS=1, then kill QEMU (5)
+spawn qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite loop
+crashwrite: rewriting /crashfile until killed
+
+XV6CRASH: 5 s after the last command: killed QEMU (pid 1408) with SIGKILL
+--- host: fsinspect fs.img log
+log header at block 2: n = 0. Recovery will install nothing.
+The log blocks still hold whatever write_log() put there last, but no header names them:
+  log block   3: 01 00 2e 00 00 00 00 00 ...
+  log block   4: 00 00 00 00 00 00 00 00 ...
+  log block   5: 53 04 00 00 54 04 00 00 ...
+  log block   6: "blk   28 gen   55 cr"
+  log block   7: "blk   29 gen   55 cr"
+  log block   8: 02 00 00 00 00 00 01 00 ...
+  log block   9: 00 00 00 00 00 00 00 00 ...
+  log block  10: 00 00 00 00 00 00 00 00 ...
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 28 inodes in use (0 orphaned), 1078 data blocks in use, 875 free
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite check
+check: /crashfile is 30720 bytes, 30 blocks
+check:   blocks 0-29: generation 55
+check: every block holds its own line
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 28 inodes in use (0 orphaned), 1078 data blocks in use, 875 free
+
+=== kill QEMU 6 s into crashwrite loop (no crash point armed)
+--- boot, CPUS=1, then kill QEMU (6)
+spawn qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite loop
+crashwrite: rewriting /crashfile until killed
+
+XV6CRASH: 6 s after the last command: killed QEMU (pid 1455) with SIGKILL
+--- host: fsinspect fs.img log
+log header at block 2: n = 0. Recovery will install nothing.
+The log blocks still hold whatever write_log() put there last, but no header names them:
+  log block   3: ff ff ff ff ff ff ff ff ...
+  log block   4: "blk    9 gen   65 cr"
+  log block   5: "blk   10 gen   65 cr"
+  log block   6: "blk   11 gen   65 cr"
+  log block   7: 02 00 00 00 00 00 01 00 ...
+  log block   8: 02 00 00 00 00 00 01 00 ...
+  log block   9: 00 00 00 00 00 00 00 00 ...
+  log block  10: 00 00 00 00 00 00 00 00 ...
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 28 inodes in use (0 orphaned), 1059 data blocks in use, 894 free
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite check
+check: /crashfile is 12288 bytes, 12 blocks
+check:   blocks 0-11: generation 65
+check: every block holds its own line
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 28 inodes in use (0 orphaned), 1059 data blocks in use, 894 free
+
+=== kill QEMU 7 s into crashwrite loop (no crash point armed)
+--- boot, CPUS=1, then kill QEMU (7)
+spawn qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite loop
+crashwrite: rewriting /crashfile until killed
+
+XV6CRASH: 7 s after the last command: killed QEMU (pid 1502) with SIGKILL
+--- host: fsinspect fs.img log
+log header at block 2: n = 6. A committed transaction: recovery will copy these 6 blocks home.
+  log block   3 -> home    46  same as home bitmap block (bits for blocks 0-8191)
+                               log copy starts ff ff ff ff ff ff ff ff ...
+  log block   4 -> home  1116  same as home data block 21 of inode 28 /crashfile
+                               log copy starts "blk   21 gen   76 cr"
+  log block   5 -> home  1106  differs      indirect block of inode 28 /crashfile
+                               log copy starts 53 04 00 00 54 04 00 00 ...
+  log block   6 -> home  1117  differs      data block 22 of inode 28 /crashfile
+                               log copy starts "blk   22 gen   76 cr"
+  log block   7 -> home  1118  differs      data block 23 of inode 28 /crashfile
+                               log copy starts "blk   23 gen   76 cr"
+  log block   8 -> home    34  differs      inode block (inodes 16-31)
+                               log copy starts 02 00 00 00 00 00 01 00 ...
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  PROBLEM: block 1116 is marked in use in the bitmap but no inode points to it (leaked)
+  PROBLEM: block 1117 is marked in use in the bitmap but no inode points to it (leaked)
+  PROBLEM: block 1118 is marked in use in the bitmap but no inode points to it (leaked)
+  3 problem(s); 28 inodes in use, 1072 data blocks in use, 881 free
+the image as recovery will leave it (6 logged blocks installed):
+  consistent: 28 inodes in use (0 orphaned), 1072 data blocks in use, 881 free
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+recovering tail 0 dst 46
+recovering tail 1 dst 1116
+recovering tail 2 dst 1106
+recovering tail 3 dst 1117
+recovering tail 4 dst 1118
+recovering tail 5 dst 34
+init: starting sh
+$ crashwrite check
+check: /crashfile is 24576 bytes, 24 blocks
+check:   blocks 0-23: generation 76
+check: every block holds its own line
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 28 inodes in use (0 orphaned), 1072 data blocks in use, 881 free
+
+====================================================================
+===== break
+====================================================================
+--- applying lab07-crashpoint.patch
+--- applying break-install-first.patch
+nmeta 47 (boot, super, log blocks 31, inode blocks 13, bitmap blocks 1) blocks 1953 total 2000
+
+=== BROKEN commit(): truncate, crash point 2, k = 1, home blocks before the header
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite prepare
+crashwrite: /crashfile has 12 blocks of generation 1
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img file /crashfile
+/crashfile: inode 27, type 2 (file), nlink 1, size 12288 bytes (12 blocks)
+  inode lives in block 34; struct dinode is 64 bytes, 13 addrs (NDIRECT 12)
+  direct (12 of 12 used): 1093-1104
+  singly indirect: none
+  index blocks (indirect and doubly indirect) for this file: 0
+--- boot, CPUS=1, then kill QEMU (marker)
+spawn qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite trunc 2 1
+crashwrite: crash point 2 armed (k = 1) for the next commit
+crashwrite: truncating /crashfile with open(O_TRUNC)
+lab07: crash point 2, a transaction of 2 blocks: 46 34
+lab07: all 2 written to the log; the header on the disk says n = 0; 1 of 2 installed at home
+lab07: waiting to be killed
+
+XV6CRASH: the kernel stopped at its crash point: killed QEMU (pid 2094) with SIGKILL
+--- host: fsinspect fs.img log
+log header at block 2: n = 0. Recovery will install nothing.
+The log blocks still hold whatever write_log() put there last, but no header names them:
+  log block   3: ff ff ff ff ff ff ff ff ...
+  log block   4: 02 00 00 00 00 00 01 00 ...
+  log block   5: "blk   10 gen    1 cr"
+  log block   6: "blk   11 gen    1 cr"
+  log block   7: 02 00 00 00 00 00 01 00 ...
+  log block   8: 00 00 00 00 00 00 00 00 ...
+  log block   9: 00 00 00 00 00 00 00 00 ...
+  log block  10: 00 00 00 00 00 00 00 00 ...
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  PROBLEM: block 1093 is in use (data block 0 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1094 is in use (data block 1 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1095 is in use (data block 2 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1096 is in use (data block 3 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1097 is in use (data block 4 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1098 is in use (data block 5 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1099 is in use (data block 6 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1100 is in use (data block 7 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1101 is in use (data block 8 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1102 is in use (data block 9 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1103 is in use (data block 10 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1104 is in use (data block 11 of inode 27 /crashfile) but marked free in the bitmap
+  12 problem(s); 27 inodes in use, 1046 data blocks in use, 907 free
+--- next boot: recover_from_log() runs in fsinit(), before init starts
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ crashwrite check
+check: /crashfile is 12288 bytes, 12 blocks
+check:   blocks 0-11: generation 1
+check: every block holds its own line
+$ crashwrite other
+crashwrite: /other has 4 blocks
+$ crashwrite check
+check: /crashfile is 12288 bytes, 12 blocks
+check: block 0 is torn, it starts "other: a new file"
+check: block 1 is torn, it starts "other: a new file"
+check: block 2 is torn, it starts "other: a new file"
+check: block 3 is torn, it starts "other: a new file"
+check:   blocks 4-11: generation 1
+check: 4 block(s) torn
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  PROBLEM: block 1093 is used twice: by inode 27 (/crashfile) and inode 28 (/other)
+  PROBLEM: block 1094 is used twice: by inode 27 (/crashfile) and inode 28 (/other)
+  PROBLEM: block 1095 is used twice: by inode 27 (/crashfile) and inode 28 (/other)
+  PROBLEM: block 1096 is used twice: by inode 27 (/crashfile) and inode 28 (/other)
+  PROBLEM: block 1097 is in use (data block 4 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1098 is in use (data block 5 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1099 is in use (data block 6 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1100 is in use (data block 7 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1101 is in use (data block 8 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1102 is in use (data block 9 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1103 is in use (data block 10 of inode 27 /crashfile) but marked free in the bitmap
+  PROBLEM: block 1104 is in use (data block 11 of inode 27 /crashfile) but marked free in the bitmap
+  12 problem(s); 28 inodes in use, 1050 data blocks in use, 903 free
+
+====================================================================
+===== bigfile
+====================================================================
+--- applying 0001-bigfile.patch
+nmeta 55 (boot, super, log blocks 31, inode blocks 13, bitmap blocks 9) blocks 69945 total 70000
+--- host: fsinspect fs.img 
+fs.img: 70000 blocks of 1024 bytes
+  superblock: size 70000, nblocks 69945, ninodes 200, nlog 31
+  layout: 0 boot | 1 super | 2-32 log (header + 30) | 33-45 inodes (16 per block) | 46-54 bitmap | 55-69999 data
+  log header: n = 0
+  data blocks in use (bitmap): 994 of 69945; inodes in use: 24 of 199
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ bigfile
+bigfile: MAXFILE = 65803 blocks (NDIRECT 11, NINDIRECT 256), 67382272 bytes
+  8192 blocks written
+  16384 blocks written
+  24576 blocks written
+  32768 blocks written
+  40960 blocks written
+  49152 blocks written
+  57344 blocks written
+  65536 blocks written
+wrote 65803 blocks (67382272 bytes); the write of block 65803 was refused
+  1865 ticks for the writes
+read back 65803 blocks: every block holds its own data
+unlinked big.file
+$ bigfile 6000 keep
+bigfile: MAXFILE = 65803 blocks (NDIRECT 11, NINDIRECT 256), 67382272 bytes
+wrote 6000 blocks (6144000 bytes)
+  153 ticks for the writes
+read back 6000 blocks: every block holds its own data
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img file /big.file
+/big.file: inode 26, type 2 (file), nlink 1, size 6144000 bytes (6000 blocks)
+  inode lives in block 34; struct dinode is 64 bytes, 13 addrs (NDIRECT 11)
+  direct (11 of 11 used): 1049-1059
+  singly indirect, block 1060 (256 of 256 entries used): 1061-1316
+  doubly indirect, block 1317 (23 of 256 indirect blocks, 5733 data blocks): 1318 1575 1832 2089 2346 2603 ...
+  index blocks (indirect and doubly indirect) for this file: 25
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 26 inodes in use (0 orphaned), 7019 data blocks in use, 62926 free
+
+====================================================================
+===== symlink
+====================================================================
+--- applying 0001-bigfile.patch
+--- applying 0002-symlink.patch
+nmeta 55 (boot, super, log blocks 31, inode blocks 13, bitmap blocks 9) blocks 69945 total 70000
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ symlinktest
+1. a link to a file
+  ok: symlink("/sl.a", "/sl.b")
+  ok: open("/sl.b") reads sl.a's contents
+  ok: fstat() of the opened link says T_FILE: open followed it
+2. O_NOFOLLOW opens the link itself
+  ok: open("/sl.b", O_NOFOLLOW) gives a T_SYMLINK inode
+  its contents: "/sl.a"
+3. a chain: sl.c -> sl.b -> sl.a, and writing through it
+  ok: symlink("/sl.b", "/sl.c")
+  ok: open("/sl.c", O_WRONLY), write
+  ok: the write reached sl.a
+4. a cycle: sl.x -> sl.y -> sl.x
+  ok: open("/sl.x") fails instead of looping
+5. a chain of 12 links, and a chain of 5
+  open("/sl.12") = -1, open("/sl.5") = 3
+  ok: 5 links deep: followed
+  12 links deep: refused (where you stop is your choice; MIT suggests about 10)
+6. a dangling link
+  ok: symlink to a missing file succeeds
+  ok: open() of the dangling link fails
+  ok: with O_NOFOLLOW it opens
+7. link() and unlink() act on the link, not the target
+  ok: link("/sl.b", "/sl.h")
+  ok: sl.h is a second name for the link inode
+  ok: unlink("/sl.b")
+  ok: sl.a is still there
+  ok: sl.h still leads to sl.a
+  ok: sl.c -> sl.b now dangles
+8. a relative target (the link and the caller are both in /)
+  ok: symlink("sl.a", "/sl.e")
+  ok: open("/sl.e") from / works
+symlinktest: 0 failure(s)
+$ symlinktest
+1. a link to a file
+  ok: symlink("/sl.a", "/sl.b")
+  ok: open("/sl.b") reads sl.a's contents
+  ok: fstat() of the opened link says T_FILE: open followed it
+2. O_NOFOLLOW opens the link itself
+  ok: open("/sl.b", O_NOFOLLOW) gives a T_SYMLINK inode
+  its contents: "/sl.a"
+3. a chain: sl.c -> sl.b -> sl.a, and writing through it
+  ok: symlink("/sl.b", "/sl.c")
+  ok: open("/sl.c", O_WRONLY), write
+  ok: the write reached sl.a
+4. a cycle: sl.x -> sl.y -> sl.x
+  ok: open("/sl.x") fails instead of looping
+5. a chain of 12 links, and a chain of 5
+  open("/sl.12") = -1, open("/sl.5") = 3
+  ok: 5 links deep: followed
+  12 links deep: refused (where you stop is your choice; MIT suggests about 10)
+6. a dangling link
+  ok: symlink to a missing file succeeds
+  ok: open() of the dangling link fails
+  ok: with O_NOFOLLOW it opens
+7. link() and unlink() act on the link, not the target
+  ok: link("/sl.b", "/sl.h")
+  ok: sl.h is a second name for the link inode
+  ok: unlink("/sl.b")
+  ok: sl.a is still there
+  ok: sl.h still leads to sl.a
+  ok: sl.c -> sl.b now dangles
+8. a relative target (the link and the caller are both in /)
+  ok: symlink("sl.a", "/sl.e")
+  ok: open("/sl.e") from / works
+symlinktest: 0 failure(s)
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 26 inodes in use (0 orphaned), 1042 data blocks in use, 68903 free
+
+====================================================================
+===== mmap
+====================================================================
+--- applying 0001-bigfile.patch
+--- applying 0002-symlink.patch
+--- applying 0003-mmap.patch
+nmeta 55 (boot, super, log blocks 31, inode blocks 13, bitmap blocks 9) blocks 69945 total 70000
+--- boot, CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ mmaptest
+1. a private, read-only mapping of a 10240-byte file
+  ok: mmap(0, 3 pages, PROT_READ, MAP_PRIVATE, fd, 0)
+  mapped at 0x0000003FFFFFB000; sbrk(0) is 0x0000000000009000
+  ok: the address is page-aligned
+  ok: above the heap, and the heap did not move
+  ok: every byte matches the file, after close(fd)
+  ok: the rest of the last page reads 0
+  ok: munmap()
+usertrap(): unexpected scause 0xd pid=4
+            sepc=0x6 stval=0x3fffffb000
+  ok: a child that reads the unmapped page is killed
+2. pages are read from the file on first touch
+  write() put 'N' in bytes 0-4999; read() now sees 'N'
+  ok: page 1, first touched after the write(), shows 'N': read lazily
+  observed: page 0, touched before the write(): still shows the old byte (its own copy)
+3. MAP_SHARED: writes reach the file, but not past its end
+  ok: mmap(PROT_READ | PROT_WRITE, MAP_SHARED) of an O_RDWR fd
+  observed: read() of the file before munmap(): sees the old bytes (written back at munmap)
+  ok: munmap()
+  ok: after munmap(), read() sees the write
+  ok: the file did not grow
+4. MAP_PRIVATE: writes stay in the process
+  ok: mmap(PROT_READ | PROT_WRITE, MAP_PRIVATE) of an O_RDONLY fd
+  ok: the process sees its own write
+  ok: the file is unchanged
+5. permissions
+  ok: PROT_WRITE + MAP_SHARED of an O_RDONLY fd is refused
+  ok: PROT_READ of an O_WRONLY fd is refused
+usertrap(): unexpected scause 0xf pid=5
+            sepc=0x22 stval=0x3fffffd000
+  ok: a child that writes a PROT_READ page is killed
+6. munmap() of the first page, then of the rest
+  ok: munmap() of page 0
+  ok: page 0 was written back
+  observed: page 2, still mapped: not in the file yet
+  ok: pages 1 and 2 still work
+  ok: munmap() of pages 1 and 2
+  ok: page 2 was written back
+7. fork(), and exit() without munmap()
+  ok: two mappings at two addresses
+  ok: the child read the inherited shared mapping
+  observed: the child's view of the parent's private write: inherited
+  ok: the child's exit() wrote its change back
+  observed: the parent's own mapping of that byte: does not show it
+8. two processes map the same file MAP_SHARED
+  observed: B's mapping after A wrote to its own: does not see it
+9. the kernel reads a mapped page that was never touched
+  ok: write(fd, untouched mapped page, 16)
+  ok: the right 16 bytes arrived
+10. 100 rounds of mmap() and munmap()
+  ok: 100 mappings, more than NVMA slots: munmap() frees the slot
+  first mapping at 0x0000003FFFFFB000, a new one now at 0x0000003FFFFFD000
+mmaptest: 0 failure(s)
+$ QEMU: Terminated
+
+XV6RUN: done
+--- boot, CPUS=3
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 1 starting
+hart 2 starting
+init: starting sh
+$ mmaptest
+1. a private, read-only mapping of a 10240-byte file
+  ok: mmap(0, 3 pages, PROT_READ, MAP_PRIVATE, fd, 0)
+  mapped at 0x0000003FFFFFB000; sbrk(0) is 0x0000000000009000
+  ok: the address is page-aligned
+  ok: above the heap, and the heap did not move
+  ok: every byte matches the file, after close(fd)
+  ok: the rest of the last page reads 0
+  ok: munmap()
+usertrap(): unexpected scause 0xd pid=4
+            sepc=0x6 stval=0x3fffffb000
+  ok: a child that reads the unmapped page is killed
+2. pages are read from the file on first touch
+  write() put 'N' in bytes 0-4999; read() now sees 'N'
+  ok: page 1, first touched after the write(), shows 'N': read lazily
+  observed: page 0, touched before the write(): still shows the old byte (its own copy)
+3. MAP_SHARED: writes reach the file, but not past its end
+  ok: mmap(PROT_READ | PROT_WRITE, MAP_SHARED) of an O_RDWR fd
+  observed: read() of the file before munmap(): sees the old bytes (written back at munmap)
+  ok: munmap()
+  ok: after munmap(), read() sees the write
+  ok: the file did not grow
+4. MAP_PRIVATE: writes stay in the process
+  ok: mmap(PROT_READ | PROT_WRITE, MAP_PRIVATE) of an O_RDONLY fd
+  ok: the process sees its own write
+  ok: the file is unchanged
+5. permissions
+  ok: PROT_WRITE + MAP_SHARED of an O_RDONLY fd is refused
+  ok: PROT_READ of an O_WRONLY fd is refused
+usertrap(): unexpected scause 0xf pid=5
+            sepc=0x22 stval=0x3fffffd000
+  ok: a child that writes a PROT_READ page is killed
+6. munmap() of the first page, then of the rest
+  ok: munmap() of page 0
+  ok: page 0 was written back
+  observed: page 2, still mapped: not in the file yet
+  ok: pages 1 and 2 still work
+  ok: munmap() of pages 1 and 2
+  ok: page 2 was written back
+7. fork(), and exit() without munmap()
+  ok: two mappings at two addresses
+  ok: the child read the inherited shared mapping
+  observed: the child's view of the parent's private write: inherited
+  ok: the child's exit() wrote its change back
+  observed: the parent's own mapping of that byte: does not show it
+8. two processes map the same file MAP_SHARED
+  observed: B's mapping after A wrote to its own: does not see it
+9. the kernel reads a mapped page that was never touched
+  ok: write(fd, untouched mapped page, 16)
+  ok: the right 16 bytes arrived
+10. 100 rounds of mmap() and munmap()
+  ok: 100 mappings, more than NVMA slots: munmap() frees the slot
+  first mapping at 0x0000003FFFFFB000, a new one now at 0x0000003FFFFFD000
+mmaptest: 0 failure(s)
+$ QEMU: Terminated
+
+XV6RUN: done
+--- host: fsinspect fs.img check
+the image as it is on the disk:
+  consistent: 27 inodes in use (0 orphaned), 1109 data blocks in use, 68836 free
+
+build trees are in /tmp/lab07
+exit status 0
+ended 2026-11-16 07:09:43 UTC
+
+==============================================================================
+SOLUTION_DIR=... sh xv6/run.sh /opt/xv6-riscv usertests
+usertests -q with three harts on the kernel with all three reference patches
+(doubly-indirect block, symbolic links, mmap). writebig, one of its quick
+tests, writes a file of MAXFILE blocks, now 65,803. The usertrap() lines are
+usertests' own processes being killed on purpose.
+==============================================================================
+
+started 2026-11-16 07:11:24 UTC
+
+====================================================================
+===== usertests
+====================================================================
+--- applying 0001-bigfile.patch
+--- applying 0002-symlink.patch
+--- applying 0003-mmap.patch
+nmeta 55 (boot, super, log blocks 31, inode blocks 13, bitmap blocks 9) blocks 69945 total 70000
+--- boot, CPUS=3
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 1 starting
+hart 2 starting
+init: starting sh
+$ usertests -q
+usertests starting
+test copyin: OK
+test copyout: OK
+test copyinstr1: OK
+test copyinstr2: OK
+test copyinstr3: OK
+test rwsbrk: OK
+test truncate1: OK
+test truncate2: OK
+test truncate3: OK
+test openiput: OK
+test exitiput: OK
+test iput: OK
+test opentest: OK
+test writetest: OK
+test writebig: OK
+test createtest: OK
+test dirtest: OK
+test exectest: OK
+test pipezero: OK
+test pipe1: OK
+test killstatus: OK
+test killzero: OK
+test preempt: kill... wait... OK
+test exitwait: OK
+test reparent: OK
+test twochildren: OK
+test forkfork: OK
+test forkforkfork: OK
+test reparent2: OK
+test mem: OK
+test sharedfd: OK
+test fourfiles: OK
+test createdelete: OK
+test unlinkread: OK
+test linktest: OK
+test concreate: OK
+test linkunlink: OK
+test subdir: OK
+test bigwrite: OK
+test bigfile: OK
+test fourteen: OK
+test rmdot: OK
+test dirfile: OK
+test iref: OK
+test forktest: OK
+test sbrkbasic: OK
+test sbrkmuch: OK
+test kernmem: usertrap(): unexpected scause 0xd pid=6479
+            sepc=0x1a8a stval=0x80000000
+usertrap(): unexpected scause 0xd pid=6480
+            sepc=0x1a8a stval=0x8000c350
+usertrap(): unexpected scause 0xd pid=6481
+            sepc=0x1a8a stval=0x800186a0
+usertrap(): unexpected scause 0xd pid=6482
+            sepc=0x1a8a stval=0x800249f0
+usertrap(): unexpected scause 0xd pid=6483
+            sepc=0x1a8a stval=0x80030d40
+usertrap(): unexpected scause 0xd pid=6484
+            sepc=0x1a8a stval=0x8003d090
+usertrap(): unexpected scause 0xd pid=6485
+            sepc=0x1a8a stval=0x800493e0
+usertrap(): unexpected scause 0xd pid=6486
+            sepc=0x1a8a stval=0x80055730
+usertrap(): unexpected scause 0xd pid=6487
+            sepc=0x1a8a stval=0x80061a80
+usertrap(): unexpected scause 0xd pid=6488
+            sepc=0x1a8a stval=0x8006ddd0
+usertrap(): unexpected scause 0xd pid=6489
+            sepc=0x1a8a stval=0x8007a120
+usertrap(): unexpected scause 0xd pid=6490
+            sepc=0x1a8a stval=0x80086470
+usertrap(): unexpected scause 0xd pid=6491
+            sepc=0x1a8a stval=0x800927c0
+usertrap(): unexpected scause 0xd pid=6492
+            sepc=0x1a8a stval=0x8009eb10
+usertrap(): unexpected scause 0xd pid=6493
+            sepc=0x1a8a stval=0x800aae60
+usertrap(): unexpected scause 0xd pid=6494
+            sepc=0x1a8a stval=0x800b71b0
+usertrap(): unexpected scause 0xd pid=6495
+            sepc=0x1a8a stval=0x800c3500
+usertrap(): unexpected scause 0xd pid=6496
+            sepc=0x1a8a stval=0x800cf850
+usertrap(): unexpected scause 0xd pid=6497
+            sepc=0x1a8a stval=0x800dbba0
+usertrap(): unexpected scause 0xd pid=6498
+            sepc=0x1a8a stval=0x800e7ef0
+usertrap(): unexpected scause 0xd pid=6499
+            sepc=0x1a8a stval=0x800f4240
+usertrap(): unexpected scause 0xd pid=6500
+            sepc=0x1a8a stval=0x80100590
+usertrap(): unexpected scause 0xd pid=6501
+            sepc=0x1a8a stval=0x8010c8e0
+usertrap(): unexpected scause 0xd pid=6502
+            sepc=0x1a8a stval=0x80118c30
+usertrap(): unexpected scause 0xd pid=6503
+            sepc=0x1a8a stval=0x80124f80
+usertrap(): unexpected scause 0xd pid=6504
+            sepc=0x1a8a stval=0x801312d0
+usertrap(): unexpected scause 0xd pid=6505
+            sepc=0x1a8a stval=0x8013d620
+usertrap(): unexpected scause 0xd pid=6506
+            sepc=0x1a8a stval=0x80149970
+usertrap(): unexpected scause 0xd pid=6507
+            sepc=0x1a8a stval=0x80155cc0
+usertrap(): unexpected scause 0xd pid=6508
+            sepc=0x1a8a stval=0x80162010
+usertrap(): unexpected scause 0xd pid=6509
+            sepc=0x1a8a stval=0x8016e360
+usertrap(): unexpected scause 0xd pid=6510
+            sepc=0x1a8a stval=0x8017a6b0
+usertrap(): unexpected scause 0xd pid=6511
+            sepc=0x1a8a stval=0x80186a00
+usertrap(): unexpected scause 0xd pid=6512
+            sepc=0x1a8a stval=0x80192d50
+usertrap(): unexpected scause 0xd pid=6513
+            sepc=0x1a8a stval=0x8019f0a0
+usertrap(): unexpected scause 0xd pid=6514
+            sepc=0x1a8a stval=0x801ab3f0
+usertrap(): unexpected scause 0xd pid=6515
+            sepc=0x1a8a stval=0x801b7740
+usertrap(): unexpected scause 0xd pid=6516
+            sepc=0x1a8a stval=0x801c3a90
+usertrap(): unexpected scause 0xd pid=6517
+            sepc=0x1a8a stval=0x801cfde0
+usertrap(): unexpected scause 0xd pid=6518
+            sepc=0x1a8a stval=0x801dc130
+OK
+test MAXVAplus: usertrap(): unexpected scause 0xf pid=6520
+            sepc=0x1b1a stval=0x4000000000
+usertrap(): unexpected scause 0xf pid=6521
+            sepc=0x1b1a stval=0x8000000000
+usertrap(): unexpected scause 0xf pid=6522
+            sepc=0x1b1a stval=0x10000000000
+usertrap(): unexpected scause 0xf pid=6523
+            sepc=0x1b1a stval=0x20000000000
+usertrap(): unexpected scause 0xf pid=6524
+            sepc=0x1b1a stval=0x40000000000
+usertrap(): unexpected scause 0xf pid=6525
+            sepc=0x1b1a stval=0x80000000000
+usertrap(): unexpected scause 0xf pid=6526
+            sepc=0x1b1a stval=0x100000000000
+usertrap(): unexpected scause 0xf pid=6527
+            sepc=0x1b1a stval=0x200000000000
+usertrap(): unexpected scause 0xf pid=6528
+            sepc=0x1b1a stval=0x400000000000
+usertrap(): unexpected scause 0xf pid=6529
+            sepc=0x1b1a stval=0x800000000000
+usertrap(): unexpected scause 0xf pid=6530
+            sepc=0x1b1a stval=0x1000000000000
+usertrap(): unexpected scause 0xf pid=6531
+            sepc=0x1b1a stval=0x2000000000000
+usertrap(): unexpected scause 0xf pid=6532
+            sepc=0x1b1a stval=0x4000000000000
+usertrap(): unexpected scause 0xf pid=6533
+            sepc=0x1b1a stval=0x8000000000000
+usertrap(): unexpected scause 0xf pid=6534
+            sepc=0x1b1a stval=0x10000000000000
+usertrap(): unexpected scause 0xf pid=6535
+            sepc=0x1b1a stval=0x20000000000000
+usertrap(): unexpected scause 0xf pid=6536
+            sepc=0x1b1a stval=0x40000000000000
+usertrap(): unexpected scause 0xf pid=6537
+            sepc=0x1b1a stval=0x80000000000000
+usertrap(): unexpected scause 0xf pid=6538
+            sepc=0x1b1a stval=0x100000000000000
+usertrap(): unexpected scause 0xf pid=6539
+            sepc=0x1b1a stval=0x200000000000000
+usertrap(): unexpected scause 0xf pid=6540
+            sepc=0x1b1a stval=0x400000000000000
+usertrap(): unexpected scause 0xf pid=6541
+            sepc=0x1b1a stval=0x800000000000000
+usertrap(): unexpected scause 0xf pid=6542
+            sepc=0x1b1a stval=0x1000000000000000
+usertrap(): unexpected scause 0xf pid=6543
+            sepc=0x1b1a stval=0x2000000000000000
+usertrap(): unexpected scause 0xf pid=6544
+            sepc=0x1b1a stval=0x4000000000000000
+usertrap(): unexpected scause 0xf pid=6545
+            sepc=0x1b1a stval=0x8000000000000000
+OK
+test sbrkfail: OK
+test sbrkarg: OK
+test validatetest: OK
+test bsstest: OK
+test bigargtest: OK
+test argptest: OK
+test stacktest: usertrap(): unexpected scause 0xd pid=6565
+            sepc=0x1b6e stval=0x11e80
+OK
+test nowrite: usertrap(): unexpected scause 0xf pid=6567
+            sepc=0x1c14 stval=0x0
+usertrap(): unexpected scause 0xf pid=6568
+            sepc=0x1c14 stval=0x80000000
+usertrap(): unexpected scause 0xf pid=6569
+            sepc=0x1c14 stval=0x3fffffe000
+usertrap(): unexpected scause 0xf pid=6570
+            sepc=0x1c14 stval=0x3ffffff000
+usertrap(): unexpected scause 0xf pid=6571
+            sepc=0x1c14 stval=0x4000000000
+usertrap(): unexpected scause 0xf pid=6572
+            sepc=0x1c14 stval=0xffffffffffffffff
+OK
+test pgbug: OK
+test sbrkbugs: usertrap(): unexpected scause 0xc pid=6575
+            sepc=0x5716 stval=0x5716
+usertrap(): unexpected scause 0xc pid=6576
+            sepc=0x5716 stval=0x5716
+usertrap(): unexpected scause 0xd pid=6577
+            sepc=0x5662 stval=0x12e98
+OK
+test sbrklast: OK
+test sbrk8000: OK
+test badarg: OK
+test lazy_alloc: OK
+test lazy_unmap: usertrap(): unexpected scause 0xf pid=6583
+            sepc=0x4a34 stval=0x14000
+usertrap(): unexpected scause 0xf pid=6584
+            sepc=0x4a34 stval=0x1014000
+usertrap(): unexpected scause 0xf pid=6585
+            sepc=0x4a34 stval=0x2014000
+usertrap(): unexpected scause 0xf pid=6586
+            sepc=0x4a34 stval=0x3014000
+usertrap(): unexpected scause 0xf pid=6587
+            sepc=0x4a34 stval=0x4014000
+usertrap(): unexpected scause 0xf pid=6588
+            sepc=0x4a34 stval=0x5014000
+usertrap(): unexpected scause 0xf pid=6589
+            sepc=0x4a34 stval=0x6014000
+usertrap(): unexpected scause 0xf pid=6590
+            sepc=0x4a34 stval=0x7014000
+usertrap(): unexpected scause 0xf pid=6591
+            sepc=0x4a34 stval=0x8014000
+usertrap(): unexpected scause 0xf pid=6592
+            sepc=0x4a34 stval=0x9014000
+usertrap(): unexpected scause 0xf pid=6593
+            sepc=0x4a34 stval=0xa014000
+usertrap(): unexpected scause 0xf pid=6594
+            sepc=0x4a34 stval=0xb014000
+usertrap(): unexpected scause 0xf pid=6595
+            sepc=0x4a34 stval=0xc014000
+usertrap(): unexpected scause 0xf pid=6596
+            sepc=0x4a34 stval=0xd014000
+usertrap(): unexpected scause 0xf pid=6597
+            sepc=0x4a34 stval=0xe014000
+usertrap(): unexpected scause 0xf pid=6598
+            sepc=0x4a34 stval=0xf014000
+usertrap(): unexpected scause 0xf pid=6599
+            sepc=0x4a34 stval=0x10014000
+usertrap(): unexpected scause 0xf pid=6600
+            sepc=0x4a34 stval=0x11014000
+usertrap(): unexpected scause 0xf pid=6601
+            sepc=0x4a34 stval=0x12014000
+usertrap(): unexpected scause 0xf pid=6602
+            sepc=0x4a34 stval=0x13014000
+usertrap(): unexpected scause 0xf pid=6603
+            sepc=0x4a34 stval=0x14014000
+usertrap(): unexpected scause 0xf pid=6604
+            sepc=0x4a34 stval=0x15014000
+usertrap(): unexpected scause 0xf pid=6605
+            sepc=0x4a34 stval=0x16014000
+usertrap(): unexpected scause 0xf pid=6606
+            sepc=0x4a34 stval=0x17014000
+usertrap(): unexpected scause 0xf pid=6607
+            sepc=0x4a34 stval=0x18014000
+usertrap(): unexpected scause 0xf pid=6608
+            sepc=0x4a34 stval=0x19014000
+usertrap(): unexpected scause 0xf pid=6609
+            sepc=0x4a34 stval=0x1a014000
+usertrap(): unexpected scause 0xf pid=6610
+            sepc=0x4a34 stval=0x1b014000
+usertrap(): unexpected scause 0xf pid=6611
+            sepc=0x4a34 stval=0x1c014000
+usertrap(): unexpected scause 0xf pid=6612
+            sepc=0x4a34 stval=0x1d014000
+usertrap(): unexpected scause 0xf pid=6613
+            sepc=0x4a34 stval=0x1e014000
+usertrap(): unexpected scause 0xf pid=6614
+            sepc=0x4a34 stval=0x1f014000
+usertrap(): unexpected scause 0xf pid=6615
+            sepc=0x4a34 stval=0x20014000
+usertrap(): unexpected scause 0xf pid=6616
+            sepc=0x4a34 stval=0x21014000
+usertrap(): unexpected scause 0xf pid=6617
+            sepc=0x4a34 stval=0x22014000
+usertrap(): unexpected scause 0xf pid=6618
+            sepc=0x4a34 stval=0x23014000
+usertrap(): unexpected scause 0xf pid=6619
+            sepc=0x4a34 stval=0x24014000
+usertrap(): unexpected scause 0xf pid=6620
+            sepc=0x4a34 stval=0x25014000
+usertrap(): unexpected scause 0xf pid=6621
+            sepc=0x4a34 stval=0x26014000
+usertrap(): unexpected scause 0xf pid=6622
+            sepc=0x4a34 stval=0x27014000
+usertrap(): unexpected scause 0xf pid=6623
+            sepc=0x4a34 stval=0x28014000
+usertrap(): unexpected scause 0xf pid=6624
+            sepc=0x4a34 stval=0x29014000
+usertrap(): unexpected scause 0xf pid=6625
+            sepc=0x4a34 stval=0x2a014000
+usertrap(): unexpected scause 0xf pid=6626
+            sepc=0x4a34 stval=0x2b014000
+usertrap(): unexpected scause 0xf pid=6627
+            sepc=0x4a34 stval=0x2c014000
+usertrap(): unexpected scause 0xf pid=6628
+            sepc=0x4a34 stval=0x2d014000
+usertrap(): unexpected scause 0xf pid=6629
+            sepc=0x4a34 stval=0x2e014000
+usertrap(): unexpected scause 0xf pid=6630
+            sepc=0x4a34 stval=0x2f014000
+usertrap(): unexpected scause 0xf pid=6631
+            sepc=0x4a34 stval=0x30014000
+usertrap(): unexpected scause 0xf pid=6632
+            sepc=0x4a34 stval=0x31014000
+usertrap(): unexpected scause 0xf pid=6633
+            sepc=0x4a34 stval=0x32014000
+usertrap(): unexpected scause 0xf pid=6634
+            sepc=0x4a34 stval=0x33014000
+usertrap(): unexpected scause 0xf pid=6635
+            sepc=0x4a34 stval=0x34014000
+usertrap(): unexpected scause 0xf pid=6636
+            sepc=0x4a34 stval=0x35014000
+usertrap(): unexpected scause 0xf pid=6637
+            sepc=0x4a34 stval=0x36014000
+usertrap(): unexpected scause 0xf pid=6638
+            sepc=0x4a34 stval=0x37014000
+usertrap(): unexpected scause 0xf pid=6639
+            sepc=0x4a34 stval=0x38014000
+usertrap(): unexpected scause 0xf pid=6640
+            sepc=0x4a34 stval=0x39014000
+usertrap(): unexpected scause 0xf pid=6641
+            sepc=0x4a34 stval=0x3a014000
+usertrap(): unexpected scause 0xf pid=6642
+            sepc=0x4a34 stval=0x3b014000
+usertrap(): unexpected scause 0xf pid=6643
+            sepc=0x4a34 stval=0x3c014000
+usertrap(): unexpected scause 0xf pid=6644
+            sepc=0x4a34 stval=0x3d014000
+usertrap(): unexpected scause 0xf pid=6645
+            sepc=0x4a34 stval=0x3e014000
+usertrap(): unexpected scause 0xf pid=6646
+            sepc=0x4a34 stval=0x3f014000
+OK
+test lazy_copy: OK
+test lazy_copyinstr: OK
+test lazy_sbrk: OK
+test partial_write: OK
+test unlinkcwd: OK
+ALL TESTS PASSED
+$ QEMU: Terminated
+
+XV6RUN: done
+
+build trees are in /tmp/lab07
+exit status 0
+ended 2026-11-16 07:19:49 UTC

@@ -1,0 +1,23 @@
+# Build outputs, images and test files of this lab's programs; never
+# commit them. labs/.gitignore covers build/, *.exe, *.o and *.obj
+# already. The run scripts build in /tmp; the Windows commands build in
+# build/.
+*.d
+*.asm
+*.sym
+*.log
+*.dat
+# an xv6 tree, kernel or image copied here by mistake
+xv6-riscv/
+fs.img
+fs.pristine
+fs.prepared
+kernel/kernel
+xv6/fsinspect
+linux/ofd
+linux/pagecache
+ofd.txt
+handles.txt
+# Your own xv6 patches, which xv6/run.sh reads (see the README).
+# Reference solutions are not shipped; anything kept here stays out of git.
+xv6/solution/

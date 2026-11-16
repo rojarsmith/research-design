@@ -1,0 +1,19 @@
+# Lab 07, exercise F, broken on purpose: commit() installs the home
+# blocks first and writes the header afterwards. Applies on top of
+# lab07-crashpoint.patch with patch -p1. Undo with patch -R -p1.
+diff -ruN a/kernel/log.c b/kernel/log.c
+--- a/kernel/log.c
++++ b/kernel/log.c
+@@ -252,8 +252,11 @@
+   if (log.lh.n > 0) {
+     write_log();      // Write modified blocks from cache to log
+     crash_stop(1, 0);
+-    write_head();     // Write header to disk -- the real commit
++    // Lab 07, broken on purpose: install the home blocks first and write
++    // the header afterwards, so a crash in between leaves half a
++    // transaction at home and a header that says n = 0.
+     install_trans(0); // Now install writes to home locations
++    write_head();     // Write header to disk -- the commit, too late
+     crash_stop(3, log.lh.n);
+     if (crash_point)
+       printk("lab07: crash point %d (k = %d) not reached in a transaction "
