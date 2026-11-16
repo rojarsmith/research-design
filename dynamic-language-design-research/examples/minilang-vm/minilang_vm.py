@@ -18,6 +18,8 @@ Usage:
     python3 minilang_vm.py program.ml          # run a file on the VM
     python3 minilang_vm.py --dis program.ml    # print the bytecode
     python3 minilang_vm.py --bench [runs]      # time both engines on programs/bench_*.ml
+    python3 minilang_vm.py --emit out.mlc program.ml   # write a bytecode file (format below)
+    python3 minilang_vm.py out.mlc             # run (or --dis) a bytecode file instead of source
     python3 minilang_vm.py                     # REPL
 Add --opt to enable the optional compiler optimizations.
 """
@@ -26,6 +28,7 @@ import operator
 import os
 import platform
 import statistics
+import struct
 import sys
 import time
 
@@ -742,6 +745,189 @@ def _operand(co, op, arg):
     return ""
 
 
+# --------------------------------------------------------- bytecode file ----
+# A compiled program can be written to a file and run later without the
+# compiler, by this VM or by the C VM in ../minilang-c (Lua likewise lets a
+# build carry only the loader). Format version 1.0, all integers little-endian:
+#
+#   file   := "MLBC" major:u16 minor:u16 opcode_count:u16 flags:u16 code
+#   code   := name:str nparams:u32 param:str*  nslots:u32 max_stack:u32
+#             ninstr:u32 (opcode:u8 operand:u32)*   -- table offsets count 2 per instruction
+#             nconsts:u32 const*
+#             nlines:u32 (offset:u32 line:u32)*
+#             nhandlers:u32 (start:u32 end:u32 target:u32)*
+#             nloops:u32 (start:u32 end:u32)*
+#             nchains:u32 (name:str nmaybe:u32 upvalue:u32* kind:u8 final:u32)*   kind 0 global, 1 upvalue
+#             nupvals:u32 (from_slot:u8 index:u32 name:str)*
+#             slot_name:str * nslots
+#   const  := tag:u8, then 0 nil | 1 false | 2 true | 3 int:i64 | 4 int outside i64:str (decimal)
+#             | 5 float:f64 | 6 string:str | 7 code
+#   str    := nbytes:u32 UTF-8 bytes
+#
+# flags bit 0 records that some optimization was on; readers ignore it. A
+# reader rejects another major version, a newer minor version, or a different
+# opcode count (renumbering opcodes is a major change).
+
+MLC_MAGIC = b"MLBC"
+MLC_VERSION = (1, 0)
+(K_NIL, K_FALSE, K_TRUE, K_INT, K_BIGINT, K_FLOAT, K_STR, K_CODE) = range(8)
+
+
+def dump_program(script, optimized=False):
+    """Bytes of a bytecode file holding the script Code and everything nested in it."""
+    out = bytearray(MLC_MAGIC)
+    out += struct.pack("<HHHH", MLC_VERSION[0], MLC_VERSION[1], len(OPCODES), 1 if optimized else 0)
+    _dump_code(out, script)
+    return bytes(out)
+
+
+def _dump_str(out, text):
+    data = text.encode("utf-8")
+    out += struct.pack("<I", len(data))
+    out += data
+
+
+def _dump_code(out, co):
+    _dump_str(out, co.name)
+    out += struct.pack("<I", len(co.params))
+    for param in co.params:
+        _dump_str(out, param)
+    out += struct.pack("<III", co.nslots, co.max_stack, len(co.code) // 2)
+    for _, op, arg in co.instructions():
+        if arg < 0:
+            raise ValueError("unpatched operand in %s" % co.name)
+        out += struct.pack("<BI", op, arg)
+    out += struct.pack("<I", len(co.consts))
+    for value in co.consts:
+        if value is None:
+            out.append(K_NIL)
+        elif value is False or value is True:
+            out.append(K_TRUE if value else K_FALSE)
+        elif isinstance(value, int):
+            if -2 ** 63 <= value < 2 ** 63:
+                out.append(K_INT)
+                out += struct.pack("<q", value)
+            else:
+                out.append(K_BIGINT)
+                _dump_str(out, str(value))
+        elif isinstance(value, float):
+            out.append(K_FLOAT)
+            out += struct.pack("<d", value)
+        elif isinstance(value, str):
+            out.append(K_STR)
+            _dump_str(out, value)
+        elif isinstance(value, Code):
+            out.append(K_CODE)
+            _dump_code(out, value)
+        else:
+            raise ValueError("cannot serialize constant %r" % (value,))
+    out += struct.pack("<I", len(co.linetable))
+    for start, line in co.linetable:
+        out += struct.pack("<II", start, line)
+    out += struct.pack("<I", len(co.handlers))
+    for handler in co.handlers:
+        out += struct.pack("<III", *handler)
+    out += struct.pack("<I", len(co.loops))
+    for loop in co.loops:
+        out += struct.pack("<II", *loop)
+    out += struct.pack("<I", len(co.chains))
+    for name, maybe, kind, final in co.chains:
+        _dump_str(out, name)
+        out += struct.pack("<I", len(maybe))
+        for index in maybe:
+            out += struct.pack("<I", index)
+        out += struct.pack("<BI", 1 if kind == "upval" else 0, final if kind == "upval" else 0)
+    out += struct.pack("<I", len(co.upval_specs))
+    for (local, index), name in zip(co.upval_specs, co.upval_names):
+        out += struct.pack("<BI", 1 if local else 0, index)
+        _dump_str(out, name)
+    for name in co.slot_names:
+        _dump_str(out, name)
+
+
+class _Reader:
+    def __init__(self, data):
+        self.data = data
+        self.pos = 0
+
+    def take(self, fmt):
+        size = struct.calcsize(fmt)
+        if self.pos + size > len(self.data):
+            raise ValueError("truncated bytecode file at byte %d" % self.pos)
+        values = struct.unpack_from(fmt, self.data, self.pos)
+        self.pos += size
+        return values if len(values) > 1 else values[0]
+
+    def text(self):
+        size = self.take("<I")
+        if self.pos + size > len(self.data):
+            raise ValueError("truncated bytecode file at byte %d" % self.pos)
+        self.pos += size
+        return self.data[self.pos - size:self.pos].decode("utf-8")
+
+
+def load_program(data):
+    """Inverse of dump_program: rebuild the script Code from bytes. Checks the
+    header and the structure; the C loader also verifies operands."""
+    r = _Reader(data)
+    if data[:4] != MLC_MAGIC:
+        raise ValueError("not a minilang bytecode file")
+    r.pos = 4
+    major, minor, nops, _flags = r.take("<HHHH")
+    if major != MLC_VERSION[0] or minor > MLC_VERSION[1]:
+        raise ValueError("unsupported bytecode version %d.%d" % (major, minor))
+    if nops != len(OPCODES):
+        raise ValueError("bytecode has %d opcodes, this VM has %d" % (nops, len(OPCODES)))
+    script = _load_code(r)
+    if r.pos != len(data):
+        raise ValueError("trailing bytes after the script")
+    return script
+
+
+def _load_code(r):
+    co = Code(r.text(), [])
+    co.params = [r.text() for _ in range(r.take("<I"))]
+    co.nparams = len(co.params)
+    co.nslots, co.max_stack, ninstr = r.take("<III")
+    for _ in range(ninstr):
+        co.code.extend(r.take("<BI"))
+    for _ in range(r.take("<I")):
+        tag = r.take("<B")
+        if tag in (K_NIL, K_FALSE, K_TRUE):
+            value = (None, False, True)[tag]
+        elif tag == K_INT:
+            value = r.take("<q")
+        elif tag == K_BIGINT:
+            value = int(r.text())
+        elif tag == K_FLOAT:
+            value = r.take("<d")
+        elif tag == K_STR:
+            value = r.text()
+        elif tag == K_CODE:
+            value = _load_code(r)
+        else:
+            raise ValueError("unknown constant tag %d" % tag)
+        co.consts.append(value)    # already unique: no need for the dedup keys
+    co.linetable = [r.take("<II") for _ in range(r.take("<I"))]
+    co.line_starts = [start for start, _ in co.linetable]
+    co.handlers = [r.take("<III") for _ in range(r.take("<I"))]
+    co.loops = [r.take("<II") for _ in range(r.take("<I"))]
+    for _ in range(r.take("<I")):
+        name = r.text()
+        maybe = tuple(r.take("<I") for _ in range(r.take("<I")))
+        kind, final = r.take("<BI")
+        co.chains.append((name, maybe, "upval", final) if kind else (name, maybe, "global", name))
+    specs, names = [], []
+    for _ in range(r.take("<I")):
+        local, index = r.take("<BI")
+        specs.append((bool(local), index))
+        names.append(r.text())
+    co.upval_specs, co.upval_names = tuple(specs), tuple(names)
+    co.slot_names = [r.text() for _ in range(co.nslots)]
+    co.padding = [None] * (co.nslots - co.nparams + co.max_stack)
+    return co
+
+
 # -------------------------------------------------------------------- VM ----
 
 
@@ -1143,14 +1329,42 @@ def bench(runs=5):
 # ------------------------------------------------------------------ main ----
 
 
+def read_program(path, vm):
+    """The script Code for a source file or a bytecode file (detected by its magic)."""
+    with open(path, "rb") as f:
+        data = f.read()
+    if data[:4] == MLC_MAGIC:
+        return load_program(data)
+    with open(path, encoding="utf-8") as f:   # text mode, as minilang.run_file reads source
+        return vm.compile(f.read())
+
+
 def run_file(path, optimize=False):
-    with open(path, encoding="utf-8") as f:
-        src = f.read()
+    vm = VM(optimize=optimize)
     try:
-        VM(optimize=optimize).run(src)
+        script = read_program(path, vm)
+        old_limit = sys.getrecursionlimit()
+        sys.setrecursionlimit(max(old_limit, vm.MAX_DEPTH * 12 + 500))
+        try:
+            vm.execute(script)
+        finally:
+            sys.setrecursionlimit(old_limit)
     except minilang.LangError as err:
         print("error: %s" % err, file=sys.stderr)
         return 1
+    return 0
+
+
+def emit_file(out_path, path, optimize=False):
+    """Compile a source file and write the bytecode file; syntax errors are reported like run_file."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            script = VM(optimize=optimize).compile(f.read())
+    except minilang.LangError as err:
+        print("error: %s" % err, file=sys.stderr)
+        return 1
+    with open(out_path, "wb") as f:
+        f.write(dump_program(script, optimized=bool(optimize)))
     return 0
 
 
@@ -1185,9 +1399,10 @@ def main(argv):
     if args[:1] == ["--bench"]:
         return bench(int(args[1]) if len(args) > 1 else 5)
     if args[:1] == ["--dis"]:
-        with open(args[1], encoding="utf-8") as f:
-            print(disassemble(VM(optimize=optimize).compile(f.read())))
+        print(disassemble(read_program(args[1], VM(optimize=optimize))))
         return 0
+    if args[:1] == ["--emit"]:
+        return emit_file(args[1], args[2], optimize)
     return run_file(args[0], optimize) if args else repl(optimize)
 
 

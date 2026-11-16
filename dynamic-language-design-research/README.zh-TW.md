@@ -16,6 +16,7 @@
 | [自製動態語言路線圖](research/03-design-your-own-dynamic-language.zh-TW.md) | 從規格到樹走訪直譯器、位元組碼 VM、GC、FFI、工具鏈的階段計畫與決策表 |
 | [可執行範例 minilang](examples/minilang/README.zh-TW.md) | 單檔樹走訪直譯器，示範詞法、語法、閉包、例外與測試 |
 | [可執行範例 minilang-vm](examples/minilang-vm/README.zh-TW.md) | 同一門語言的階段 4：位元組碼編譯器與堆疊式 VM，沿用 minilang 前端、不改一行跑 minilang 的測試，並與樹走訪比較效能 |
+| [可執行範例 minilang-c](examples/minilang-c/README.zh-TW.md) | 階段 5：C11 寫成的 VM 與精確標記清除 GC，載入 minilang-vm 寫出的位元組碼檔；在每次配置都回收的模式下與樹走訪比對 10,000 個隨機程式全部一致，並補上階段 4 缺少的 C 版加速倍數 |
 | [來源與查證範圍](research/04-sources.zh-TW.md) | 官方文件、論文與本研究的證據邊界 |
 
 ## 問題一：Python 與 Node.js 是怎麼從 0 到有的
@@ -82,10 +83,12 @@
 
 完整決策表、每階段的細節與常見陷阱見[研究三](research/03-design-your-own-dynamic-language.zh-TW.md)。可執行的最小範例在 [examples/minilang](examples/minilang/README.zh-TW.md)，用 Python 寫成的單檔樹走訪直譯器，含測試，對應階段 2；[examples/minilang-vm](examples/minilang-vm/README.zh-TW.md) 是同一門語言的位元組碼編譯器與 VM，對應階段 4。兩次量測中，它在 Python 3.14.6 上比樹走訪快 1.45 至 2.80 倍，開啟編譯器最佳化最多 3.19 倍，額外的增益幾乎都來自「指派陳述不產生 DUP 與 POP」這一項；加速來自省掉每個 AST 節點的 Python 函式呼叫與以例外實作的 `return`，不是分派變便宜（每道指令仍約 140 至 200 奈秒，由量測的計數與時間推算），所以 Python 原型驗證的是編譯器設計，不代表 C 版本能得到的效能。
 
+[examples/minilang-c](examples/minilang-c/README.zh-TW.md) 對應階段 5：用 C11 寫成的 VM 與精確標記清除 GC，載入 minilang-vm 寫出的位元組碼檔。階段 2 與階段 4 的測試不改一行在它上面通過，10,000 個隨機程式在 6 種設定（含每次配置都回收）下共 60,048 次執行與樹走訪完全一致，AddressSanitizer 與 UBSan 沒有任何報告。同一台機器上，它執行同一份位元組碼，在呼叫與迴圈上比 Python VM 快 81 至 154 倍，字串拼接快 8 至 12 倍；拼接約 30% 的時間在回收器，幾乎全花在清除。minilang 裡每個會呼叫自己的區域函式都是參考循環，這是「不能只靠參考計數」最具體的理由。要與樹走訪一致，C VM 還得重現 Python 的整數、浮點數格式與 `int()`/`float()` 的解析，這些 minilang 從未規定。
+
 ## 本研究的邊界
 
 - 歷史事實來自 Python 官方 FAQ 與 Guido van Rossum 的 Python History 部落格、Lua 作者的 HOPL III 論文與 JUCS 論文、Chromium 官方部落格、Node.js 與 V8 官方文件。Node.js 首次展示的日期只有 Wikipedia 等二手來源，文中已標示。
 - 平台層級、版本與工具鏈要求以查閱日當天的官方文件為準；PEP 與 BUILDING.md 會隨版本更新，實作前請重查。
 - 階段規模是依公開教材與參考實作的行數推估，不是量測結果。
-- Python、Node.js、V8、Lua 的效能數字是各專案自行公布，未重測；minilang-vm 的加速倍數是本研究在單一機器上的量測，條件見該範例說明。
+- Python、Node.js、V8、Lua 的效能數字是各專案自行公布，未重測；minilang-vm 與 minilang-c 的加速倍數是本研究在單一機器上的量測，條件見各範例說明。
 - 本研究沒有宣稱哪種語言設計較優；表格是對照，不是排名。
