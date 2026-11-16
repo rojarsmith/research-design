@@ -1,6 +1,6 @@
 # minilang-spec：語言規格與一致性測試
 
-[回主報告](../../README.zh-TW.md)｜[路線圖](../../research/03-design-your-own-dynamic-language.zh-TW.md)｜[階段 2：minilang](../minilang/README.zh-TW.md)｜[階段 4：minilang-vm](../minilang-vm/README.zh-TW.md)｜[階段 5：minilang-c](../minilang-c/README.zh-TW.md)｜[English README](README.md)
+[回主報告](../../README.zh-TW.md)｜[路線圖](../../research/03-design-your-own-dynamic-language.zh-TW.md)｜[階段 2：minilang](../minilang/README.zh-TW.md)｜[階段 4：minilang-vm](../minilang-vm/README.zh-TW.md)｜[階段 5：minilang-c](../minilang-c/README.zh-TW.md)｜[階段 6：minilang-embed](../minilang-embed/README.zh-TW.md)｜[English README](README.md)
 
 這是研究路線圖「階段 8：規格與流程」的可執行範例。minilang 目前有三個引擎，階段 4 與 5 發現它們之所以一致，有一部分是因為照抄樹走訪碰巧的行為。本目錄把語言寫下來，並拿文字檢查引擎：
 
@@ -9,7 +9,7 @@
 - `conformance.py`：在每個引擎上執行每個測試，印出各引擎、各節的矩陣。只用 Python 標準函式庫。
 - `test_conformance.py`：測試這套測試本身，包括在樹走訪中刻意植入偏差，確認測試抓得到。
 
-本目錄不修改任何引擎。違反明定規則的引擎列在下方作為回報，不在這裡修正。已在 Windows 11、Python 3.14.6 與 WinLibs GCC 16.2.0 上驗證。
+本目錄不修改任何引擎。違反明定規則的引擎列在下方作為回報，不在這裡修正；這套測試找到的唯一失敗已在階段 6 修正（發現 1）。已在 Windows 11、Python 3.14.6 與 WinLibs GCC 16.2.0 上驗證。
 
 ## 執行
 
@@ -67,7 +67,7 @@ print(
 
 ## 結果
 
-`python3 conformance.py --all-configs`，2026-11-16，Windows 11 Pro、Python 3.14.6、以 WinLibs GCC 16.2.0 `-O2` 建置的 `mlvm`：
+`python3 conformance.py --all-configs`，2026-11-16，Windows 11 Pro、Python 3.14.6、以 WinLibs GCC 16.2.0 `-O2` 從目前的 `mlvm.c`（含階段 6 的巢狀修正）建置的 `mlvm`：
 
 | 規格節 | 測試數 | tree | vm | vm --opt | c | c --opt | c --gc-stress |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -83,11 +83,11 @@ print(
 | 11 標準函式 | 20 | 20 | 20 | 20 | 20 | 20 | 20 |
 | 12 數值 | 17 | 17 | 17 | 17 | 17 | 17 | 17 |
 | 13 字串與文字 | 6 | 6 | 6 | 6 | 6 | 6 | 6 |
-| 14 限制 | 14 | 14 | 14 | 14 | **13** | **13** | **13** |
-| **Core 層級** | 160 | 160 | 160 | 160 | **159** | **159** | **159** |
-| **Full 層級** | 201 | 201 | 201 | 201 | **200** | **200** | **200** |
+| 14 限制 | 14 | 14 | 14 | 14 | 14 | 14 | 14 |
+| **Core 層級** | 160 | 160 | 160 | 160 | 160 | 160 | 160 |
+| **Full 層級** | 201 | 201 | 201 | 201 | 201 | 201 | 201 |
 
-201 個測試中，明定 168 個、舊有行為 23 個、實作定義 10 個。`--cli --all-configs` 得到相同的矩陣與相同的失敗。Python 引擎在同一行程中各約 0.2 秒；透過命令列、8 個行程平行時，每個引擎 5 到 14 秒。
+201 個測試中，明定 168 個、舊有行為 23 個、實作定義 10 個。`--cli --all-configs` 得到相同的矩陣，兩種方式都印出「Failures: none」，加上 `--strict` 也都沒有文件偏移。撰寫這套測試時，階段 5 的 `mlvm` 在每種 C 設定下第 14 節通過 13 個、Core 層級 159 個、Full 層級 200 個，唯一的失敗是 `14-limits/nesting-functions-200`（發現 1）。Python 引擎在同一行程中各約 0.2 秒；透過命令列、8 個行程平行時，每個引擎 5 到 14 秒。
 
 實作定義的測試，依執行器的輸出整理（D 編號見規格附錄 A）：
 
@@ -100,11 +100,11 @@ print(
 | `14-limits/cyclic-list-text`（D49） | fatal RecursionError | fatal RecursionError | fatal RecursionError |
 | `14-limits/cyclic-list-text-in-function`（D49） | ok，印出 `caught: stack overflow (host recursion limit)` | **fatal RecursionError** | ok，同 tree |
 | `14-limits/nesting-list-text-1100`（D48） | ok | ok | fatal RecursionError |
-| `14-limits/nesting-functions-200`（D48） | ok | ok | **crash** |
+| `14-limits/nesting-functions-200`（D48） | ok | ok | ok（階段 6 修正前是 **crash**） |
 
 ## 發現
 
-1. **C VM 錯誤：64 層巢狀函式字面值會讓行程當掉。** `mlvm.c` 的 `load_code()` 每多一層函式巢狀就推入一個暫時根，而暫時根堆疊只能放 64 個（`TEMP_ROOTS`）；載入器自己的上限 `MAX_CODE_NESTING`（訊息 `functions nested too deeply`）是 200，永遠到不了。VM 以 `mlvm: fatal: temp root stack overflow` 與結束碼 70 停止；serve 模式下同一行程的其他工作階段全部遺失。63 層可以運作。規格 14.3 節要求超過實作上限時要有診斷過的錯誤，所以這在每種 C 設定下都讓 `14-limits/nesting-functions-200` 失敗，也是整套測試唯一的失敗。本目錄不修正。
+1. **C VM 錯誤，由這套測試發現、於階段 6 修正：64 層巢狀函式字面值曾讓行程當掉。** `mlvm.c` 的 `load_code()` 每多一層函式巢狀就推入一個暫時根，而暫時根堆疊原本固定只能放 64 個（`TEMP_ROOTS`）；載入器自己的上限 `MAX_CODE_NESTING`（訊息 `functions nested too deeply`）是 200，永遠到不了。VM 以 `mlvm: fatal: temp root stack overflow` 與結束碼 70 停止；serve 模式下同一行程的其他工作階段全部遺失。63 層可以運作。規格 14.3 節要求超過實作上限時要有診斷過的錯誤，所以這在每種 C 設定下都讓 `14-limits/nesting-functions-200` 失敗，也是整套測試唯一的失敗。[minilang-embed](../minilang-embed/README.zh-TW.md#兩項修正) 讓暫時根堆疊可以成長（用 `malloc`，所以推入根永遠不會觸發回收）：63、64 與 200 層現在都能載入並執行，201 層是載入錯誤 `functions nested too deeply`，整套測試在每個引擎上都通過。還有一個缺口在測試範圍之外：透過 Python API，201 層的載入錯誤是致命的 `LoadError`；透過命令列，`minilang_c.py` 卻直接沿用 `mlvm` 拒絕檔案時的結束碼 2，而規格 15.3 節要求致命錯誤的結束碼是 1。沒有測試超過 200 層，所以發布關卡看不到這一點。
 2. **在函式內印出包含自己的列表時，引擎不一致。** 樹走訪在最內層呼叫處把宿主的 `RecursionError` 轉成可捕捉的 `stack overflow (host recursion limit)`，C VM 照抄；Python VM 沒有可以轉換的宿主呼叫，錯誤以致命的 `RecursionError` 逸出。minilang-vm 的說明寫這個訊息只會來自極深的巢狀運算式；印出循環或很深的列表是第二種、也很普通的觸發方式。規格把它定為實作定義（D49），提案 P5 會改成印出 `[...]`。
 3. **共用前端遇到某些數字會當掉。** 數字字面值中的 `²`（以及其他 Python `str.isdigit()` 為真但 `int()` 失敗的字元）會讓詞法分析器丟出 Python 的 `ValueError`，4,301 位數的整數字面值也一樣。三個引擎共用詞法分析器，所以三者都如此；提案 P7 會把兩者都變成語法錯誤或一般字面值。
 4. **整除的整數除法不精確。** `9007199254740993 / 1` 是 `9007199254740992`，因為商先捨入成浮點數再轉回整數。三個引擎一致（C VM 移植了 CPython 的捨入），所以對引擎而言不是錯誤；規格把它保留為舊有行為，提案 P9 會讓整除商精確。這是撰寫規格 12.3 節時發現的，既有測試都沒有涵蓋。
@@ -145,7 +145,7 @@ print(
 ## 下一步
 
 1. 負責人決定 P1 到 P9；採納的提案依規格附錄 D.2 進行，成為 minilang 2.0，若 VM 指令的意義改變，MLBC 也要升主版本。
-2. 修正 C VM 的巢狀當掉問題（發現 1），讓發布關卡通過；之後把 `--strict` 納入關卡。
+2. 已完成：階段 6 修正了 C VM 的巢狀當掉問題（發現 1），規格附錄 D.3 的發布關卡現在通過，包括 `--strict`。尚待處理：`mlvm` 拒絕檔案時，`minilang_c.py` 應以結束碼 1 而不是 2 結束，讓 201 層巢狀函式字面值透過命令列也符合規格 15.3 節；之後就能把超過 C VM 上限的測試加入這套測試。
 3. 不讀引擎、只依 SPEC 寫一個 Core 實作，檢驗手冊是否足夠。
 
 詳細決策見[路線圖](../../research/03-design-your-own-dynamic-language.zh-TW.md)。

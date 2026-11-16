@@ -8,4 +8,4 @@ print(fn() { return fn() { return fn() { return fn() { return fn() { return fn()
 # output: unchecked
 # doc-tree: ok
 # doc-vm: ok
-# doc-c: fatal
+# doc-c: ok

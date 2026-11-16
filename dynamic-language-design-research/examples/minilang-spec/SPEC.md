@@ -482,6 +482,8 @@ Converting an integer to text works up to 4,300 decimal digits (the sign does no
 
 Every implementation must accept at least 100 nested parenthesized expressions, 100 nested blocks, 63 nested function literals, and convert to text a list nested 200 deep. Beyond its own limits an implementation must report a syntax error or a fatal error; it must not crash or stop other runs (Core). The actual limits are implementation-defined (Annex B), as is the outcome of converting to text a list that contains itself (a fatal error at the top level in all reference engines; inside a function, Annex B).
 
+Implementation note: 63 was the C VM's limit when this minimum was chosen (64 levels crashed it). Since that was fixed, all three reference engines accept 200 nested function literals (Annex B); the 1.0 minimum stays 63.
+
 ## 15 Conformance
 
 ### 15.1 Levels
@@ -583,7 +585,7 @@ Measured with the suite on 2026-11-16 (Windows 11, Python 3.14.6, WinLibs GCC 16
 | `num()` of non-ASCII decimal digits (D34) | Accepted (`"٣"` is 3, full-width `"１２"` is 12) | Accepted | Rejected: `num() cannot convert '٣'` |
 | Characters escaped in `num()` messages | Python's Unicode database | Same | A fixed list (controls, spaces, format characters, surrogates, private use); rare code points may differ |
 | `clock()` (D37) | `time.time()` | Same | Wall-clock seconds since the Unix epoch |
-| Nested parentheses, blocks, function literals (D48) | Limited by Python's recursion limit, raised to 20,000 by the command line; 1,000 parentheses, 500 blocks and 250 function literals were run | Same parser; the compiler also recurses | Same front end; the C loader accepts 63 nested function literals and **crashes at 64** (see README) |
+| Nested parentheses, blocks, function literals (D48) | Limited by Python's recursion limit, raised to 20,000 by the command line; 1,000 parentheses, 500 blocks and 250 function literals were run | Same parser; the compiler also recurses | Same front end; the C loader accepts 200 nested function literals. 201 or more is the load error `functions nested too deeply`: a fatal `LoadError` through the Python API, but through the command line `mlvm`'s exit status 2, which does not meet section 15.3. Until its fix the C VM **crashed at 64** (see README, finding 1) |
 | Text of a nested list (D48) | Python stack: 1,100 levels printed | Same | 999 levels; 1,000 or more is a fatal `RecursionError` |
 | Text of a list that contains itself, outside a function (D49) | Fatal `RecursionError` | Same | Same |
 | The same inside a function, inside `try` (D49) | Catchable runtime error `stack overflow (host recursion limit)` at the call | **Fatal `RecursionError`** | Catchable, as tree |
@@ -630,4 +632,4 @@ A release of the language, or of any engine, requires:
 2. `--strict` also passes: every engine still behaves as Annex B documents, or Annex B is updated in the same change;
 3. each engine's own test suite passes.
 
-A failing test is resolved by fixing the engine, or by changing the rule through D.2; never by editing an expectation to match an engine. As of this document the gate is **not met**: the c engine crashes on 64 or more nested function literals (`14-limits/nesting-functions-200`), which is a bug in the C VM to fix, not a rule to change.
+A failing test is resolved by fixing the engine, or by changing the rule through D.2; never by editing an expectation to match an engine. When this document was first written the gate was **not met**: the c engine crashed on 64 or more nested function literals (`14-limits/nesting-functions-200`), which was a bug in the C VM to fix, not a rule to change. The C VM has since been fixed (README, finding 1) and Annex B updated to match. As of 2026-11-16 the gate is **met**: both commands of item 1 exit with status 0, `--strict` reports no documentation drift in either mode, and each engine's own test suite passes.

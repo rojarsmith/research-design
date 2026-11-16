@@ -1,6 +1,6 @@
 # minilang-spec: a specification and conformance suite
 
-[Back to the overview](../../README.md) | [Roadmap (zh-TW)](../../research/03-design-your-own-dynamic-language.zh-TW.md) | [Stage 2: minilang](../minilang/README.md) | [Stage 4: minilang-vm](../minilang-vm/README.md) | [Stage 5: minilang-c](../minilang-c/README.md) | [Traditional Chinese README](README.zh-TW.md)
+[Back to the overview](../../README.md) | [Roadmap (zh-TW)](../../research/03-design-your-own-dynamic-language.zh-TW.md) | [Stage 2: minilang](../minilang/README.md) | [Stage 4: minilang-vm](../minilang-vm/README.md) | [Stage 5: minilang-c](../minilang-c/README.md) | [Stage 6: minilang-embed](../minilang-embed/README.md) | [Traditional Chinese README](README.zh-TW.md)
 
 Runnable example for stage 8 of the research roadmap, specification and process. Three engines run minilang today, and stages 4 and 5 found that they agree partly by copying what the tree-walker happens to do. This folder writes the language down and checks the engines against the text:
 
@@ -9,7 +9,7 @@ Runnable example for stage 8 of the research roadmap, specification and process.
 - `conformance.py`: runs every test on every engine and prints a matrix per engine and section. Python standard library only.
 - `test_conformance.py`: tests of the suite itself, including deliberate deviations planted in the tree-walker that the suite must catch.
 
-Nothing here changes an engine. Engines that fail a specified rule are reported below, not fixed. Verified on Windows 11 with Python 3.14.6 and WinLibs GCC 16.2.0.
+Nothing here changes an engine. Engines that fail a specified rule are reported below, not fixed here; the one failure the suite found was fixed in stage 6 (finding 1). Verified on Windows 11 with Python 3.14.6 and WinLibs GCC 16.2.0.
 
 ## Running
 
@@ -67,7 +67,7 @@ Two ways to run an engine:
 
 ## Results
 
-`python3 conformance.py --all-configs`, 2026-11-16, Windows 11 Pro, Python 3.14.6, `mlvm` built with WinLibs GCC 16.2.0 `-O2`:
+`python3 conformance.py --all-configs`, 2026-11-16, Windows 11 Pro, Python 3.14.6, `mlvm` built from the current `mlvm.c` (with stage 6's nesting fix) with WinLibs GCC 16.2.0 `-O2`:
 
 | SPEC section | Tests | tree | vm | vm --opt | c | c --opt | c --gc-stress |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -83,11 +83,11 @@ Two ways to run an engine:
 | 11 Standard functions | 20 | 20 | 20 | 20 | 20 | 20 | 20 |
 | 12 Numbers | 17 | 17 | 17 | 17 | 17 | 17 | 17 |
 | 13 Strings and text | 6 | 6 | 6 | 6 | 6 | 6 | 6 |
-| 14 Limits | 14 | 14 | 14 | 14 | **13** | **13** | **13** |
-| **Core level** | 160 | 160 | 160 | 160 | **159** | **159** | **159** |
-| **Full level** | 201 | 201 | 201 | 201 | **200** | **200** | **200** |
+| 14 Limits | 14 | 14 | 14 | 14 | 14 | 14 | 14 |
+| **Core level** | 160 | 160 | 160 | 160 | 160 | 160 | 160 |
+| **Full level** | 201 | 201 | 201 | 201 | 201 | 201 | 201 |
 
-Of the 201 tests, 168 are specified, 23 legacy and 10 implementation-defined. `--cli --all-configs` gives the same matrix and the same failure. The Python engines take about 0.2 s each in-process; through the command lines each engine takes 5 to 14 s with 8 processes in parallel.
+Of the 201 tests, 168 are specified, 23 legacy and 10 implementation-defined. `--cli --all-configs` gives the same matrix, both modes report "Failures: none", and with `--strict` both also report no documentation drift. When the suite was written, the stage 5 `mlvm` passed 13 in section 14, 159 at Core and 200 at Full in every C configuration; the one failure was `14-limits/nesting-functions-200` (finding 1). The Python engines take about 0.2 s each in-process; through the command lines each engine takes 5 to 14 s with 8 processes in parallel.
 
 The implementation-defined tests, as printed by the runner (D numbers are SPEC Annex A):
 
@@ -100,11 +100,11 @@ The implementation-defined tests, as printed by the runner (D numbers are SPEC A
 | `14-limits/cyclic-list-text` (D49) | fatal RecursionError | fatal RecursionError | fatal RecursionError |
 | `14-limits/cyclic-list-text-in-function` (D49) | ok, prints `caught: stack overflow (host recursion limit)` | **fatal RecursionError** | ok, as tree |
 | `14-limits/nesting-list-text-1100` (D48) | ok | ok | fatal RecursionError |
-| `14-limits/nesting-functions-200` (D48) | ok | ok | **crash** |
+| `14-limits/nesting-functions-200` (D48) | ok | ok | ok (**crash** before stage 6's fix) |
 
 ## Findings
 
-1. **C VM bug: 64 nested function literals crash the process.** `load_code()` in `mlvm.c` pushes one temporary root per level of function nesting, and the temporary root stack holds 64 (`TEMP_ROOTS`), while the loader's own limit, `MAX_CODE_NESTING` with the message `functions nested too deeply`, is 200 and is never reached. The VM stops with `mlvm: fatal: temp root stack overflow` and exit status 70; in serve mode every other session in the process is lost. 63 levels work. SPEC 14.3 requires a diagnosed error beyond an implementation's limit, so this fails `14-limits/nesting-functions-200` in every C configuration and is the only failure in the suite. Not fixed here.
+1. **C VM bug, found by this suite and fixed in stage 6: 64 nested function literals crashed the process.** `load_code()` in `mlvm.c` pushes one temporary root per level of function nesting, and the temporary root stack held a fixed 64 (`TEMP_ROOTS`), while the loader's own limit, `MAX_CODE_NESTING` with the message `functions nested too deeply`, is 200 and was never reached. The VM stopped with `mlvm: fatal: temp root stack overflow` and exit status 70; in serve mode every other session in the process was lost. 63 levels worked. SPEC 14.3 requires a diagnosed error beyond an implementation's limit, so this failed `14-limits/nesting-functions-200` in every C configuration and was the only failure in the suite. [minilang-embed](../minilang-embed/README.md#two-fixes) made the temporary root stack grow (with `malloc`, so pushing a root never collects): 63, 64 and 200 levels now load and run, 201 is the load error `functions nested too deeply`, and the suite passes on every engine. One gap is left outside the suite: through the Python API the 201-level load error is a fatal `LoadError`, but through the command line `minilang_c.py` passes on `mlvm`'s exit status 2 for a rejected file, and SPEC 15.3 requires status 1 for a fatal error. No test goes past 200 levels, so the release gate does not see it.
 2. **The engines disagree when a list that contains itself is printed inside a function.** The tree-walker converts the host `RecursionError` into the catchable `stack overflow (host recursion limit)` at the innermost call, and the C VM copies that; the Python VM has no host call to convert at, so the error escapes as a fatal `RecursionError`. minilang-vm's README says that message can only come from extremely deeply nested expressions; printing a cyclic or very deep list is a second, ordinary way to reach it. The SPEC makes it implementation-defined (D49), and proposal P5 would print `[...]` instead.
 3. **The shared front end crashes on some digits.** `²` (and other characters for which Python's `str.isdigit()` is true but `int()` fails) in a number literal stops the lexer with a Python `ValueError`, and so does an integer literal of 4,301 digits. All three engines share the lexer, so all three do it; proposal P7 would make both syntax errors or ordinary literals.
 4. **Integer division is not exact for whole quotients.** `9007199254740993 / 1` is `9007199254740992`, because the quotient is rounded to a float before it is turned back into an integer. All three engines agree (the C VM ports CPython's rounding), so it is not a bug against the engines; it is kept as legacy and proposal P9 would make whole quotients exact. It was found while writing SPEC 12.3, not by any existing test.
@@ -145,7 +145,7 @@ SPEC Annex A lists 50 decisions. In short: lexical rules, values, equality, scop
 ## Next steps
 
 1. The owner decides P1 to P9; accepted proposals go through SPEC Annex D.2 and make minilang 2.0, with an MLBC major version where a VM instruction changes meaning.
-2. Fix the C VM's nesting crash (finding 1) so the release gate passes; then make `--strict` part of the gate.
+2. Done: stage 6 fixed the C VM's nesting crash (finding 1), and the release gate of SPEC Annex D.3 now passes, `--strict` included. Still open: `minilang_c.py` should exit with status 1, not 2, when `mlvm` rejects a file, so that 201 nested function literals also meet SPEC 15.3 through the command line; then a test past the C VM's limit can join the suite.
 3. Write a Core implementation from SPEC.md alone, without reading the engines, to test whether the manual is enough.
 
 Detailed decisions are in the [roadmap](../../research/03-design-your-own-dynamic-language.zh-TW.md) (Traditional Chinese).

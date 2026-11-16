@@ -17,6 +17,8 @@
 | [可執行範例 minilang](examples/minilang/README.zh-TW.md) | 單檔樹走訪直譯器，示範詞法、語法、閉包、例外與測試 |
 | [可執行範例 minilang-vm](examples/minilang-vm/README.zh-TW.md) | 同一門語言的階段 4：位元組碼編譯器與堆疊式 VM，沿用 minilang 前端、不改一行跑 minilang 的測試，並與樹走訪比較效能 |
 | [可執行範例 minilang-c](examples/minilang-c/README.zh-TW.md) | 階段 5：C11 寫成的 VM 與精確標記清除 GC，載入 minilang-vm 寫出的位元組碼檔；在每次配置都回收的模式下與樹走訪比對 10,000 個隨機程式全部一致，並補上階段 4 缺少的 C 版加速倍數 |
+| [可執行範例 minilang-embed](examples/minilang-embed/README.zh-TW.md) | 階段 6：在 minilang-c 的 VM 上加一層嵌入 API，以 scope 裡的 handle 當根、以狀態碼取代 `longjmp`、支援 minilang 與 C 互相重入呼叫，附範例宿主；也修掉兩種會讓載入的檔案結束整個行程的情況 |
+| [可執行範例 minilang-spec](examples/minilang-spec/README.zh-TW.md) | 階段 8：中英同內容的 minilang 1.0 參考手冊，記錄 50 項決策、九項變更提案與發布關卡，並附 201 個一致性測試，三個引擎在所有設定下全部通過 |
 | [來源與查證範圍](research/04-sources.zh-TW.md) | 官方文件、論文與本研究的證據邊界 |
 
 ## 問題一：Python 與 Node.js 是怎麼從 0 到有的
@@ -81,14 +83,18 @@
 - **並行模型**：先選單執行緒加事件迴圈或協程；多執行緒共享堆積是 Python 花了二十年才在 3.13 做出 free-threaded 實驗版的題目。
 - **嵌入或獨立**：Lua 從第一天就是嵌入式函式庫；Python 是獨立直譯器後來才補嵌入 API。這決定 API 形狀與全域狀態的處理。
 
-完整決策表、每階段的細節與常見陷阱見[研究三](research/03-design-your-own-dynamic-language.zh-TW.md)。可執行的最小範例在 [examples/minilang](examples/minilang/README.zh-TW.md)，用 Python 寫成的單檔樹走訪直譯器，含測試，對應階段 2；[examples/minilang-vm](examples/minilang-vm/README.zh-TW.md) 是同一門語言的位元組碼編譯器與 VM，對應階段 4。兩次量測中，它在 Python 3.14.6 上比樹走訪快 1.45 至 2.80 倍，開啟編譯器最佳化最多 3.19 倍，額外的增益幾乎都來自「指派陳述不產生 DUP 與 POP」這一項；加速來自省掉每個 AST 節點的 Python 函式呼叫與以例外實作的 `return`，不是分派變便宜（每道指令仍約 140 至 200 奈秒，由量測的計數與時間推算），所以 Python 原型驗證的是編譯器設計，不代表 C 版本能得到的效能。
+完整決策表、每階段的細節與常見陷阱見[研究三](research/03-design-your-own-dynamic-language.zh-TW.md)。可執行範例對應階段 2、4、5、6 與 8。最小的範例在 [examples/minilang](examples/minilang/README.zh-TW.md)，用 Python 寫成的單檔樹走訪直譯器，含測試，對應階段 2；[examples/minilang-vm](examples/minilang-vm/README.zh-TW.md) 是同一門語言的位元組碼編譯器與 VM，對應階段 4。兩次量測中，它在 Python 3.14.6 上比樹走訪快 1.45 至 2.80 倍，開啟編譯器最佳化最多 3.19 倍，額外的增益幾乎都來自「指派陳述不產生 DUP 與 POP」這一項；加速來自省掉每個 AST 節點的 Python 函式呼叫與以例外實作的 `return`，不是分派變便宜（每道指令仍約 140 至 200 奈秒，由量測的計數與時間推算），所以 Python 原型驗證的是編譯器設計，不代表 C 版本能得到的效能。
 
 [examples/minilang-c](examples/minilang-c/README.zh-TW.md) 對應階段 5：用 C11 寫成的 VM 與精確標記清除 GC，載入 minilang-vm 寫出的位元組碼檔。階段 2 與階段 4 的測試不改一行在它上面通過，10,000 個隨機程式在 6 種設定（含每次配置都回收）下共 60,048 次執行與樹走訪完全一致，AddressSanitizer 與 UBSan 沒有任何報告。同一台機器上，它執行同一份位元組碼，在呼叫與迴圈上比 Python VM 快 81 至 154 倍，字串拼接快 8 至 12 倍；拼接約 30% 的時間在回收器，幾乎全花在清除。minilang 裡每個會呼叫自己的區域函式都是參考循環，這是「不能只靠參考計數」最具體的理由。要與樹走訪一致，C VM 還得重現 Python 的整數、浮點數格式與 `int()`/`float()` 的解析，這些 minilang 從未規定。
+
+[examples/minilang-embed](examples/minilang-embed/README.zh-TW.md) 對應階段 6，驗收時不分叉 VM：`minilang.c` 直接引入階段 5 的 `mlvm.c`，命令列的建置、輸出與測試都不變。C 宿主只透過 scope 裡的 handle 持有 minilang 的值，handle 就是回收器的根，世代計數讓過期的 handle 在使用當下就變成明確的錯誤；錯誤以狀態碼跨越邊界、不用 `longjmp`，minilang 與 C 可以互相重入呼叫。C 測試的 2,526 項檢查在一般模式、每次配置都回收與 4 KiB 堆積下全部通過，在 Linux 以 AddressSanitizer、UBSan 與 LeakSanitizer 建置也都通過。一次植入一個、共 5 個錯誤，壓力模式抓到 4 個；第 5 個是指向已搬家的值堆疊的舊指標，只有 AddressSanitizer 看得出。跨一次邊界約等於二到五次 minilang 呼叫。嵌入也代表任何檔案都不能結束整個行程，所以範例修掉兩種會這樣的情況，其中之一就是階段 8 的測試找到的 64 層巢狀當掉。
+
+[examples/minilang-spec](examples/minilang-spec/README.zh-TW.md) 對應階段 8。中英同內容的參考手冊描述 minilang 1.0 這門語言而不是某個引擎：引擎中 50 項實作定義或出人意料的行為，包括階段 4 與 5 被迫照抄的，逐項定為明定、實作定義，或以九項變更提案之一保留為舊有行為；Core 與 Full 兩個一致性層級訂出新實作必須符合的範圍。仿 Test262 的 201 個一致性測試、只用標準函式庫的執行器與發布關卡檢查三個引擎；階段 6 修正後，三者在全部六種設定下、透過 Python API 與命令列都是 201/201，也都符合文件記載的實作定義行為，所以關卡已通過。這套測試找到 C VM 的巢狀當掉，以及在函式內印出包含自己的列表時引擎間的分歧；撰寫手冊時還發現整數整除會先捨入成浮點數（`9007199254740993 / 1` 得 `9007199254740992`），因為三個引擎都這樣做，既有的差異測試抓不到。三個引擎並不是三個獨立實作，因為詞法與語法分析器只有一份；階段 8 本身的驗收，也就是只依手冊寫出的實作，還沒有做。
 
 ## 本研究的邊界
 
 - 歷史事實來自 Python 官方 FAQ 與 Guido van Rossum 的 Python History 部落格、Lua 作者的 HOPL III 論文與 JUCS 論文、Chromium 官方部落格、Node.js 與 V8 官方文件。Node.js 首次展示的日期只有 Wikipedia 等二手來源，文中已標示。
 - 平台層級、版本與工具鏈要求以查閱日當天的官方文件為準；PEP 與 BUILDING.md 會隨版本更新，實作前請重查。
-- 階段規模是依公開教材與參考實作的行數推估，不是量測結果。
-- Python、Node.js、V8、Lua 的效能數字是各專案自行公布，未重測；minilang-vm 與 minilang-c 的加速倍數是本研究在單一機器上的量測，條件見各範例說明。
+- 階段規模是依公開教材與參考實作的行數推估，不是量測結果；實際執行並測試過的只有 minilang、minilang-vm、minilang-c、minilang-embed 與 minilang-spec 五個範例。
+- Python、Node.js、V8、Lua 的效能數字是各專案自行公布，未重測；minilang-vm 與 minilang-c 的量測數字、minilang-embed 的跨邊界成本與 minilang-spec 的一致性測試結果，是本研究在單一機器上的量測，條件見各範例說明。
 - 本研究沒有宣稱哪種語言設計較優；表格是對照，不是排名。
