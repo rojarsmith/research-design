@@ -1,0 +1,107 @@
+# 頻寬：位元與位元組差 8 倍，尖峰與平均分開（研究報告第 3.3 節）。
+# 題目與數字是為本練習包寫的練習假設，不是任何公司的真實數據。
+
+== drill video-egress
+title: 影音平台的尖峰出口頻寬
+kind: YouTube
+scenario: 一個影音平台在晚間尖峰有大量同時觀看的使用者。影片透過 CDN 傳送。
+given: viewers = 1000萬 人 | 尖峰同時觀看人數
+given: bitrate = 3 Mbps | 平均串流位元率
+given: hit = 95% | CDN 快取命中率
+ask: egress | bandwidth | byterate | 送給觀眾的總頻寬
+ask: origin | bandwidth | byterate | 打回源站（CDN 沒命中）的頻寬
+answer: egress = 30 Tbps
+answer: origin = 1.5 Tbps
+assume: 題目給的是尖峰同時觀看人數，不再乘尖峰倍數
+calc: mult | 總頻寬：1,000 萬 × 3 Mbps = 30 Tbps（約 3.75 TB/s）
+calc: mix | 回源：30 Tbps × (1 − 95%) = 1.5 Tbps
+design: 30 Tbps 不可能從自己的資料中心送出，一定要 CDN；源站只負責 5% 的未命中，也還有 1.5 Tbps。
+design: CDN 命中率從 95% 掉到 90%，回源頻寬就加倍：命中率是要監控的關鍵指標。
+
+== drill video-upload
+title: 影片上傳的入口頻寬與原始檔儲存
+kind: YouTube
+type: bandwidth
+scenario: 影音平台每天收到大量上傳。估算上傳的平均頻寬，以及原始檔每天占用的空間。
+given: videos = 100萬 支/天 | 每天上傳的影片
+given: length = 18 min | 影片平均長度
+given: bitrate = 10 Mbps | 上傳原始檔的平均位元率
+ask: ingress | bandwidth | byterate | 平均上傳頻寬
+ask: daily | storage | bytes | 原始檔每天的儲存量（不含轉檔後的版本）
+answer: ingress = 100 Gbps
+answer: daily = 1.4 PB
+assume: 一天約 10⁵ 秒
+calc: unit | 影片秒數：100 萬 × 18 分 × 60 ≈ 10.8 億秒/天
+calc: mult | 每天位元：10.8 億秒 × 10 Mbps ≈ 1.1×10¹⁶ bit
+calc: unit | 平均頻寬：1.1×10¹⁶ bit ÷ 10⁵ 秒 ≈ 1.1×10¹¹ bps ≈ 100 Gbps
+calc: unit | 每天儲存：1.1×10¹⁶ bit ÷ 8 ≈ 1.4 PB
+design: 100 Gbps 的上傳要分散到多個區域的上傳端點，用分段上傳直接寫進物件儲存（presigned URL）。
+design: 轉檔成多種解析度後，總儲存還會再多幾倍；原始檔可以移到冷儲存。
+
+== drill photo-cdn-egress
+title: 圖片 CDN 的尖峰頻寬
+kind: Instagram
+scenario: 照片分享 App 的動態消息會載入縮圖。估算 CDN 在尖峰時要送出的頻寬。
+given: views = 30億 次/天 | 每天的圖片瀏覽次數
+given: size = 150 KB | 每次送出的縮圖平均大小
+ask: peak | bandwidth | byterate | 尖峰的 CDN 出口頻寬
+answer: peak = 110 Gbps
+assume: 一天約 10⁵ 秒
+assume: 尖峰取平均的 3 倍
+calc: size | 每天：30 億 × 150 KB = 450 TB
+calc: unit | 平均：450 TB ÷ 10⁵ 秒 = 4.5 GB/s
+calc: peak | 尖峰：4.5 GB/s × 3 = 13.5 GB/s
+calc: unit | 換成位元：13.5 GB/s × 8 ≈ 110 Gbps
+design: 110 Gbps 要靠 CDN 的多個節點分攤，源站只看得到未命中的那一小部分。
+design: 頻寬題常見的 8 倍誤差來自位元和位元組：寫單位時分清楚 GB/s 和 Gbps。
+
+== drill cross-region-replication
+title: 跨區域複寫的頻寬
+kind: Distributed Cache、資料庫複寫
+scenario: 主資料庫在一個區域，另外兩個區域各有一份唯讀副本，所有寫入都要非同步複寫過去。
+given: writes = 5萬 次/s | 尖峰寫入
+given: size = 1 KB | 每次寫入的資料（含複寫格式的額外負擔）
+given: regions = 2 倍 | 要複寫過去的區域數
+ask: bw | bandwidth | byterate | 從主區域送出的複寫頻寬
+answer: bw = 100 MB/s
+assume: 每個副本區域各收一份完整的寫入串流
+calc: size | 一份串流：5 萬 × 1 KB = 50 MB/s
+calc: copy | 兩個區域：50 MB/s × 2 = 100 MB/s（800 Mbps）
+design: 800 Mbps 的跨區域流量會持續產生傳輸費用，這筆成本要放進設計取捨。
+design: 副本的延遲取決於這條鏈路：尖峰時要留頻寬餘裕，否則複寫延遲會一直累積。
+
+== drill log-shipping
+title: 集中式日誌的頻寬與儲存
+kind: Metrics Monitoring、日誌平台
+type: bandwidth
+scenario: 公司把所有伺服器的應用程式日誌送到集中式的日誌平台，保留 14 天供查詢。
+given: servers = 2萬 台 | 伺服器數
+given: per = 5 GB/天 | 每台每天產生的日誌
+given: keep = 14 天 | 保留天數
+given: copies = 2 倍 | 日誌平台的副本數
+ask: ingest | bandwidth | byterate | 平均寫入頻寬
+ask: total | storage | bytes | 穩定狀態下的總儲存量（含副本）
+answer: ingest = 1 GB/s
+answer: total = 2.8 PB
+assume: 一天約 10⁵ 秒；日誌不壓縮
+calc: mult | 每天：2 萬 × 5 GB = 100 TB
+calc: unit | 平均頻寬：100 TB ÷ 10⁵ 秒 = 1 GB/s（8 Gbps）
+calc: mult | 14 天：100 TB × 14 = 1.4 PB
+calc: copy | 含 2 份副本：1.4 PB × 2 = 2.8 PB
+design: 2.8 PB 的熱資料很貴。常見做法是最近 1 到 2 天放可搜尋的熱儲存，其餘移到物件儲存，或在送出前取樣、減少 debug 日誌。
+design: 1 GB/s 的寫入要先經過佇列（例如 Kafka）緩衝，避免日誌平台變慢時拖累應用程式。
+
+== drill dropbox-sync
+title: 檔案同步的上傳頻寬
+kind: Dropbox
+scenario: 檔案同步服務只上傳檔案裡改變的區塊。估算使用者上傳到伺服器的平均頻寬。
+given: dau = 1億 人 | 日活躍使用者
+given: changes = 10 次 | 每人每天修改的檔案數
+given: delta = 0.5 MB | 每次修改實際上傳的變更區塊
+ask: upload | bandwidth | byterate | 平均上傳頻寬
+answer: upload = 5 GB/s
+assume: 一天約 10⁵ 秒
+calc: mult | 每天上傳：1 億 × 10 × 0.5 MB = 500 TB
+calc: unit | 平均：500 TB ÷ 10⁵ 秒 = 5 GB/s（40 Gbps）
+design: 只傳變更區塊是關鍵：如果每次都上傳整個檔案（假設平均 5 MB），就是 10 倍，50 GB/s。
+design: 上傳直接寫進物件儲存（presigned URL），應用伺服器只處理 metadata。

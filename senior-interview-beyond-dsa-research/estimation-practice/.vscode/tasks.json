@@ -1,0 +1,116 @@
+{
+    // 每個工作都呼叫 build/est.exe。第一次執行時會自動用 g++ 建置 est.exe（約 10 秒）。
+    // 練習是互動的：工作開始後，直接在下方的終端機面板輸入假設和答案。
+    "version": "2.0.0",
+    "options": { "cwd": "${workspaceFolder}" },
+    "tasks": [
+        {
+            "label": "est: 確認工具已建置",
+            "type": "shell",
+            "command": "test -x build/est.exe || g++ -std=c++20 -O2 -o build/est.exe tools/est.cpp",
+            "windows": {
+                "command": "if not exist build\\est.exe g++ -std=c++20 -O2 -static -o build/est.exe tools/est.cpp",
+                "options": { "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } }
+            },
+            "presentation": { "reveal": "silent", "showReuseMessage": false },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "est: 重新建置工具",
+            "type": "process",
+            "command": "g++",
+            "args": ["-std=c++20", "-O2", "-o", "build/est.exe", "tools/est.cpp"],
+            "windows": { "args": ["-std=c++20", "-O2", "-static", "-o", "build/est.exe", "tools/est.cpp"] },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "est: 今日練習",
+            "detail": "到期複習、還沒做的新題與串連",
+            "type": "process",
+            "command": "${workspaceFolder}/build/est.exe",
+            "args": ["today"],
+            "dependsOn": "est: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "est: 交錯練習 3 題",
+            "detail": "先到期、再新題，題型不連續重複；每題 5 分鐘。快捷鍵 Ctrl+Shift+B",
+            "type": "process",
+            "command": "${workspaceFolder}/build/est.exe",
+            "args": ["drill", "-n", "3"],
+            "dependsOn": "est: 確認工具已建置",
+            "group": { "kind": "build", "isDefault": true },
+            "presentation": { "clear": true, "focus": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "est: 練指定的題目或題型",
+            "detail": "輸入題目 id（例如 shortlink-qps）或題型（qps、storage、bandwidth、memory、servers、fanout、time）",
+            "type": "process",
+            "command": "${workspaceFolder}/build/est.exe",
+            "args": ["drill", "${input:target}"],
+            "dependsOn": "est: 確認工具已建置",
+            "presentation": { "clear": true, "focus": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "est: 到期複習",
+            "detail": "只做今天到期的題目（最多 5 題）",
+            "type": "process",
+            "command": "${workspaceFolder}/build/est.exe",
+            "args": ["review"],
+            "dependsOn": "est: 確認工具已建置",
+            "presentation": { "clear": true, "focus": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "est: 串連練習",
+            "detail": "一個系統的數字依序算完：使用者 → QPS → 儲存 → 頻寬 → 伺服器（約 15 分鐘）",
+            "type": "process",
+            "command": "${workspaceFolder}/build/est.exe",
+            "args": ["chain"],
+            "dependsOn": "est: 確認工具已建置",
+            "presentation": { "clear": true, "focus": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "est: 偏差統計",
+            "detail": "各題型的命中率，以及系統性高估或低估",
+            "type": "process",
+            "command": "${workspaceFolder}/build/est.exe",
+            "args": ["stats"],
+            "dependsOn": "est: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "est: 題庫清單",
+            "detail": "每題的題型與複習狀態",
+            "type": "process",
+            "command": "${workspaceFolder}/build/est.exe",
+            "args": ["list"],
+            "dependsOn": "est: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        },
+        {
+            "label": "est: 自我測試",
+            "detail": "單位解析測試與題庫檢查",
+            "type": "process",
+            "command": "${workspaceFolder}/build/est.exe",
+            "args": ["--self-test"],
+            "dependsOn": "est: 確認工具已建置",
+            "presentation": { "clear": true, "showReuseMessage": false },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "target",
+            "type": "promptString",
+            "description": "題目 id 或題型（qps、storage、bandwidth、memory、servers、fanout、time）",
+            "default": "qps"
+        }
+    ]
+}

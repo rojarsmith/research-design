@@ -1,0 +1,157 @@
+# QPS：平均與尖峰、讀與寫分開算（研究報告第 3.3 節）。
+# 題目與數字是為本練習包寫的練習假設，不是任何公司的真實數據。格式見 README 的「題庫格式」。
+
+== drill shortlink-qps
+title: 短網址的讀寫 QPS
+kind: Bitly（短網址）
+scenario: 你在設計一個短網址服務。使用者貼上長網址、拿到短網址；別人點短網址時轉址到原網址。
+given: links = 500萬 個/天 | 每天新建的短網址
+given: reads = 100 倍 | 讀寫比：每建立 1 個短網址，平均被點 100 次
+ask: write_avg | qps | rate | 平均寫入 QPS
+ask: read_peak | qps | rate | 尖峰讀取 QPS
+answer: write_avg = 50 QPS
+answer: read_peak = 15k QPS
+assume: 一天約 10⁵ 秒（第 3.3 節；精確值 86,400）
+assume: 尖峰取平均的 3 倍（第 3.3 節：2 到 3 倍）
+calc: unit | 寫入：500 萬 ÷ 10⁵ 秒 = 50 QPS
+calc: mix | 讀取平均：50 × 100 = 5,000 QPS
+calc: peak | 尖峰讀取：5,000 × 3 = 15k QPS
+design: 寫入 50 QPS，一台資料庫綽綽有餘，不需要為寫入分片。
+design: 讀取 15k QPS，而且讀遠多於寫：在資料庫前面放快取（cache-aside），熱門短網址幾乎都從快取回應。
+
+== drill feed-evening-peak
+title: 動態消息的晚間尖峰
+kind: FB News Feed、Instagram
+scenario: 一個社群 App 的首頁是動態消息。產品數據顯示，晚上 8 點到 11 點這 3 個小時，占了全天動態消息請求的 40%。
+given: dau = 5000萬 人 | 日活躍使用者
+given: opens = 10 次 | 每人每天打開動態消息的次數（每次 1 個 API 請求）
+given: share = 40% | 晚間 3 小時占全天請求的比例
+ask: avg | qps | rate | 全天平均的動態消息 QPS
+ask: evening | qps | rate | 晚間 3 小時的平均 QPS
+answer: avg = 5k QPS
+answer: evening = 20k QPS
+assume: 一天約 10⁵ 秒；3 小時約 10⁴ 秒（精確值 10,800）
+assume: 晚間的量用題目給的 40% 算，不再套 2 到 3 倍的經驗值
+calc: mult | 每天請求：5,000 萬 × 10 = 5 億
+calc: unit | 平均：5 億 ÷ 10⁵ 秒 = 5k QPS
+calc: mix | 晚間 3 小時的請求：5 億 × 40% = 2 億
+calc: peak | 晚間平均：2 億 ÷ 10⁴ 秒 = 20k QPS（全天平均的 4 倍）
+design: 有實際流量分布時，用分布算尖峰比套 2 到 3 倍準。這裡是 4 倍，容量要照 20k 規劃。
+design: 這 3 小時裡最忙的那幾分鐘還會更高：20k 是規劃的下限，不是上限。
+
+== drill chat-send-qps
+title: 聊天訊息的寫入 QPS
+kind: WhatsApp
+scenario: 一個全球性的聊天 App。估算伺服器尖峰時每秒要接收多少則訊息。尖峰倍數請自己決定並說明理由。
+given: dau = 2億 人 | 日活躍使用者
+given: msgs = 40 則 | 每人每天送出的訊息
+ask: peak | qps | rate | 尖峰的訊息寫入 QPS
+answer: peak = 160k QPS
+assume: 一天約 10⁵ 秒
+assume: 使用者分散在各時區，流量比單一地區平均，尖峰取平均的 2 倍
+calc: mult | 每天訊息：2 億 × 40 = 80 億
+calc: unit | 平均：80 億 ÷ 10⁵ 秒 = 80k QPS
+calc: peak | 尖峰：80k × 2 = 160k QPS
+design: 160k 寫入 QPS 超出單一資料庫主節點的合理範圍，訊息儲存要依對話 id 分片。
+design: 取 3 倍是 240k，跟參考差 1.5 倍，仍在容許範圍內。尖峰取 2 倍還是 3 倍，要說得出理由。
+
+== drill driver-location-qps
+title: 司機位置回報
+kind: Uber
+scenario: 叫車平台的司機 App 在上線期間定時回報 GPS 位置。後來為了省電，改成每 20 秒送一次請求、一次帶 5 個點。
+given: online = 100萬 人 | 尖峰時同時在線的司機
+given: every = 4 s | 原本多久回報一次位置
+given: batch = 20 s | 改版後多久送一次請求（一次帶 5 個點）
+ask: points | qps | rate | 尖峰每秒寫入的位置點數
+ask: requests | qps | rate | 改版後尖峰每秒的請求數
+answer: points = 250k /s
+answer: requests = 50k /s
+assume: 題目給的就是尖峰在線人數，不用再乘尖峰倍數
+calc: unit | 位置點：100 萬 ÷ 4 秒 = 250k /s
+calc: mix | 改版後的請求：100 萬 ÷ 20 秒 = 50k /s；每秒的位置點數不變，還是 250k
+design: 批次送出把請求數降成 1/5，但寫入的資料量不變：接收端處理請求變輕，儲存端的寫入量沒有變。
+design: 「請求數」和「紀錄數」要分開講，就像讀和寫的 QPS 要分開算。
+
+== drill flash-sale-qps
+title: 限時搶購開賣的前 10 秒
+kind: Flash Sale、Ticketmaster
+scenario: 一場限量 1 萬件的限時搶購。開賣前已經有大量使用者停在商品頁，開賣後的前 10 秒內幾乎都會按下「購買」。
+given: waiting = 100萬 人 | 開賣時停在商品頁的使用者
+given: window = 10 s | 大部分人按下購買的時間範圍
+given: tries = 2 次 | 每人平均送出的購買請求（按了沒反應會再按）
+ask: buy | qps | rate | 前 10 秒的購買請求 QPS
+answer: buy = 200k QPS
+assume: 請求平均分散在 10 秒內（實際上前 1 到 2 秒更集中）
+calc: mult | 購買請求：100 萬 × 2 = 200 萬
+calc: unit | 200 萬 ÷ 10 秒 = 200k QPS
+design: 只有 1 萬件可賣，卻有 200k QPS 打進來：99% 以上的請求注定失敗，要在進資料庫之前就擋下（虛擬排隊、預先放在 Redis 的庫存）。
+design: 這個數字跟全天平均無關。突發流量用「人數 ÷ 時間窗」算，不能用每日量除以 10⁵。
+
+== drill price-tracker-crawl
+title: 價格追蹤的抓取頻率
+kind: Price Tracking Service
+scenario: 一個價格追蹤服務定期重新抓取每個商品頁，偵測降價。
+given: products = 5000萬 個 | 追蹤中的商品
+given: period = 6 h | 每個商品多久重新抓一次
+ask: fetch | qps | rate | 平均每秒要抓幾個商品頁
+answer: fetch = 2.5k /s
+assume: 6 小時約 2×10⁴ 秒（精確值 21,600）
+assume: 抓取平均排程，不集中在某個時段
+calc: unit | 6 小時 ≈ 2×10⁴ 秒
+calc: unit | 5,000 萬 ÷ 2×10⁴ 秒 = 2.5k /s
+design: 2.5k /s 對抓取 worker 不難，但對單一電商網站可能太多：要依網域限速，並讓熱門商品抓得比冷門的勤。
+design: 抓取頻率是這個系統的成本旋鈕：改成每小時抓一次就是 6 倍。
+
+== drill search-read-write
+title: 貼文搜尋的讀與寫
+kind: FB Post Search
+scenario: 一個社群平台要做貼文的全文搜尋。新貼文要寫進搜尋索引，使用者則會搜尋貼文。
+given: dau = 3億 人 | 日活躍使用者
+given: searchers = 5% | 每天會搜尋的使用者比例
+given: searches = 3 次 | 會搜尋的人平均每天搜尋次數
+given: posts = 5億 則/天 | 每天新增的貼文
+ask: search_peak | qps | rate | 尖峰搜尋 QPS
+ask: index_avg | qps | rate | 平均索引寫入 QPS
+answer: search_peak = 1.4k QPS
+answer: index_avg = 5k QPS
+assume: 一天約 10⁵ 秒
+assume: 搜尋的尖峰取平均的 3 倍
+calc: mult | 每天搜尋：3 億 × 5% × 3 = 4,500 萬
+calc: unit | 搜尋平均：4,500 萬 ÷ 10⁵ 秒 = 450 QPS
+calc: peak | 搜尋尖峰：450 × 3 ≈ 1.4k QPS
+calc: unit | 索引寫入：5 億 ÷ 10⁵ 秒 = 5k QPS
+design: 這個系統寫比讀多：索引寫入是搜尋尖峰的 3 倍以上。設計重點在索引的寫入管線（CDC、批次寫入），不是讀取快取。
+design: 先把讀和寫分開算，才看得出瓶頸在哪一邊（第 3.3 節）。
+
+== drill chess-moves
+title: 線上棋局的落子速率
+kind: Online Chess
+scenario: 一個線上下棋平台。估算尖峰時每秒要處理多少步棋。
+given: games = 50萬 個 | 尖峰時同時進行的棋局
+given: interval = 10 s | 一局棋平均多久走一步（兩人輪流合計）
+ask: moves | qps | rate | 尖峰每秒的落子數
+answer: moves = 50k /s
+assume: 題目給的是尖峰同時棋局數，不再乘尖峰倍數
+calc: unit | 50 萬 ÷ 10 秒 = 50k /s
+design: 每步棋都要驗證、寫入棋譜、推給對手和觀戰者：50k /s 的寫入依棋局 id 分片，同一局的狀態放在同一台。
+
+== drill rate-limiter-redis
+title: 限流計數器的 Redis 負載
+kind: Rate Limiter
+type: qps
+scenario: API 閘道在每個請求上檢查 3 條限流規則（每個使用者、每個 IP、每個 API key），計數器放在 Redis，每條規則每個請求做 1 次 INCR。
+given: peak = 30萬 req/s | 閘道的尖峰請求
+given: rules = 3 倍 | 每個請求檢查的規則數（每條 1 次 INCR）
+given: node = 10萬 ops/s | 壓測：一個 Redis 節點的上限（題目假設）
+given: target = 50% | 平常只讓節點跑到上限的比例
+ask: ops | qps | rate | 尖峰的 Redis 操作數
+ask: nodes | servers | count | 需要幾個 Redis 節點（不含副本）
+answer: ops = 900k ops/s
+answer: nodes = 18 nodes
+assume: 規則之間沒有共用計數器
+assume: 計數器依 key 雜湊，平均分散到各節點
+calc: fan | Redis 操作：30 萬 × 3 = 900k ops/s
+calc: cap | 每個節點只用一半：10 萬 × 50% = 5 萬 ops/s
+calc: cap | 節點數：900k ÷ 5 萬 = 18 nodes
+design: 18 個節點的叢集可以接受；如果節點數大到難管理，可以在閘道本機先累計、批次同步，犧牲一點準確度。
+design: 「Redis 單機上限」不要背數字。題目給的是壓測結果；面試時也要說出你假設的單機容量。

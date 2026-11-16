@@ -1,0 +1,66 @@
+# 時間與延遲：可用性的停機預算、延遲表的數量級（研究報告第 3.3 節）。
+# 延遲數字取自報告第 3.3 節的表（Jeff Dean 2010，經 ByteByteGo），只用來比較數量級。
+
+== drill downtime-budget
+title: 99.95% 可用性的停機預算
+kind: 通用（SLA）
+scenario: 你的服務承諾每月 99.95% 的可用性。估算一個月可以停機多久。
+given: sla = 99.95% | 每月可用性目標
+given: month = 30 天 | 一個月
+ask: budget | time | time | 每月允許的停機時間
+answer: budget = 22 min
+assume: 第 3.3 節的表：99.9% 每月 43.8 分，99.99% 每月 4.38 分；99.95% 落在兩者之間
+calc: mix | 不可用的比例：1 − 99.95% = 0.05%
+calc: unit | 一個月：30 × 86,400 ≈ 260 萬秒
+calc: mult | 0.05% × 260 萬秒 ≈ 1,300 秒 ≈ 22 min
+design: 22 分鐘大約是一次嚴重事故的長度：一個月出一次大事故就用完了，所以部署要能快速回滾。
+design: 如果每次部署會造成 30 秒的錯誤，一個月最多容許約 40 次這樣的部署。
+
+== drill memory-vs-disk-scan
+title: 掃描 10 GB：記憶體與磁碟
+kind: 通用（延遲數量級）
+scenario: 一個報表要循序掃描 10 GB 的資料。比較資料在記憶體、和在傳統硬碟時，各要多久。
+given: data = 10 GB | 要掃描的資料
+ask: mem | time | time | 從記憶體循序讀完的時間
+ask: disk | time | time | 從磁碟循序讀完的時間
+answer: mem = 2.5 s
+answer: disk = 5 min
+assume: 第 3.3 節的延遲表（Jeff Dean 2010，經 ByteByteGo）：記憶體循序讀 1 MB 約 250 µs，磁碟循序讀 1 MB 約 30 ms
+assume: 這些是 2010 年的數量級，只用來比較（第 8 節）
+calc: unit | 10 GB = 1 萬 MB
+calc: mult | 記憶體：1 萬 × 250 µs = 2.5 s
+calc: mult | 磁碟：1 萬 × 30 ms = 300 秒 = 5 min
+design: 差了 100 倍以上：互動式查詢的資料要放記憶體或 SSD，傳統硬碟只適合批次作業。
+design: 現代 SSD 比表裡的硬碟快很多；面試時要說出你用的是哪一代的數字。
+
+== drill cross-region-calls
+title: 跨洲的串行呼叫
+kind: 通用（延遲數量級）
+scenario: 一個 API 要依序呼叫另一個服務 6 次（每次都要用上一次的結果）。那個服務部署在另一個洲的資料中心。
+given: calls = 6 次 | 依序呼叫的次數
+ask: serial | time | time | 依序呼叫的總網路延遲（跨洲）
+ask: same_dc | time | time | 如果那個服務在同一個資料中心
+answer: serial = 0.9 s
+answer: same_dc = 3 ms
+assume: 第 3.3 節的延遲表：加州到荷蘭來回約 150 ms，同資料中心來回約 500 µs
+assume: 只算網路來回，不算服務本身的處理時間
+calc: mult | 跨洲：6 × 150 ms = 900 ms = 0.9 s
+calc: mult | 同資料中心：6 × 500 µs = 3 ms
+design: 0.9 秒光是網路就超過大多數 API 的延遲目標：把服務搬到同一區域、把 6 次合成 1 次批次呼叫，或改成平行呼叫。
+design: 跨洲來回比同資料中心貴 300 倍：設計時先問「這個呼叫會不會跨區域」。
+
+== drill replica-rebuild
+title: 重建一個儲存節點要多久
+kind: Distributed Cache、分散式儲存
+scenario: 一個儲存節點的磁碟壞了，要從其他節點把它的資料複製到新節點。為了不影響線上流量，重建只能用一半的網路頻寬。
+given: data = 4 TB | 要重建的資料量
+given: link = 10 Gbps | 新節點的網路頻寬
+given: share = 50% | 重建可以用的比例
+ask: time | time | time | 重建需要的時間
+answer: time = 1.8 h
+assume: 來源節點夠多，瓶頸在新節點的網路，不在磁碟
+calc: cap | 可用頻寬：10 Gbps × 50% = 5 Gbps
+calc: unit | 換成位元組：5 Gbps ÷ 8 ≈ 625 MB/s
+calc: mult | 時間：4 TB ÷ 625 MB/s = 6,400 秒 ≈ 1.8 h
+design: 重建的這 1.8 小時內，這份資料少一個副本：只有 2 份副本時，這段時間再壞一台就會遺失資料，這是選 3 份副本的理由之一。
+design: 讓多個節點各重建一小部分（而不是整顆複製到同一台新節點），可以把時間縮短很多。

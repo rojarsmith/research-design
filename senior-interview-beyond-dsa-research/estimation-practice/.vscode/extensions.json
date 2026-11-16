@@ -1,0 +1,4 @@
+{
+    // 練習本身只需要 g++。這個擴充只在你想修改 tools/est.cpp 時有用。
+    "recommendations": ["ms-vscode.cpptools"]
+}
