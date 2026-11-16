@@ -1,0 +1,147 @@
+Recorded 2026-11-16 in an Ubuntu 24.04.5 container (image oslab:24.04) under
+rootless podman 5.8.3 on Windows 11 Pro build 26300, run in a copy of this
+folder. The podman machine runs on WSL 2: the Linux kernel is
+6.6.87.2-microsoft-standard-WSL2, with 16 online CPUs. This is not the WSL 2
+Ubuntu distribution that the course tells you to use, and these are VM
+numbers. gcc 13.3.0, glibc 2.39, strace 6.8. strace ran with the
+container's default capabilities (no --cap-add).
+The session follows. Its "$" and "==" lines were printed by the script that
+ran the commands. One script line that ran no command was removed, and the
+note in parentheses was added; nothing else was edited.
+
+== uname / glibc / gcc
+6.6.87.2-microsoft-standard-WSL2
+ldd (Ubuntu GLIBC 2.39-0ubuntu8.12) 2.39
+gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+16
+== vdso clocksource
+tsc
+$ gcc -O2 -Wall -o boundary linux/boundary.c
+(gcc exit 0)
+$ ./boundary   (stdout is a file here)
+1. One write, three ways
+  write() through the libc wrapper
+  syscall(SYS_write, ...) through libc
+  a raw syscall instruction
+
+2. Bad pointers
+  write(1, kernel address, 8) = -1, errno 14 (Bad address)
+  write(1, NULL, 8)           = -1, errno 14 (Bad address)
+
+3. Cost per call
+  plain function call                     1.6 ns/call  (1000000 calls)
+  syscall(SYS_getpid)                    99.1 ns/call  (1000000 calls)
+  clock_gettime(CLOCK_MONOTONIC)         13.9 ns/call  (1000000 calls)
+$ ./boundary | cat   (stdout is a pipe)
+1. One write, three ways
+  write() through the libc wrapper
+  syscall(SYS_write, ...) through libc
+  a raw syscall instruction
+
+2. Bad pointers
+  write(1, kernel address, 8) = -1, errno 14 (Bad address)
+  write(1, NULL, 8)           = -1, errno 14 (Bad address)
+
+3. Cost per call
+  plain function call                     1.5 ns/call  (1000000 calls)
+  syscall(SYS_getpid)                    96.3 ns/call  (1000000 calls)
+  clock_gettime(CLOCK_MONOTONIC)         15.5 ns/call  (1000000 calls)
+$ strace -o boundary.trace ./boundary > /dev/null
+(strace exit 0)
+== boundary.trace without the getpid lines
+execve("./boundary", ["./boundary"], 0x7ffd85b26bd0 /* 8 vars */) = 0
+brk(NULL)                               = 0x65489dff0000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x79e642992000
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=12504, ...}) = 0
+mmap(NULL, 12504, PROT_READ, MAP_PRIVATE, 3, 0) = 0x79e64298e000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+pread64(3, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 784, 64) = 784
+fstat(3, {st_mode=S_IFREG|0755, st_size=2129424, ...}) = 0
+pread64(3, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 784, 64) = 784
+mmap(NULL, 2174352, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x79e64277b000
+mmap(0x79e6427a3000, 1609728, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x28000) = 0x79e6427a3000
+mmap(0x79e64292c000, 323584, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1b1000) = 0x79e64292c000
+mmap(0x79e64297b000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1ff000) = 0x79e64297b000
+mmap(0x79e642981000, 52624, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x79e642981000
+close(3)                                = 0
+mmap(NULL, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x79e642778000
+arch_prctl(ARCH_SET_FS, 0x79e642778740) = 0
+set_tid_address(0x79e642778a10)         = 23
+set_robust_list(0x79e642778a20, 24)     = 0
+rseq(0x79e642779060, 0x20, 0, 0x53053053) = 0
+mprotect(0x79e64297b000, 16384, PROT_READ) = 0
+mprotect(0x65486326a000, 4096, PROT_READ) = 0
+mprotect(0x79e6429ca000, 8192, PROT_READ) = 0
+prlimit64(0, RLIMIT_STACK, NULL, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+munmap(0x79e64298e000, 12504)           = 0
+write(1, "1. One write, three ways", 24) = 24
+write(1, "\n", 1)                       = 1
+write(1, "  write() through the libc wrapp"..., 35) = 35
+write(1, "  syscall(SYS_write, ...) throug"..., 39) = 39
+write(1, "  a raw syscall instruction\n", 28) = 28
+write(1, "\n2. Bad pointers", 16)       = 16
+write(1, "\n", 1)                       = 1
+write(1, 0xffff800000000000, 8)         = -1 EFAULT (Bad address)
+write(1, "  write(1, kernel address, 8) = "..., 59) = 59
+write(1, NULL, 8)                       = 8
+write(1, "  write(1, NULL, 8)           = "..., 53) = 53
+write(1, "\n3. Cost per call", 17)      = 17
+write(1, "\n", 1)                       = 1
+write(1, "  plain function call           "..., 71) = 71
+write(1, "  syscall(SYS_getpid)           "..., 71) = 71
+write(1, "  clock_gettime(CLOCK_MONOTONIC)"..., 71) = 71
+exit_group(0)                           = ?
++++ exited with 0 +++
+== getpid lines in boundary.trace: 1000000
+== clock_gettime lines in boundary.trace: 1
+(That line is the write() of the text "clock_gettime(CLOCK_MONOTONIC)". The trace has no clock_gettime system call.)
+$ strace -c ./boundary > /dev/null
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+100.00    8.541311           8   1000000           getpid
+  0.00    0.000011           0        16         1 write
+  0.00    0.000000           0         1           read
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         2           fstat
+  0.00    0.000000           0         8           mmap
+  0.00    0.000000           0         3           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         2           pread64
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+  0.00    0.000000           0         1           set_tid_address
+  0.00    0.000000           0         2           openat
+  0.00    0.000000           0         1           set_robust_list
+  0.00    0.000000           0         1           prlimit64
+  0.00    0.000000           0         1           rseq
+------ ----------- ----------- --------- --------- ----------------
+100.00    8.541322           8   1000045         2 total
+$ strace -o /dev/null ./boundary   (program output kept, to time part 3 under strace)
+1. One write, three ways
+  write() through the libc wrapper
+  syscall(SYS_write, ...) through libc
+  a raw syscall instruction
+
+2. Bad pointers
+  write(1, kernel address, 8) = -1, errno 14 (Bad address)
+  write(1, NULL, 8)           = -1, errno 14 (Bad address)
+
+3. Cost per call
+  plain function call                     1.6 ns/call  (1000000 calls)
+  syscall(SYS_getpid)                 88462.5 ns/call  (1000000 calls)
+  clock_gettime(CLOCK_MONOTONIC)         13.7 ns/call  (1000000 calls)
+$ ./boundary   (again, for the spread)
+3. Cost per call
+  plain function call                     1.5 ns/call  (1000000 calls)
+  syscall(SYS_getpid)                   126.6 ns/call  (1000000 calls)
+  clock_gettime(CLOCK_MONOTONIC)         16.2 ns/call  (1000000 calls)
+3. Cost per call
+  plain function call                     1.5 ns/call  (1000000 calls)
+  syscall(SYS_getpid)                   101.5 ns/call  (1000000 calls)
+  clock_gettime(CLOCK_MONOTONIC)         14.6 ns/call  (1000000 calls)

@@ -1,0 +1,423 @@
+Recorded 2026-11-16 in an Ubuntu 24.04.5 container (image oslab:24.04) under
+rootless podman 5.8.3 on Windows 11 Pro build 26300. The podman machine runs
+on WSL 2 (kernel 6.6.87.2-microsoft-standard-WSL2). This is not the WSL 2
+Ubuntu distribution that the lab's setup step 1 installs.
+xv6-riscv master, commit fa2ddcb7ca87a77af579380a6eafd5aff163b44f
+(2026-11-05, "usertests: bound the zero-length pipe read regression test"),
+copied to /tmp/x inside the container and built there as root (uid 0, so
+GDBPORT is 25000).
+GDB was driven by batch scripts (gdb-multiarch -q -batch -x <script>) against
+"make CPUS=n qemu-gdb" running in the background of the same container.
+Batch GDB does not echo commands, so the "(gdb) ..." lines below are the
+script's commands, put in front of the output they produced. Lines marked
+[...] were cut, and notes in parentheses were added; nothing else was
+edited. Carriage returns from the QEMU console were removed.
+
+==== Setup step 3: versions
+
+$ dpkg-query -W qemu-system-misc gdb-multiarch gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu gcc-13-riscv64-linux-gnu
+binutils-riscv64-linux-gnu 2.42-4ubuntu2.10
+gcc-13-riscv64-linux-gnu 13.3.0-6ubuntu2~24.04.1cross1
+gcc-riscv64-linux-gnu 4:13.2.0-7ubuntu1
+gdb-multiarch 15.1-1ubuntu1~24.04.1
+qemu-system-misc 1:8.2.2+ds-0ubuntu1.18
+$ qemu-system-riscv64 --version
+QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)
+$ riscv64-linux-gnu-gcc --version
+riscv64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+$ riscv64-linux-gnu-ld --version
+GNU ld (GNU Binutils for Ubuntu) 2.42
+$ gdb-multiarch --version
+GNU gdb (Ubuntu 15.1-1ubuntu1~24.04.1) 15.1
+
+Building the kernel prints one linker warning, every time:
+riscv64-linux-gnu-ld: warning: kernel/kernel has a LOAD segment with RWX permissions
+
+==== Setup step 5: gdb-multiarch before the safe-path line was added
+
+warning: File "/tmp/x/.gdbinit" auto-loading has been declined by your `auto-load safe-path' set to "$debugdir:$datadir/auto-load".
+To enable execution of this file add
+	add-auto-load-safe-path /tmp/x/.gdbinit
+line to your configuration file "/root/.config/gdb/gdbinit".
+[...]
+No registers.
+
+After "echo add-auto-load-safe-path /tmp/x/.gdbinit >> ~/.gdbinit", GDB read
+.gdbinit and connected (every session below).
+
+==== A. make qemu (CPUS=3), ls, Ctrl-p, Ctrl-a x
+
+xv6 kernel is booting
+
+hart 2 starting
+hart 1 starting
+init: starting sh
+$ ls
+.              1 1 1024
+..             1 1 1024
+README         2 2 2441
+cat            2 3 35408
+[...]
+sync           2 22 33744
+console        3 23 0
+$
+1 sleep  init
+2 sleep  sh
+
+$ QEMU: Terminated
+
+Second boot, same build:
+
+xv6 kernel is booting
+
+hart 1 starting
+hart 2 starting
+init: starting sh
+
+make CPUS=1 qemu, then Ctrl-p:
+
+xv6 kernel is booting
+
+init: starting sh
+$
+1 sleep  init
+2 sleep  sh
+
+==== B. make -n qemu
+
+if [ "1" -eq 0 ]; then \
+	echo "ERROR: Need qemu version >= 7.2"; \
+	exit 1; \
+fi
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+==== B. Break it: -m 64M
+
+$ make qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 64M -smp 3 [...]
+
+xv6 kernel is booting
+
+(nothing more; stopped by a 20 s timeout)
+
+The same kernel under GDB (CPUS=1):
+(gdb) p/x $stvec
+$1 = 0x0
+(gdb) b *0x0
+(gdb) c
+Breakpoint 1, 0x0000000000000000 in ?? ()
+=> 0x0000000000000000:
+Cannot access memory at address 0x0
+(gdb) p $priv
+$2 = 1
+(gdb) p/x $pc
+$3 = 0x0
+(gdb) p/x $scause
+$4 = 0x7
+(gdb) p/x $sepc
+$5 = 0x80000ca6
+(gdb) info symbol $sepc
+memset + 18 in section .text
+(gdb) p/x $stval
+$6 = 0x84000000
+
+==== C. The first instructions (CPUS=1)
+
+0x0000000000001000 in ?? ()
+(gdb) p/x $pc
+$1 = 0x1000
+(gdb) x/6i $pc
+=> 0x1000:	auipc	t0,0x0
+   0x1004:	addi	a2,t0,40
+   0x1008:	csrr	a0,mhartid
+   0x100c:	ld	a1,32(t0)
+   0x1010:	ld	t0,24(t0)
+   0x1014:	jr	t0
+(gdb) p $priv
+$2 = 3
+(gdb) x/2gx 0x1018
+0x1018:	0x0000000080000000	0x0000000087e00000
+
+After each si, the script printed the registers ([...] GDB's own location lines cut):
+  pc=0x1004  t0=0x1000  a0=0x0  a1=0x0  a2=0x0
+  pc=0x1008  t0=0x1000  a0=0x0  a1=0x0  a2=0x1028
+  pc=0x100c  t0=0x1000  a0=0x0  a1=0x0  a2=0x1028
+  pc=0x1010  t0=0x1000  a0=0x0  a1=0x87e00000  a2=0x1028
+  pc=0x1014  t0=0x80000000  a0=0x0  a1=0x87e00000  a2=0x1028
+_entry () at kernel/entry.S:12
+12	        la sp, stack0
+  pc=0x80000000  t0=0x80000000  a0=0x0  a1=0x87e00000  a2=0x1028
+
+==== D. _entry to start()
+
+(gdb) x/8i 0x80000000
+=> 0x80000000 <_entry>:	auipc	sp,0xa
+   0x80000004 <_entry+4>:	ld	sp,472(sp)
+   0x80000008 <_entry+8>:	lui	a0,0x1
+   0x8000000a <_entry+10>:	csrr	a1,mhartid
+   0x8000000e <_entry+14>:	addi	a1,a1,1
+   0x80000010 <_entry+16>:	mul	a0,a0,a1
+   0x80000014 <_entry+20>:	add	sp,sp,a0
+   0x80000016 <_entry+22>:	jal	0x80000054 <start>
+
+After each si ([...] GDB's location lines cut):
+  pc=0x80000004  sp=0x8000a000  a0=0x0  a1=0x87e00000
+  pc=0x80000008  sp=0x8000a220  a0=0x0  a1=0x87e00000
+  pc=0x8000000a  sp=0x8000a220  a0=0x1000  a1=0x87e00000
+  pc=0x8000000e  sp=0x8000a220  a0=0x1000  a1=0x0
+  pc=0x80000010  sp=0x8000a220  a0=0x1000  a1=0x1
+  pc=0x80000014  sp=0x8000a220  a0=0x1000  a1=0x1
+  pc=0x80000016  sp=0x8000b220  a0=0x1000  a1=0x1
+start () at kernel/start.c:16
+  pc=0x80000054  sp=0x8000b220  a0=0x1000  a1=0x1
+(gdb) p/x $sp
+$3 = 0x8000b220
+(gdb) p &stack0
+$4 = (char (*)[32768]) 0x8000a220 <stack0>
+
+entry.S assembled by hand, as the Makefile's .S rule does, then with -fno-pie:
+$ riscv64-linux-gnu-gcc -march=rv64gc -g -c -o /tmp/e1.o kernel/entry.S
+$ riscv64-linux-gnu-objdump -d /tmp/e1.o | sed -n '/<_entry>:/,+3p'
+0000000000000000 <_entry>:
+   0:	00000117          	auipc	sp,0x0
+   4:	00013103          	ld	sp,0(sp) # 0 <_entry>
+   8:	6505                	lui	a0,0x1
+$ riscv64-linux-gnu-gcc -march=rv64gc -g -fno-pie -c -o /tmp/e2.o kernel/entry.S
+$ riscv64-linux-gnu-objdump -d /tmp/e2.o | sed -n '/<_entry>:/,+3p'
+0000000000000000 <_entry>:
+   0:	00000117          	auipc	sp,0x0
+   4:	00010113          	mv	sp,sp
+   8:	6505                	lui	a0,0x1
+(objdump shows the not yet relocated addi sp,sp,0 as mv sp,sp.)
+$ riscv64-linux-gnu-gcc -v 2>&1 | tr ' ' '\n' | grep -i default-pie
+--enable-default-pie
+
+Three harts (make qemu-gdb, CPUS=3):
+(gdb) b *0x80000000
+Breakpoint 1 at 0x80000000: file kernel/entry.S, line 12.
+(gdb) c
+Thread 1 hit Breakpoint 1, _entry () at kernel/entry.S:12
+(gdb) info threads
+  Id   Target Id                    Frame
+* 1    Thread 1.1 (CPU#0 [running]) _entry () at kernel/entry.S:12
+  2    Thread 1.2 (CPU#1 [running]) _entry () at kernel/entry.S:12
+  3    Thread 1.3 (CPU#2 [running]) _entry () at kernel/entry.S:12
+(gdb) c
+Thread 3 hit Breakpoint 1, _entry () at kernel/entry.S:12
+(gdb) c
+Thread 2 hit Breakpoint 1, _entry () at kernel/entry.S:12
+(gdb) b scheduler
+(gdb) c
+Thread 1 hit Breakpoint 2, scheduler () at kernel/proc.c:430
+(gdb) info breakpoints
+Num     Type           Disp Enb Address            What
+1       breakpoint     keep y   0x0000000080000000 kernel/entry.S:12
+	breakpoint already hit 3 times
+2       breakpoint     keep y   0x0000000080001d4c in scheduler at kernel/proc.c:430
+	breakpoint already hit 1 time
+
+==== E. start() and the mret
+
+(gdb) b start
+(gdb) c
+Breakpoint 1, start () at kernel/start.c:16
+(gdb) p/x $mstatus
+$1 = 0xa00000000
+(gdb) p/x $mideleg
+$5 = 0x1444
+
+After each next, GDB printed the next line to run, and the script printed the
+registers:
+18	  unsigned long x = r_mstatus();
+  pc=0x8000005c mstatus=0xa00000000 mepc=0x0 satp=0x0 medeleg=0x0 mideleg=0x1444 sie=0x0
+19	  x &= ~MSTATUS_MPP_MASK;
+  pc=0x80000060 mstatus=0xa00000000 mepc=0x0 satp=0x0 medeleg=0x0 mideleg=0x1444 sie=0x0
+30	  asm volatile("csrw mstatus, %0" : : "r"(x));
+  pc=0x80000068 mstatus=0xa00000000 mepc=0x0 satp=0x0 medeleg=0x0 mideleg=0x1444 sie=0x0
+25	  w_mepc((uint64)main);
+  pc=0x80000074 mstatus=0xa00000800 mepc=0x0 satp=0x0 medeleg=0x0 mideleg=0x1444 sie=0x0
+28	  w_satp(0);
+  pc=0x80000080 mstatus=0xa00000800 mepc=0x80000e2e satp=0x0 medeleg=0x0 mideleg=0x1444 sie=0x0
+31	  w_medeleg(0xffff);
+  pc=0x80000086 mstatus=0xa00000800 mepc=0x80000e2e satp=0x0 medeleg=0x0 mideleg=0x1444 sie=0x0
+32	  w_mideleg(0xffff);
+  pc=0x8000008e mstatus=0xa00000800 mepc=0x80000e2e satp=0x0 medeleg=0xbfff mideleg=0x1444 sie=0x0
+33	  w_sie(r_sie() | SIE_SEIE | SIE_STIE);
+  pc=0x80000092 mstatus=0xa00000800 mepc=0x80000e2e satp=0x0 medeleg=0xbfff mideleg=0x3666 sie=0x0
+112	  asm volatile("csrw sie, %0" : : "r"(x));
+  pc=0x80000096 mstatus=0xa00000800 mepc=0x80000e2e satp=0x0 medeleg=0xbfff mideleg=0x3666 sie=0x0
+37	  w_pmpaddr0(0x3fffffffffffffull);
+  pc=0x8000009e mstatus=0xa00000800 mepc=0x80000e2e satp=0x0 medeleg=0xbfff mideleg=0x3666 sie=0x220
+38	  w_pmpcfg0(0xf);
+[...]
+41	  w_menvcfg(r_menvcfg() | MENVCFG_ADUE);
+[...]
+44	  timerinit();
+[...]
+351	  asm volatile("mv tp, %0" : : "r"(x));
+  pc=0x800000c2 mstatus=0xa00000800 mepc=0x80000e2e satp=0x0 medeleg=0xbfff mideleg=0x3666 sie=0x220
+(gdb) p main
+$6 = {void ()} 0x80000e2e <main>
+MPP field = 1
+(gdb) p/x $pmpaddr0
+$7 = 0x3fffffffffffff
+(gdb) p/x $pmpcfg0
+$8 = 0xf
+(gdb) p/x $menvcfg
+$9 = 0xa000000000000000
+
+mret is at 0x800000c6 in kernel/kernel.asm.
+(gdb) b *0x800000c6
+(gdb) c
+Breakpoint 2, start () at kernel/start.c:51
+51	  asm volatile("mret");
+(gdb) x/i $pc
+=> 0x800000c6 <start+114>:	mret
+(gdb) p $priv
+$12 = 3
+(gdb) p/x $pc
+$13 = 0x800000c6
+(gdb) p/x $mepc
+$14 = 0x80000e2e
+(gdb) si
+(gdb) p $priv
+Cannot execute this command while the target is running.
+Use the "interrupt" command to stop the target
+and then try again.
+(The si did not stop; xv6 booted to "init: starting sh" and "$ ".)
+
+Second session, with a breakpoint on the mret's target first:
+(gdb) b *0x800000c6
+(gdb) c
+(gdb) p $priv
+$1 = 3
+(gdb) p/x $pc
+$2 = 0x800000c6
+(gdb) p/x $mepc
+$3 = 0x80000e2e
+(gdb) p/x $mstatus
+$4 = 0xa00000800
+(gdb) b *0x80000e2e
+(gdb) si
+Breakpoint 2, main () at kernel/main.c:12
+12	{
+(gdb) p $priv
+$5 = 1
+(gdb) p/x $pc
+$6 = 0x80000e2e
+(gdb) p/x $mstatus
+$7 = 0xa00000080
+(gdb) p/x $sstatus
+$8 = 0x200000000
+(gdb) si
+0x0000000080000e30	12	{
+(gdb) si
+0x0000000080000e32	12	{
+(plain si works on ordinary instructions)
+
+==== E. Break it: w_pmpaddr0 and w_pmpcfg0 commented out
+
+mret is now at 0x800000b8, main at 0x80000e20.
+Breakpoint 1, start () at kernel/start.c:51
+(gdb) x/i $pc
+=> 0x800000b8 <start+100>:	mret
+(gdb) p $priv
+$1 = 3
+(gdb) p/x $pc
+$2 = 0x800000b8
+(gdb) p/x $pmpcfg0
+$3 = 0x0
+(gdb) p/x $pmpaddr0
+$4 = 0x0
+(gdb) p/x $stvec
+$5 = 0x0
+(gdb) b *0x80000e20
+(gdb) b *0x0
+(gdb) si
+Breakpoint 3, 0x0000000000000000 in ?? ()
+=> 0x0000000000000000:
+Cannot access memory at address 0x0
+(gdb) p $priv
+$6 = 3
+(gdb) p/x $pc
+$7 = 0x0
+(gdb) p/x $scause
+$8 = 0x0
+(gdb) p/x $sepc
+$9 = 0x0
+(gdb) p/x $stval
+$10 = 0x0
+(gdb) p/x $mcause
+$11 = 0x1
+(gdb) p/x $mepc
+$12 = 0x800000b8
+
+==== F. main() and the first page table
+
+(gdb) b main
+Breakpoint 1 at 0x80000e36: file kernel/main.c, line 13.
+(gdb) c
+Breakpoint 1, main () at kernel/main.c:13
+13	  if (cpuid() == 0) {
+(gdb) bt
+#0  main () at kernel/main.c:13
+(gdb) p $priv
+$1 = 1
+(gdb) p/x $ra
+$2 = 0x800000be
+(gdb) info symbol $ra
+start + 106 in section .text
+(gdb) p/x $satp
+$3 = 0x0
+(gdb) x/2i $pc
+=> 0x80000e36 <main+8>:	jal	0x800018b6 <cpuid>
+   0x80000e3a <main+12>:	auipc	a4,0x9
+(gdb) b kvminithart
+(gdb) c
+Breakpoint 2, kvminithart () at kernel/vm.c:76
+(gdb) p/x $satp
+$4 = 0x0
+(gdb) finish
+main () at kernel/main.c:22
+22	    procinit();         // process table
+(gdb) p/x $satp
+$5 = 0x8000000000087fff
+(gdb) p/x kernel_pagetable
+$6 = 0x87fff000
+(gdb) x/2i $pc
+=> 0x80000ea8 <main+122>:	jal	0x80001800 <procinit>
+   0x80000eac <main+126>:	jal	0x80002420 <trapinit>
+(gdb) p $priv
+$7 = 1
+
+From the second E session above, after the si on mret (b main, c, then):
+(gdb) bt
+#0  main () at kernel/main.c:13
+(gdb) set backtrace past-main on
+(gdb) bt
+#0  main () at kernel/main.c:13
+#1  0x00000000800000be in start () at kernel/start.c:44
+#2  0x000000008000001a in _entry () at kernel/entry.S:19
+Backtrace stopped: frame did not save the PC
+
+==== G. The linker script, from the outside
+
+$ riscv64-linux-gnu-readelf -h kernel/kernel | grep Entry
+  Entry point address:               0x80000000
+$ riscv64-linux-gnu-objdump -h kernel/kernel
+Idx Name          Size      VMA               LMA               File off  Algn
+  0 .text         00007000  0000000080000000  0000000080000000  00001000  2**4
+  1 .rodata       00000848  0000000080007000  0000000080007000  00008000  2**3
+  2 .eh_frame     00002970  0000000080007848  0000000080007848  00008848  2**3
+  3 .data         00000018  000000008000a1b8  000000008000a1b8  0000b1b8  2**2
+  4 .got          00000010  000000008000a1d0  000000008000a1d0  0000b1d0  2**3
+  5 .got.plt      00000010  000000008000a1e0  000000008000a1e0  0000b1e0  2**3
+  6 .bss          00019338  000000008000a1f0  000000008000a1f0  0000b1f0  2**4
+[... flags lines and debug sections cut ...]
+$ grep -E ' (_entry|start|main|etext|_trampoline|end)$' kernel/kernel.sym
+0000000080023528 end
+0000000080007000 etext
+0000000080006000 _trampoline
+0000000080000000 _entry
+0000000080000e2e main
+0000000080000054 start

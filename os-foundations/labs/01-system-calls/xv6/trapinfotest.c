@@ -2,8 +2,9 @@
 // call you add to xv6. It needs kernel/trapinfo.h (below) and your
 // kernel changes; see the lab README for the five places to edit.
 //
-// NOT compiled or run on the machine where this lab was written (no RISC-V
-// toolchain or QEMU there).
+// Compiled and run on 2026-11-16 against xv6-riscv master (commit fa2ddcb),
+// with a trapinfo() written only for that check and not shipped here;
+// output in xv6/example-output.txt.
 //
 // kernel/trapinfo.h, shared by the kernel and this program:
 //

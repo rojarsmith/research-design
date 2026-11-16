@@ -1,10 +1,10 @@
 // badptr.c - Stage 01, exercise D: hand the xv6 kernel pointers it must
 // not trust, and compare with touching the same address from user code.
 //
-// NOT compiled or run on the machine where this lab was written (no RISC-V
-// toolchain or QEMU there). The addresses follow xv6-riscv as read on
-// 2026-11-15; check them against kernel/memlayout.h and kernel/riscv.h in
-// your tree before you trust the comments.
+// Compiled and run on 2026-11-16 against xv6-riscv master (commit fa2ddcb)
+// in an Ubuntu 24.04 container; output in xv6/example-output.txt. The
+// addresses follow that tree; check them against kernel/memlayout.h and
+// kernel/riscv.h in yours before you trust the comments.
 //
 // Install: copy to user/badptr.c, add $U/_badptr to UPROGS in the
 // Makefile, run make qemu, then type badptr at the xv6 shell.

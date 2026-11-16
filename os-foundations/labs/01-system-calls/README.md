@@ -2,10 +2,11 @@
 
 **English** | [繁體中文](README.zh-TW.md) | [Build plan, stage 01](../../SYLLABUS.md#01-system-calls-crossing-the-boundary)
 
-> **Draft for review, 2026-11-15. What was and was not executed:**
-> - **xv6 parts (exercises A–D): not executed.** The machine this lab was written on has no RISC-V toolchain or QEMU. Everything marked *expected* comes from reading [xv6-riscv](https://github.com/mit-pdos/xv6-riscv) master on 2026-11-15.
-> - **Linux part (exercise E): not executed.** That machine has no Linux distribution or Linux toolchain, so `linux/boundary.c` has not been compiled either.
-> - **Windows parts (exercises F and G): built and run** on that machine on 2026-11-15 with gcc 16.2 and gdb 18.1 from WinLibs. The full output is in [`windows/example-output.txt`](windows/example-output.txt), and the numbers quoted below come from it.
+> **Draft for review, 2026-11-15, xv6 and Linux parts run on 2026-11-16. What was and was not executed:**
+> - **xv6 parts (exercises A–D): run on 2026-11-16** in an Ubuntu 24.04 container under podman on Windows 11, whose podman machine runs on WSL 2. That is not the WSL 2 Ubuntu distribution the course tells you to use. The container had QEMU 8.2.2, riscv64-linux-gnu-gcc 13.3.0 and gdb-multiarch 15.1, and [xv6-riscv](https://github.com/mit-pdos/xv6-riscv) master at commit `fa2ddcb` (2026-11-05). Exercise C was checked against a `trapinfo` written only for that check; it is not in this folder. Output: [`xv6/example-output.txt`](xv6/example-output.txt).
+> - **Linux part (exercise E): run on 2026-11-16** in the same container: the podman machine's kernel 6.6.87.2-microsoft-standard-WSL2, glibc 2.39, gcc 13.3.0, and strace 6.8, which worked without extra container capabilities. The timings come from that VM. Output: [`linux/example-output.txt`](linux/example-output.txt).
+> - **Windows parts (exercises F and G): built and run** on the machine this lab was written on, on 2026-11-15, with gcc 16.2 and gdb 18.1 from WinLibs. The full output is in [`windows/example-output.txt`](windows/example-output.txt), and the numbers quoted below come from it.
+> - **Not run:** MIT's `xv6-labs-2025` repository and its `syscall` branch (the plain xv6-riscv tree was used), MIT's own syscall-lab assignments, and the console test under "Your turn" in exercise F.
 
 ## Goal
 
@@ -29,9 +30,11 @@ Names follow xv6-riscv master as read on 2026-11-15, which has `kfork`, `kexit`,
 
 | File | What it is | Status |
 | --- | --- | --- |
-| [`xv6/badptr.c`](xv6/badptr.c) | xv6 user program that passes four bad addresses to `write`, `pipe` and `fstat`, then loads from a kernel address itself | not compiled here |
-| [`xv6/trapinfotest.c`](xv6/trapinfotest.c) | test for the `trapinfo()` system call you add in exercise C | not compiled here |
-| [`linux/boundary.c`](linux/boundary.c) | one `write` three ways, bad pointers, and the cost of a call that stays in user mode vs one that enters the kernel | not compiled here |
+| [`xv6/badptr.c`](xv6/badptr.c) | xv6 user program that passes four bad addresses to `write`, `pipe` and `fstat`, then loads from a kernel address itself | run in xv6 (container) |
+| [`xv6/trapinfotest.c`](xv6/trapinfotest.c) | test for the `trapinfo()` system call you add in exercise C | run in xv6 against a reference `trapinfo` (container) |
+| [`xv6/example-output.txt`](xv6/example-output.txt) | recorded xv6 output: the stub, the GDB trace, `trapinfotest`, `badptr` and its break-it step | recorded 2026-11-16 |
+| [`linux/boundary.c`](linux/boundary.c) | one `write` three ways, bad pointers, and the cost of a call that stays in user mode vs one that enters the kernel | built and run on Linux (container) |
+| [`linux/example-output.txt`](linux/example-output.txt) | recorded output of `boundary` with and without `strace` | recorded 2026-11-16 |
 | [`windows/nt_boundary.c`](windows/nt_boundary.c) | the same questions against Win32 and ntdll | built and run here |
 | [`windows/win32_write.c`](windows/win32_write.c), [`find_nt_routine.gdb`](windows/find_nt_routine.gdb), [`user_mode_calls.gdb`](windows/user_mode_calls.gdb) | a two-call Win32 program and two GDB scripts that show which ntdll routine it reaches | built and run here |
 | [`windows/example-output.txt`](windows/example-output.txt) | recorded output of the Windows programs | recorded 2026-11-15 |
@@ -49,7 +52,7 @@ Names follow xv6-riscv master as read on 2026-11-15, which has `kfork`, `kexit`,
   ```
 
   Exercises A–D here work in that tree or in a plain xv6-riscv clone. MIT's [syscall lab](https://pdos.csail.mit.edu/6.1810/2025/labs/syscall.html) adds its own: a "Using gdb" section whose questions overlap exercise B, a sandbox system call, and an attack on memory that the lab build does not zero.
-- **Linux:** WSL 2 Ubuntu from Lab 00, plus `sudo apt-get install strace`.
+- **Linux:** WSL 2 Ubuntu from Lab 00, plus `sudo apt-get install strace`. (The run for this draft used the container described at the top, where `strace` worked without extra privileges.)
 - **Windows:** any x86-64 MinGW-w64 gcc. The WinLibs build also ships `gdb`.
 
 ## Read first
@@ -65,11 +68,16 @@ As in Lab 00, write each prediction in `NOTES.md` before you run anything.
 
 ### A. Read the stub (xv6)
 
-Run `make` once, then open the generated `user/usys.S`, or find `write:` in any `user/*.asm` file.
+Run `make fs.img` once, then open the generated `user/usys.S`, or find `write:` in any `user/*.asm` file. Plain `make` is not enough: it builds only `kernel/kernel`, so neither file exists yet.
 
 **Predict:** the value loaded into `a7`; which registers hold `fd`, `buf` and `n`; and where the return value is when `ret` executes.
 
-*Expected, from source:* `li a7, SYS_write`, where `SYS_write` is 16 in master's `kernel/syscall.h`, then `ecall`, then `ret`. The arguments are already in `a0`, `a1` and `a2` because the C calling convention put them there. The result comes back in `a0` because `syscall()` stores it in `p->trapframe->a0` and `userret` restores `a0` last. Linux on RISC-V uses the same convention: `ecall`, the number in `a7`, arguments in `a0`–`a5` ([syscall(2)](https://man7.org/linux/man-pages/man2/syscall.2.html)).
+<details>
+<summary>What the source says, and what the build showed. Read this only after you have predicted.</summary>
+
+`user/usys.S` has `li a7, SYS_write`, `ecall` and `ret`. In `user/cat.asm` they assembled to `li a7,16` (a 2-byte compressed instruction), a 4-byte `ecall` and `ret`; `SYS_write` is 16 in this tree's `kernel/syscall.h`. The arguments are already in `a0`, `a1` and `a2` because the C calling convention put them there. The result comes back in `a0` because `syscall()` stores it in `p->trapframe->a0` and `userret` restores `a0` last. Linux on RISC-V uses the same convention: `ecall`, the number in `a7`, arguments in `a0`–`a5` ([syscall(2)](https://man7.org/linux/man-pages/man2/syscall.2.html)).
+
+</details>
 
 ### B. Follow one `write` in GDB (xv6)
 
@@ -80,14 +88,14 @@ Run `make` once, then open the generated `user/usys.S`, or find `write:` in any 
 (gdb) c
 ```
 
-Type `echo hi` in the xv6 console if no write happens on its own. At the stop, **predict, then print:** `$priv`, `$satp`, `$sepc`, `$sp`, `$a0`, `$a1`, `$a2`, `$stvec`. Then:
+In the run recorded for this lab the first stop came on its own, from `init` printing `init: starting sh`. Type `echo hi` in the xv6 console if yours does not stop. At the stop, **predict, then print:** `$priv`, `$satp`, `$sepc`, `$sp`, `$a0`, `$a1`, `$a2`, `$stvec`. Then:
 
 ```
 (gdb) x/12i $pc           uservec; there are no symbols at this address, so compare with trampoline.S
 (gdb) si                  (repeat until after "csrw satp, t1"; print $satp and $sp each time)
 ```
 
-Look `$sepc` up in the `.asm` file of the program that made the call (for the shell, `user/sh.asm`). `x/2i $sepc` may also work, but GDB reads memory through QEMU with the CPU's current privilege, and supervisor mode is not normally allowed to read `PTE_U` pages. If GDB answers `Cannot access memory`, that is the reason.
+Look `$sepc` up in the `.asm` file of the program that made the call (`user/init.asm` for the first stop, `user/sh.asm` for the shell). `x/2i $sepc` answered `Cannot access memory at address 0x372` in the recorded run: GDB reads memory through QEMU with the CPU's current privilege, and supervisor mode is not normally allowed to read `PTE_U` pages.
 
 At `jalr t0` you enter `usertrap()`, and kernel symbols work again:
 
@@ -100,8 +108,9 @@ At `jalr t0` you enter `usertrap()`, and kernel symbols work again:
 (gdb) p/x p->trapframe->epc
 (gdb) b syscall
 (gdb) c
-(gdb) next
-(gdb) p num
+(gdb) next                (twice)
+(gdb) p num               printed <optimized out> here: the kernel is built with -O
+(gdb) p p->trapframe->a7
 ```
 
 For the way back, compute where `userret` runs. Its symbol has the kernel link address, but it executes in the trampoline page:
@@ -112,12 +121,27 @@ For the way back, compute where `userret` runs. Its symbol has the kernel link a
 (gdb) c
 (gdb) p/x $a0             the user satp that usertrap() returned
 (gdb) si                  (repeat to the sret; print $sepc and $sstatus just before it)
+(gdb) b *$sepc            needed: a plain si on sret did not stop in the recorded run
 (gdb) si
 (gdb) p $priv
 (gdb) p/x $pc
 ```
 
-*Expected, from source:* at `uservec`, `$priv` is 1 (supervisor), `$satp` still holds the user page table, `$sepc` points at the `ecall`, `$sp` is the user stack and `$stvec` equals `0x3ffffff000`. `csrw satp, t1` switches to the kernel page table, and the code keeps running because the trampoline page is mapped at the same virtual address in both. After `sret`, `$priv` is 0 and `$pc` is the instruction after the `ecall`.
+<details>
+<summary>What the source says, and what the run showed. Read this only after you have predicted and run it.</summary>
+
+From the source: at `uservec`, `$priv` is 1 (supervisor), `$satp` still holds the user page table, `$sepc` points at the `ecall`, `$sp` is the user stack and `$stvec` equals `0x3ffffff000`. `csrw satp, t1` switches to the kernel page table, and the code keeps running because the trampoline page is mapped at the same virtual address in both. After `sret`, `$priv` is 0 and `$pc` is the instruction after the `ecall`.
+
+Observed, at the first stop:
+
+- `$priv` 1, `$satp` `0x8000000000087f52` (init's page table), `$sepc` `0x372` (the `ecall` of the `write` stub in `user/init.asm`), `$sp` `0x3ed0`, `$stvec` `0x3ffffff000`. `a0` was 1, `a1` `0x3edf` and `a2` 1: xv6's user `printf` makes one `write` per character.
+- `ld sp, 8(a0)` set `sp` to `0x3fffffe000`, the top of this process's kernel stack, before `csrw satp, t1` set `satp` to `0x8000000000087fff`, the kernel page table that Lab 00 saw.
+- At `jalr t0`, `t0` held `usertrap`. In `usertrap`, `bt` showed `#1 0x0000003ffffff09c in ?? ()`: the trampoline address after the `jalr`, which is `userret`. `$sstatus` was `0x200000020`, so SPP was 0. `p->trapframe->epc` went from `0x372` to `0x376`.
+- In `syscall()`, `p num` printed `<optimized out>` both times, and `p p->trapframe->a7` printed 16.
+- `userret` ran at `0x3ffffff09c`, with `a0` = `0x8000000000087f52`. Just before the `sret`, `$sepc` was `0x376` and `$sstatus` `0x200000020` (SPP 0, SPIE 1). With `b *$sepc` set, `si` stopped at `0x376`, the `ret` after the `ecall`, with `$priv` 0.
+- Without that breakpoint, `si` on the `sret` did not stop. The next stop was the next `write`'s trap, at `uservec` with `$priv` 1.
+
+</details>
 
 ### C. Add a system call: `trapinfo` (xv6)
 
@@ -132,6 +156,13 @@ Add `int trapinfo(struct trapinfo *ti)`. It copies to user memory what the trap 
 Copy `trapinfotest.c` to `user/`, add `$U/_trapinfotest` to `UPROGS`, and run it.
 
 **Predict, before running:** Is `epc` the address of the `ecall` or of the instruction after it? Find both in `user/trapinfotest.asm`. Is `a0` equal to `&ti`? (The trap frame holds `a0` as `uservec` saved it, before `syscall()` writes the return value.) What is `ra`? Do the three bad destinations at the end all return -1?
+
+<details>
+<summary>Observed with a reference <code>trapinfo</code>. Read this only after you have predicted and run your own.</summary>
+
+`SYS_trapinfo` was 23 in this tree. `trapinfotest` printed `epc 0x0000000000000418`, `ra 0x0000000000000014`, `sp 0x0000000000003F80`, `a0 0x0000000000003F88` with `&ti is 0x0000000000003F88: same`, and `a7 23`. All three bad destinations returned -1. In `user/trapinfotest.asm`, `main` calls the stub with the `jal` at `0x10`, and the stub's `li a7,23` is at `0x412`, its `ecall` at `0x414` and its `ret` at `0x418`.
+
+</details>
 
 **Then decide what not to copy.** `struct trapframe` also holds `kernel_satp`, `kernel_sp` and `kernel_trap`. User code cannot read the trap frame page itself, because it is mapped without `PTE_U`. Write down what a process would learn if `trapinfo` copied those three fields out, and why kernels that randomize their own layout treat such a leak as a security bug.
 
@@ -149,7 +180,7 @@ Copy [`xv6/badptr.c`](xv6/badptr.c) to `user/`, add `$U/_badptr` to `UPROGS`, an
 Also predict part 4: what happens when user code loads from `KERNBASE` itself, what the kernel prints, and the child's exit status.
 
 <details>
-<summary>What the source suggests. Read this only after you have predicted and run it.</summary>
+<summary>What the source suggests, and what the run showed. Read this only after you have predicted and run it.</summary>
 
 From xv6-riscv master on 2026-11-15:
 
@@ -159,9 +190,18 @@ From xv6-riscv master on 2026-11-15:
 - `KERNBASE` fails because the user page table has no mapping there at all: `copyin` walks the process's page table, not the kernel's. `TRAPFRAME` is mapped in that table, but without `PTE_U`.
 - Part 4: the load causes a page fault (`scause` 13). `usertrap()` prints `usertrap(): unexpected scause 0xd ...` with `stval=0x80000000`, marks the process killed, and the parent sees status -1.
 
+Observed on 2026-11-16, at commit `fa2ddcb`: all of the above. `write(1, 0, 8)` printed eight bytes of `badptr`'s own code and returned 8, and the other three `write` cases returned 0. Every `pipe` and `fstat` case returned -1, and the real `fstat` returned 0 with type 3 (`T_DEVICE`). Part 4 printed `usertrap(): unexpected scause 0xd pid=6` and `sepc=0xf2 stval=0x80000000`, and the child's exit status was -1.
+
 </details>
 
 **Break it:** delete the `PTE_U` test in `walkaddr()`. Predict what `write(1, TRAPFRAME, 8)` prints now, then run it. The kernel now copies a page that the process itself may not read. This kind of bug is called a confused deputy. Restore the test.
+
+<details>
+<summary>Observed with the <code>PTE_U</code> test deleted. Read this only after you have predicted and run it.</summary>
+
+`write(1, TRAPFRAME, 8)` returned 8 and printed the bytes `ff 7f 08 00 00 00 00 80`, that is `0x8000000000087fff`: the kernel's `satp`, the first field of the trap frame. `pipe(TRAPFRAME)` and `fstat(0, TRAPFRAME)` now returned 0 as well, so the kernel wrote into the trap frame for the process. The system kept running, because the fields they overwrote (`kernel_satp`, `kernel_sp`, `kernel_trap`) are rewritten by `prepare_return()` before every return to user space. Which field would a longer copy reach next, and what would happen then?
+
+</details>
 
 ### E. The same boundary on Linux (WSL 2)
 
@@ -170,7 +210,10 @@ gcc -O2 -Wall -o boundary linux/boundary.c
 ./boundary
 strace -o boundary.trace ./boundary > /dev/null
 strace -c ./boundary > /dev/null
+strace -o /dev/null ./boundary
 ```
+
+The last line keeps the program's own output, so you can compare its part 3 with the run without `strace`.
 
 **Predict, then check in `boundary.trace` and the `-c` summary:**
 
@@ -178,6 +221,16 @@ strace -c ./boundary > /dev/null
 2. What do the two bad-pointer writes return, and with which `errno`?
 3. How many `getpid` calls does `strace -c` count, and does `clock_gettime` appear at all? The [vdso(7)](https://man7.org/linux/man-pages/man7/vdso.7.html) page lists `__vdso_clock_gettime` among the x86-64 vDSO symbols and says vDSO calls do not show up in `strace`. Since glibc 2.25, `getpid()` always makes the real system call ([getpid(2)](https://man7.org/linux/man-pages/man2/getpid.2.html)). If `clock_gettime` does show up as a system call, record that and find out why on your system.
 4. How much slower is `syscall(SYS_getpid)` under `strace` than without it?
+
+<details>
+<summary>Observed in the container (kernel 6.6.87.2-microsoft-standard-WSL2, glibc 2.39, strace 6.8). Read this only after you have predicted and run it.</summary>
+
+1. No. The trace has three `write(1, "...", n)` lines of the same form. strace sees the system call, not the code that made it.
+2. `write(1, 0xffff800000000000, 8)` returned -1 with errno 14 (`EFAULT`, "Bad address") every time. `write(1, NULL, 8)` returned -1 with `EFAULT` when standard output was a file or a pipe. In `boundary.trace`, where standard output was `/dev/null`, it returned 8. The kernel range-checks the buffer before the driver runs, and the kernel-half address fails that check. `NULL` passes it, and the `/dev/null` driver never reads the buffer.
+3. `strace -c` counted 1,000,000 `getpid` calls and no `clock_gettime` call at all; the VM's clocksource was `tsc`. `grep -c clock_gettime boundary.trace` still finds one line: the `write` of the label text.
+4. In the recorded run, `syscall(SYS_getpid)` cost 96–127 ns over four runs without `strace` and 88,463 ns under `strace -o /dev/null`, about 900 times more. A plain call cost 1.5–1.6 ns and `clock_gettime` 13.7–16.2 ns.
+
+</details>
 
 Compare the registers with xv6. On x86-64 the number goes in `rax` and the arguments in `rdi`, `rsi`, `rdx`, `r10`, `r8`, `r9` ([syscall(2)](https://man7.org/linux/man-pages/man2/syscall.2.html)). The fourth argument uses `r10` instead of `rcx` because the `SYSCALL` instruction saves the return address in `rcx` and the flags in `r11`. The comment above the 64-bit entry code in Linux's [`arch/x86/entry/entry_64.S`](https://github.com/torvalds/linux/blob/master/arch/x86/entry/entry_64.S) describes this, and adds that `SYSCALL` saves nothing on the stack. RISC-V's `ecall` saves nothing on the stack either: the hardware records the trap in `sepc`, `scause`, `stval` and `sstatus`, and `uservec` stores every general-purpose register itself.
 
@@ -278,6 +331,9 @@ Answer these in `NOTES.md`.
 
 - **A breakpoint on `uservec` or `userret` by name never fires.** The symbols have kernel link addresses, but the code runs at `TRAMPOLINE`. Break on `*0x3ffffff000` and on the computed `userret` address.
 - **The breakpoint at `0x3ffffff000` fires all the time.** Timer interrupts from user mode also enter `uservec`. Use the `$scause == 8` condition.
+- **`si` on `sret` never comes back, or stops at `uservec` again.** With QEMU 8.2.2 and GDB 15.1, a single step over `sret` did not stop. Set `b *$sepc` before the `si`.
+- **`p num` prints `<optimized out>`.** The kernel is built with `-O`. Print `p->trapframe->a7` after a `next`, or `cpus[0].proc->trapframe->a7` with one hart.
+- **`user/usys.S` or `user/*.asm` does not exist.** Plain `make` builds only `kernel/kernel`. Run `make fs.img` or `make qemu`.
 - **`No symbol "p" in current context`.** You are in the wrong frame. Use `bt`, then `frame N` or `up`.
 - **`unknown sys call 23` on the console.** `syscall()` found no handler. The number in `syscall.h` and the `syscalls[]` entry do not match, or you did not rebuild.
 - **`implicit declaration of function 'trapinfo'`.** The prototype is missing from `user/user.h`. The Makefile builds with `-Werror`, so every warning stops the build.
@@ -285,6 +341,8 @@ Answer these in `NOTES.md`.
 - **`exec trapinfotest failed`.** The program is not in `UPROGS`, so it is not in `fs.img`.
 - **Different names in your tree:** `fork`/`kfork`, `usertrapret`/`prepare_return`, `printf`/`printk`. Grep before you set breakpoints.
 - **`badptr` crashes after the address-0 cases.** Your `copyout` lacks the `PTE_W` check, so `pipe(0)` overwrote the program's code. Explain the crash instead of hiding it.
+- **`badptr` prints odd characters.** The `write` from address 0 sends eight bytes of machine code to the console, and your terminal shows them however it likes.
+- **Linux: `write(1, NULL, 8)` returns 8.** Standard output was `/dev/null`, whose driver never reads the buffer. Run it with output to a file or a pipe to see `EFAULT`.
 - **Windows: GDB prints "Could not find platform independent libraries".** WinLibs gdb 18.1 printed this Python warning on the machine this lab was written on, and the scripts still worked.
 - **Windows: `Function "NtWriteFile" not defined`.** ntdll is not loaded until the program starts. Both scripts stop at `main` first for that reason.
 - **Windows: timings jump between runs.** Power plan, turbo, background load and the hypervisor all show up in these numbers. Run several times and report the spread, not one run.

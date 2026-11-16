@@ -3,8 +3,8 @@
  * "cat pipeline.c | grep pipe | wc -l" with fork, exec, pipe and wait,
  * the same shape as xv6/pipeline.c.
  *
- * NOT compiled or run on the machine where this lab was written: it had no
- * Linux distribution or Linux toolchain.
+ * Built and run on 2026-11-16 in an Ubuntu 24.04 container (gcc 13.3.0,
+ * glibc 2.39, strace 6.8); output in linux/example-output.txt.
  *
  * Build:  gcc -O2 -Wall -o pipeline pipeline.c
  * Run:    ./pipeline                 (compare: cat pipeline.c | grep pipe | wc -l)

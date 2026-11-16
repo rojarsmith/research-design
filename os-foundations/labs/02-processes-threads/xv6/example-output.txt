@@ -1,0 +1,351 @@
+Recorded 2026-11-16 in an Ubuntu 24.04.5 container (image oslab:24.04) under
+rootless podman 5.8.3 on Windows 11 Pro build 26300. The podman machine runs
+on WSL 2 (kernel 6.6.87.2-microsoft-standard-WSL2). This is not the WSL 2
+Ubuntu distribution that the course tells you to use.
+QEMU 8.2.2, riscv64-linux-gnu-gcc 13.3.0, gdb-multiarch 15.1.
+xv6-riscv master, commit fa2ddcb7ca87a77af579380a6eafd5aff163b44f
+(2026-11-05), built in /tmp/x inside the container.
+Exercise D ran a port of windows/uthread_win64.c written only for this check;
+that port is not in this folder.
+Exercise B was driven by an expect script that typed into the QEMU console
+and into an interactive gdb-multiarch. Exercise C used a batch GDB script;
+there the "(gdb) ..." lines are the script's commands, put in front of their
+output. Lines marked [...] were cut, and notes in parentheses were added;
+nothing else was edited. Carriage returns from the QEMU console were removed.
+
+==== A. pipeline, CPUS=1
+
+$ pipeline
+spawned cat 4, grep 5, wc 6
+pid 4 exited with status 0
+pid 5 exited with status 3 33 197
+0
+pid 6 exited with status 0
+$ cat README | grep the | wc
+3 33 197
+$ pipeline
+spawned cat 13, grep 14, wc 15
+3 33 197
+pid 13 exited with status 0
+pid 14 exited with status 0
+pid 15 exited with status 0
+
+==== A. pipeline, CPUS=3, three runs in one boot
+
+$ pipeline
+spawned cat 4, grep 5, wc 6
+3 33 197
+pid 4 exited with status 0
+pid 5 exited with status 0
+pid 6 exited with status 0
+$ pipeline
+spawned cat 8, grep 9, wc 10
+3 33 197
+pid 8 exited with status 0
+pid 9 exited with status 0
+pid 10 exited with status 0
+$ pipeline
+spawned cat 12, grep 13, wc 14
+3 p3i3d  1129 ex7i t
+ed with status 0
+pid 13 exited with status 0
+pid 14 exited with status 0
+(wc's "3 33 197" and the parent's "pid 12 exited with status 0" were mixed
+character by character: xv6's printf makes one write() per character.)
+
+==== A. pipeline -leak, CPUS=1, then Ctrl-p twice, 5 s and 8 s later
+
+$ pipeline -leak
+spawned cat 4, grep 5, wc 6
+-leak: the parent keeps every pipe end open
+pid 4 exited with status 0
+
+1 sleep  init
+2 sleep  sh
+3 sleep  pipeline
+5 sleep  grep
+6 sleep  wc
+
+1 sleep  init
+2 sleep  sh
+3 sleep  pipeline
+5 sleep  grep
+6 sleep  wc
+QEMU: Terminated
+
+==== A. Failure mode: run from another directory
+
+$ mkdir d
+$ cd d
+$ /pipeline
+spawned cat 5, grep 6, wc 7
+exec cat failed
+exec grep failed
+exec wc failed
+pid 5 exited with status 1
+pid 6 exited with status 1
+pid 7 exited with status 1
+
+==== B. Trace fork() (make CPUS=1 qemu-gdb)
+
+The fork stub in user/pipeline.asm:
+ 49c:	4885                	li	a7,1
+ 49e:	00000073          	ecall
+ 4a2:	8082                	ret
+
+(gdb) b kfork
+Breakpoint 1 at 0x80001c3e: file kernel/proc.c, line 260.
+(gdb) c
+Continuing.
+
+Breakpoint 1, kfork () at kernel/proc.c:260
+260	{
+(gdb) p p->name
+value has been optimized out
+(gdb) p cpus[0].proc->name
+$1 = "init", '\000' <repeats 11 times>
+(gdb) p cpus[0].proc->pid
+$2 = 1
+(nothing had been typed yet: this is init starting sh)
+(gdb) c
+Continuing.
+(the console showed "init: starting sh" and "$ "; the script typed pipeline)
+
+Breakpoint 1, kfork () at kernel/proc.c:260
+260	{
+(gdb) p cpus[0].proc->name
+$3 = "sh", '\000' <repeats 13 times>
+(gdb) p cpus[0].proc->pid
+$4 = 2
+(gdb) c
+Continuing.
+
+Breakpoint 1, kfork () at kernel/proc.c:260
+260	{
+(gdb) p p->name
+value has been optimized out
+(gdb) p p->pid
+value has been optimized out
+(gdb) next
+263	  struct proc *p = myproc();
+(gdb) next
+266	  if ((np = allocproc()) == 0) {
+(gdb) next
+271	  if (uvmcopy(p->pagetable, np->pagetable, p->sz) < 0) {
+(gdb) p np->pid
+$5 = 4
+(gdb) p/x np->context
+$6 = {ra = 0x80001912, sp = 0x3fffff8000, s0 = 0x0, s1 = 0x0, s2 = 0x0,
+  s3 = 0x0, s4 = 0x0, s5 = 0x0, s6 = 0x0, s7 = 0x0, s8 = 0x0, s9 = 0x0,
+  s10 = 0x0, s11 = 0x0}
+(gdb) info symbol np->context.ra
+forkret in section .text
+(gdb) p/x np->kstack
+$7 = 0x3fffff7000
+(gdb) p/x np->kstack + 4096
+$8 = 0x3fffff8000
+(gdb) p p->sz / 4096
+$9 = 4
+(gdb) p p->sz
+$10 = 16384
+
+First attempt at prediction 1, with breakpoint 1 still enabled:
+(gdb) b forkret
+Breakpoint 2 at 0x80001912: file kernel/proc.c, line 514.
+(gdb) c
+Continuing.
+
+Breakpoint 1, kfork () at kernel/proc.c:260
+260	{
+(gdb) p cpus[0].proc->pid
+$11 = 3
+(gdb) p cpus[0].proc->name
+$12 = "pipeline\000\000\000\000\000\000\000"
+(the parent's second fork came first)
+
+Second run, identical up to here, with "disable 1" before "b forkret":
+(gdb) disable 1
+(gdb) b forkret
+Breakpoint 2 at 0x80001912: file kernel/proc.c, line 514.
+(gdb) c
+Continuing.
+
+Breakpoint 2, forkret () at kernel/proc.c:514
+514	{
+(gdb) p cpus[0].proc->pid
+$11 = 4
+(gdb) p cpus[0].proc->name
+$12 = "pipeline\000\000\000\000\000\000\000"
+(gdb) p/x $sp
+$13 = 0x3fffff8000
+(gdb) p/x cpus[0].proc->kstack
+$14 = 0x3fffff7000
+(gdb) delete
+(gdb) c
+(console:)
+spawned cat 4, grep 5, wc 6
+pid 4 exited with status 0
+pid 5 exited with status 0
+3 33 197
+pid 6 exited with status 0
+$
+
+==== C. Trace swtch() (make CPUS=1 qemu-gdb, batch script)
+
+The script stopped at swtch four times. Each time it printed the values
+below, ran si until "x/i $pc" showed the ret, then printed $ra and stepped
+once more ([...] the per-instruction lines cut).
+
+---- stop 1
+(gdb) bt
+#0  swtch () at kernel/swtch.S:10
+#1  0x0000000080001dce in scheduler () at kernel/proc.c:453
+#2  0x0000000080000e70 in main () at kernel/main.c:44
+(gdb) p/x $a0
+$1 = 0x80012350
+(gdb) p/x $a1
+$2 = 0x800127a8
+(gdb) p &cpus[0].context
+$3 = (context *) 0x80012350 <cpus+8>
+(gdb) p cpus[0].proc->pid
+$4 = 1
+[...]
+(gdb) p/x $sp
+$6 = 0x8000b1a0
+[...]
+  reached the ret after 28 si
+=> 0x8000241e <swtch+104>:	ret
+(gdb) p/x $ra
+$7 = 0x80001912
+(gdb) info symbol $ra
+forkret in section .text
+(gdb) p/x $sp
+$8 = 0x3fffffe000
+(gdb) si
+forkret () at kernel/proc.c:514
+514	{
+(gdb) bt
+#0  forkret () at kernel/proc.c:514
+#1  0x0000000080001912 in myproc () at kernel/proc.c:89
+Backtrace stopped: frame did not save the PC
+
+---- stop 2
+(gdb) bt
+#0  swtch () at kernel/swtch.S:10
+#1  0x0000000080001e70 in sched () at kernel/proc.c:78
+#2  0x0000000080001f42 in sleep () at kernel/proc.c:569
+#3  0x0000000080005a98 in virtio_disk_rw (b=b@entry=0x80018178 <bcache+24>, write=write@entry=0) at kernel/virtio_disk.c:290
+#4  0x0000000080002c36 in bread (dev=dev@entry=1, blockno=blockno@entry=1) at kernel/bio.c:98
+#5  0x0000000080003584 in readsb (sb=0x80020820 <sb>, dev=1) at kernel/fs.c:35
+#6  fsinit (dev=dev@entry=1) at kernel/fs.c:44
+#7  0x000000008000193e in forkret () at kernel/proc.c:528
+#8  0x0000000080001912 in myproc () at kernel/proc.c:89
+Backtrace stopped: frame did not save the PC
+(gdb) p/x $a0
+$10 = 0x800127a8
+(gdb) p/x $a1
+$11 = 0x80012350
+[...]
+(gdb) p/x $sp
+$15 = 0x3fffffdeb0
+  reached the ret after 28 si
+[...]
+(gdb) p/x $ra
+$16 = 0x80001dce
+(gdb) info symbol $ra
+scheduler + 130 in section .text
+(gdb) p/x $sp
+$17 = 0x8000b1a0
+[...]
+
+---- stop 3
+(gdb) bt
+[...]
+#1  0x0000000080001dce in scheduler () at kernel/proc.c:453
+[...]
+(gdb) p/x $a0
+$19 = 0x80012350
+(gdb) p/x $a1
+$20 = 0x800127a8
+[...]
+  reached the ret after 28 si
+[...]
+(gdb) p/x $ra
+$25 = 0x80001e70
+(gdb) info symbol $ra
+sched + 112 in section .text
+(gdb) p/x $sp
+$26 = 0x3fffffdeb0
+
+---- stop 4: like stop 2 (pid 1 sleeping in fsinit's next disk read); the
+ret went to scheduler + 130 again, with $sp = 0x8000b1a0.
+
+(gdb) p &stack0
+$37 = (char (*)[32768]) 0x8000a220 <stack0>
+(gdb) p/x (long)&stack0 + 4096
+$38 = 0x8000b220
+
+==== D. User-level threads, the reference port (not shipped)
+
+$ uthread
+Three threads, three rounds each:
+  thread_a round 0
+  thread_b round 0
+  thread_c round 0
+  thread_a round 1
+  thread_b round 1
+  thread_c round 1
+  thread_a round 2
+  thread_b round 2
+  thread_c round 2
+  thread 0: integer sum 3 (expected 3) ok
+  thread 1: integer sum 6 (expected 6) ok
+  thread 2: integer sum 9 (expected 9) ok
+  16 switches, 0 ticks
+
+Two threads, 1,000,000 rounds each:
+  thread 0: integer sum 499999500000 (expected 499999500000) ok
+  thread 1: integer sum 999999000000 (expected 999999000000) ok
+  3000003 switches, 2 ticks
+
+worker() in that port's user/uthread.asm, the loop ([...] cut):
+ 33e:	4481                	li	s1,0
+ 340:	4981                	li	s3,0
+ 342:	00002a17          	auipc	s4,0x2
+ 346:	cc6a0a13          	addi	s4,s4,-826 # 2008 <current>
+[...]
+ 35e:	ca3ff0ef          	jal	0 <thread_schedule>
+ 362:	0485                	addi	s1,s1,1
+ 364:	00492703          	lw	a4,4(s2)
+[...]
+ 376:	029787b3          	mul	a5,a5,s1
+ 37a:	99be                	add	s3,s3,a5
+(i in s1, isum in s3, w in s2, &current in s4)
+
+---- Break it: thread_switch saves only ra and sp
+
+$ uthread
+Three threads, three rounds each:
+  thread_a round 0
+  thread_b round 0
+  thread_c round 0
+usertrap(): unexpected scause 0xf pid=3
+            sepc=0x252 stval=0x800e022e40611b1
+
+In that build, sepc 0x252 is in run(), in the inlined thread_yield of main's
+loop:
+  current->state = RUNNABLE;
+ 24e:	0009b783          	ld	a5,0(s3)
+ 252:	0727a823          	sw	s2,112(a5)
+
+---- Experiment: the double sums added back
+
+$ uthread
+Three threads, three rounds each:
+usertrap(): unexpected scause 0x2 pid=3
+            sepc=0x396 stval=0xa422
+
+In that build, sepc 0x396 is in worker's prologue:
+ 396:	a422                	fsd	fs0,8(sp)
+$ grep -n -i "SSTATUS_FS\|sstatus.*FS" kernel/*.h kernel/*.c
+(no output)

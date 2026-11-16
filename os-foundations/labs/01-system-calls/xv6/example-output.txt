@@ -1,0 +1,303 @@
+Recorded 2026-11-16 in an Ubuntu 24.04.5 container (image oslab:24.04) under
+rootless podman 5.8.3 on Windows 11 Pro build 26300. The podman machine runs
+on WSL 2 (kernel 6.6.87.2-microsoft-standard-WSL2). This is not the WSL 2
+Ubuntu distribution that the course tells you to use.
+QEMU 8.2.2, riscv64-linux-gnu-gcc 13.3.0, gdb-multiarch 15.1.
+xv6-riscv master, commit fa2ddcb7ca87a77af579380a6eafd5aff163b44f
+(2026-11-05), built in /tmp/x inside the container. MIT's xv6-labs-2025
+repository was not used.
+Exercise C ran against a trapinfo() written only for this check; that
+kernel code is not in this folder.
+GDB was driven by batch scripts. Batch GDB does not echo commands, so the
+"(gdb) ..." lines are the script's commands, put in front of their output.
+Some commands ran through a small Python wrapper that catches GDB errors;
+those error messages are shown without the wrapper's "[gdb error]" prefix.
+Lines marked [...] were cut, and notes in parentheses were added; nothing
+else was edited. Carriage returns from
+the QEMU console were removed.
+
+==== A. The stub
+
+$ make
+$ ls user/usys.S user/*.asm
+ls: cannot access 'user/usys.S': No such file or directory
+ls: cannot access 'user/*.asm': No such file or directory
+(plain make builds only kernel/kernel)
+$ make fs.img
+$ grep -n -A3 "^write:" user/usys.S
+29:write:
+30- li a7, SYS_write
+31- ecall
+32- ret
+$ grep -n -A9 "<write>:" user/cat.asm
+658:000000000000039e <write>:
+659-.global write
+660-write:
+661- li a7, SYS_write
+662- 39e:	48c1                	li	a7,16
+663- ecall
+664- 3a0:	00000073          	ecall
+665- ret
+666- 3a4:	8082                	ret
+$ grep -n "prepare_return\|usertrapret" kernel/*.c
+kernel/proc.c:539:  prepare_return();
+kernel/trap.c:88:  prepare_return();
+kernel/trap.c:101:prepare_return(void)
+
+==== B. One write in GDB (make CPUS=1 qemu-gdb; nothing typed)
+
+The first stop came from init printing "init: starting sh". Its write stub,
+from user/init.asm:
+ 370:	48c1                	li	a7,16
+ 372:	00000073          	ecall
+ 376:	8082                	ret
+
+(gdb) b *0x3ffffff000 if $scause == 8 && $a7 == 16
+Breakpoint 1 at 0x3ffffff000
+(gdb) c
+Breakpoint 1, 0x0000003ffffff000 in ?? ()
+=> 0x0000003ffffff000:	14051073        	csrw	sscratch,a0
+(gdb) p $priv
+$1 = 1
+(gdb) p/x $satp
+$2 = 0x8000000000087f52
+(gdb) p/x $sepc
+$3 = 0x372
+(gdb) p/x $sp
+$4 = 0x3ed0
+(gdb) p/x $a0
+$5 = 0x1
+(gdb) p/x $a1
+$6 = 0x3edf
+(gdb) p/x $a2
+$7 = 0x1
+(gdb) p/x $stvec
+$8 = 0x3ffffff000
+(gdb) p/x $scause
+$9 = 0x8
+(gdb) p/x $a7
+$10 = 0x10
+(gdb) x/12i $pc
+=> 0x3ffffff000:	csrw	sscratch,a0
+   0x3ffffff004:	lui	a0,0x2000
+   0x3ffffff008:	addiw	a0,a0,-1
+   0x3ffffff00a:	slli	a0,a0,0xd
+   0x3ffffff00c:	sd	ra,40(a0)
+   0x3ffffff010:	sd	sp,48(a0)
+   0x3ffffff014:	sd	gp,56(a0)
+   0x3ffffff018:	sd	tp,64(a0)
+   0x3ffffff01c:	sd	t0,72(a0)
+   0x3ffffff020:	sd	t1,80(a0)
+   0x3ffffff024:	sd	t2,88(a0)
+   0x3ffffff028:	sd	s0,96(a0)
+(gdb) x/2i $sepc
+   0x372:	Cannot access memory at address 0x372
+
+si until after "csrw satp,t1"; the script printed pc, satp and sp after each
+step ([...] 33 lines and GDB's location lines cut):
+  pc=0x3ffffff004 satp=0x8000000000087f52 sp=0x3ed0
+[...]
+  pc=0x3ffffff07e satp=0x8000000000087f52 sp=0x3ed0
+  pc=0x3ffffff082 satp=0x8000000000087f52 sp=0x3fffffe000
+  pc=0x3ffffff086 satp=0x8000000000087f52 sp=0x3fffffe000
+  pc=0x3ffffff08a satp=0x8000000000087f52 sp=0x3fffffe000
+  pc=0x3ffffff08e satp=0x8000000000087f52 sp=0x3fffffe000
+=> 0x0000003ffffff092:	18031073        	csrw	satp,t1
+  pc=0x3ffffff092 satp=0x8000000000087f52 sp=0x3fffffe000
+=> 0x0000003ffffff096:	12000073        	sfence.vma
+  pc=0x3ffffff096 satp=0x8000000000087fff sp=0x3fffffe000
+
+At jalr t0, then one si:
+(gdb) p/x $t0
+$11 = 0x80002598
+(gdb) si
+usertrap () at kernel/trap.c:39
+39	{
+(gdb) bt
+#0  usertrap () at kernel/trap.c:39
+#1  0x0000003ffffff09c in ?? ()
+(gdb) p/x $sstatus
+$12 = 0x200000020
+SPP bit = 0
+(gdb) p $priv
+$13 = 1
+(gdb) p/x $satp
+$14 = 0x8000000000087fff
+(gdb) p/x $sp
+$15 = 0x3fffffe000
+(gdb) p/x p->trapframe->epc
+value has been optimized out
+
+next through usertrap(), printing p->trapframe->epc after each step
+([...] "info line" output cut):
+42	  if ((r_sstatus() & SSTATUS_SPP) != 0)
+  value has been optimized out
+[...]
+49	  struct proc *p = myproc();
+  value has been optimized out
+52	  p->trapframe->epc = r_sepc();
+$16 = 0x3ce
+145	  return x;
+$17 = 0x3ce
+54	  if (r_scause() == 8) {
+$18 = 0x372
+[...]
+62	    p->trapframe->epc += 4;
+$21 = 0x372
+66	    intr_on();
+$22 = 0x376
+68	    syscall();
+$23 = 0x376
+
+(gdb) b syscall
+Breakpoint 2 at 0x80002884: file kernel/syscall.c, line 138.
+(gdb) c
+Breakpoint 2, syscall () at kernel/syscall.c:138
+138	{
+(gdb) next
+140	  struct proc *p = myproc();
+(gdb) p num
+$24 = <optimized out>
+(gdb) p p->trapframe->a7
+value has been optimized out
+(gdb) p cpus[0].proc->trapframe->a7
+$25 = 16
+(gdb) p cpus[0].proc->name
+$26 = "init", '\000' <repeats 11 times>
+(gdb) next
+142	  num = p->trapframe->a7;
+(gdb) p num
+$27 = <optimized out>
+(gdb) p p->trapframe->a7
+$28 = 16
+
+(gdb) p/x 0x3ffffff000 + ((long)&userret - (long)&trampoline)
+$31 = 0x3ffffff09c
+(gdb) b *0x3ffffff09c
+(gdb) c
+Breakpoint 3, 0x0000003ffffff09c in ?? ()
+=> 0x0000003ffffff09c:	0000100f        	fence.i
+(gdb) p/x $a0
+$32 = 0x8000000000087f52
+(gdb) p/x $satp
+$33 = 0x8000000000087fff
+si to the sret ([...] 40 lines cut):
+=> 0x0000003ffffff0a4:	18051073        	csrw	satp,a0
+[...]
+=> 0x0000003ffffff11e:	7928              	ld	a0,112(a0)
+0x0000003ffffff120 in ?? ()
+=> 0x0000003ffffff120:	10200073        	sret
+(gdb) p/x $sepc
+$34 = 0x376
+(gdb) p/x $sstatus
+$35 = 0x200000020
+SPP bit = 0, SPIE bit = 1
+(gdb) p/x $satp
+$36 = 0x8000000000087f52
+(gdb) p $priv
+$37 = 1
+(gdb) b *$sepc
+Breakpoint 4 at 0x376
+(gdb) si
+Breakpoint 4, 0x0000000000000376 in ?? ()
+=> 0x0000000000000376:	8082              	ret
+(gdb) p $priv
+$38 = 0
+(gdb) p/x $pc
+$39 = 0x376
+(gdb) p/x $satp
+$40 = 0x8000000000087f52
+
+A second session, identical up to the sret, with a plain si there (no
+breakpoint on $sepc):
+(gdb) si
+Breakpoint 1, 0x0000003ffffff000 in ?? ()
+(gdb) p $priv
+$38 = 1
+(gdb) p/x $pc
+$39 = 0x3ffffff000
+(The si did not stop after the sret; the next stop was the next write's trap.)
+
+==== C. trapinfotest, against the reference trapinfo (SYS_trapinfo = 23)
+
+From user/trapinfotest.asm:
+  10:	402000ef          	jal	412 <trapinfo>
+  14:	85aa                	mv	a1,a0
+[...]
+0000000000000412 <trapinfo>:
+ 412:	48dd                	li	a7,23
+ (the ecall is at 0x414 and the ret at 0x418)
+
+$ trapinfotest
+trapinfo(&ti) returned 0
+  epc 0x0000000000000418
+  ra  0x0000000000000014
+  sp  0x0000000000003F80
+  a0  0x0000000000003F88   (&ti is 0x0000000000003F88: same)
+  a7  23
+trapinfo(0)          returned -1
+trapinfo(KERNBASE)   returned -1
+trapinfo(TRAPFRAME)  returned -1
+
+Failure mode check, with the syscalls[] entry left out:
+$ trapinfotest
+3 trapinfotest: unknown sys call 23
+trapinfo(&ti) returned -1
+[...]
+
+==== D. badptr
+
+The bytes between [ and ] are raw binary. The console capture turned each
+byte above 0x7f into two UTF-8 bytes, so they are given here in hex instead:
+address 0: 1d 71 86 ec a2 e8 a6 e4 (the first four instructions of main).
+
+$ badptr
+1. write(1, addr, 8): the kernel copies IN from addr
+   0 (start of user text): [<8 bytes>] returned 8
+   KERNBASE: [] returned 0
+   TRAPFRAME: [] returned 0
+   MAXVA: [] returned 0
+2. pipe(addr): the kernel copies OUT two ints to addr
+   0 (start of user text): returned -1
+   KERNBASE: returned -1
+   TRAPFRAME: returned -1
+   MAXVA: returned -1
+3. fstat(0, addr): the kernel copies OUT a struct stat
+   0 (start of user text): returned -1
+   KERNBASE: returned -1
+   TRAPFRAME: returned -1
+   MAXVA: returned -1
+   a real struct stat on the stack: returned 0, type 3
+4. user code loads from KERNBASE itself (in a child)
+usertrap(): unexpected scause 0xd pid=6
+            sepc=0xf2 stval=0x80000000
+   child exit status -1
+
+==== D. Break it: the PTE_U test deleted from walkaddr()
+
+TRAPFRAME bytes, in hex: ff 7f 08 00 00 00 00 80 (0x8000000000087fff, the
+kernel satp, which is the first field of the trap frame).
+
+$ badptr
+1. write(1, addr, 8): the kernel copies IN from addr
+   0 (start of user text): [<8 bytes>] returned 8
+   KERNBASE: [] returned 0
+   TRAPFRAME: [<8 bytes>] returned 8
+   MAXVA: [] returned 0
+2. pipe(addr): the kernel copies OUT two ints to addr
+   0 (start of user text): returned -1
+   KERNBASE: returned -1
+   TRAPFRAME: returned 0
+   MAXVA: returned -1
+3. fstat(0, addr): the kernel copies OUT a struct stat
+   0 (start of user text): returned -1
+   KERNBASE: returned -1
+   TRAPFRAME: returned 0
+   MAXVA: returned -1
+   a real struct stat on the stack: returned 0, type 3
+4. user code loads from KERNBASE itself (in a child)
+usertrap(): unexpected scause 0xd pid=4
+            sepc=0xf2 stval=0x80000000
+   child exit status -1
+$ echo still-alive
+still-alive

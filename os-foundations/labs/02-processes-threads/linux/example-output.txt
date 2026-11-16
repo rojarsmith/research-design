@@ -1,0 +1,182 @@
+Recorded 2026-11-16 in an Ubuntu 24.04.5 container (image oslab:24.04) under
+rootless podman 5.8.3 on Windows 11 Pro build 26300, run from linux/ in a
+copy of this folder. The podman machine runs on WSL 2: the Linux kernel is
+6.6.87.2-microsoft-standard-WSL2, with 16 online CPUs. This is not the WSL 2
+Ubuntu distribution that the course tells you to use, and these are VM
+numbers. gcc 13.3.0, glibc 2.39, strace 6.8. strace ran with the
+container's default capabilities (no --cap-add).
+The whole session follows unedited. Its "$" lines were printed by the
+script that ran the commands. The strace -c run took several
+minutes: every traced system call is slow (see lab 01's linux output).
+
+$ gcc -O2 -Wall -o pipeline pipeline.c
+(gcc exit 0)
+$ gcc -O2 -Wall -pthread -o procthread procthread.c
+(gcc exit 0)
+$ ./pipeline
+spawned cat 16, grep 17, wc 18
+pid 16 exited with status 0
+12
+pid 17 exited with status 0
+pid 18 exited with status 0
+$ cat pipeline.c | grep pipe | wc -l
+12
+$ strace -f -e trace=clone,clone3,execve,pipe,pipe2,dup2,wait4 -o pipeline.trace ./pipeline
+spawned cat 26, grep 27, wc 28
+pid 26 exited with status 0
+12
+pid 27 exited with status 0
+pid 28 exited with status 0
+(strace exit 0)
+$ cat pipeline.trace
+25    execve("./pipeline", ["./pipeline"], 0x7ffceb67fbd8 /* 8 vars */) = 0
+25    pipe2([3, 4], 0)                  = 0
+25    pipe2([5, 6], 0)                  = 0
+25    clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7d1705689a10) = 26
+25    clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD <unfinished ...>
+26    dup2(4, 1)                        = 1
+25    <... clone resumed>, child_tidptr=0x7d1705689a10) = 27
+25    clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD <unfinished ...>
+27    dup2(3, 0)                        = 0
+25    <... clone resumed>, child_tidptr=0x7d1705689a10) = 28
+27    dup2(6, 1)                        = 1
+28    dup2(5, 0)                        = 0
+26    execve("/usr/local/sbin/cat", ["cat", "pipeline.c"], 0x7ffd4ea110f8 /* 8 vars */) = -1 ENOENT (No such file or directory)
+25    wait4(-1,  <unfinished ...>
+26    execve("/usr/local/bin/cat", ["cat", "pipeline.c"], 0x7ffd4ea110f8 /* 8 vars */) = -1 ENOENT (No such file or directory)
+28    execve("/usr/local/sbin/wc", ["wc", "-l"], 0x7ffd4ea110f8 /* 8 vars */ <unfinished ...>
+27    execve("/usr/local/sbin/grep", ["grep", "pipe"], 0x7ffd4ea110f8 /* 8 vars */ <unfinished ...>
+26    execve("/usr/sbin/cat", ["cat", "pipeline.c"], 0x7ffd4ea110f8 /* 8 vars */ <unfinished ...>
+28    <... execve resumed>)             = -1 ENOENT (No such file or directory)
+27    <... execve resumed>)             = -1 ENOENT (No such file or directory)
+28    execve("/usr/local/bin/wc", ["wc", "-l"], 0x7ffd4ea110f8 /* 8 vars */ <unfinished ...>
+26    <... execve resumed>)             = -1 ENOENT (No such file or directory)
+27    execve("/usr/local/bin/grep", ["grep", "pipe"], 0x7ffd4ea110f8 /* 8 vars */ <unfinished ...>
+28    <... execve resumed>)             = -1 ENOENT (No such file or directory)
+26    execve("/usr/bin/cat", ["cat", "pipeline.c"], 0x7ffd4ea110f8 /* 8 vars */ <unfinished ...>
+28    execve("/usr/sbin/wc", ["wc", "-l"], 0x7ffd4ea110f8 /* 8 vars */ <unfinished ...>
+27    <... execve resumed>)             = -1 ENOENT (No such file or directory)
+28    <... execve resumed>)             = -1 ENOENT (No such file or directory)
+27    execve("/usr/sbin/grep", ["grep", "pipe"], 0x7ffd4ea110f8 /* 8 vars */ <unfinished ...>
+28    execve("/usr/bin/wc", ["wc", "-l"], 0x7ffd4ea110f8 /* 8 vars */ <unfinished ...>
+27    <... execve resumed>)             = -1 ENOENT (No such file or directory)
+26    <... execve resumed>)             = 0
+27    execve("/usr/bin/grep", ["grep", "pipe"], 0x7ffd4ea110f8 /* 8 vars */ <unfinished ...>
+28    <... execve resumed>)             = 0
+27    <... execve resumed>)             = 0
+26    +++ exited with 0 +++
+25    <... wait4 resumed>[{WIFEXITED(s) && WEXITSTATUS(s) == 0}], 0, NULL) = 26
+25    --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=26, si_uid=0, si_status=0, si_utime=0, si_stime=0} ---
+25    wait4(-1,  <unfinished ...>
+27    +++ exited with 0 +++
+25    <... wait4 resumed>[{WIFEXITED(s) && WEXITSTATUS(s) == 0}], 0, NULL) = 27
+25    --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=27, si_uid=0, si_status=0, si_utime=0, si_stime=0} ---
+28    +++ exited with 0 +++
+25    --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=28, si_uid=0, si_status=0, si_utime=0, si_stime=0} ---
+25    wait4(-1, [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], 0, NULL) = 28
+25    +++ exited with 0 +++
+$ timeout 3 ./pipeline --leak
+spawned cat 32, grep 33, wc 34
+--leak: the parent keeps every pipe end open
+pid 32 exited with status 0
+(exit 124 after timeout)
+$ ./procthread
+Online CPUs: 16
+
+1. Identity
+  main thread:    pid 35, tid 35
+  created thread: pid 35, tid 36
+  child process:  pid 37, tid 37, parent 35
+
+2. Creation cost (create, wait for exit)
+  fork + _exit + wait:               254.5 us each  (200 runs)
+  fork + exec /bin/true + wait:      553.6 us each  (200 runs)
+  posix_spawn /bin/true + wait:      437.0 us each  (200 runs)
+  pthread_create + join:              73.9 us each  (5000 runs)
+
+3. Switch between two kernel threads (semaphore ping-pong, ns per hand-off)
+  same CPU:                           1189 ns
+  unpinned:                          18803 ns
+
+4. Switch between two contexts on one thread (swapcontext)
+  swapcontext:                       199.7 ns
+$ strace -f -e trace=clone,clone3,execve,wait4 ./procthread identity
+execve("./procthread", ["./procthread", "identity"], 0x7fffe49090f0 /* 8 vars */) = 0
+Online CPUs: 16
+
+1. Identity
+  main thread:    pid 5643, tid 5643
+clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, child_tid=0x72b083f38990, parent_tid=0x72b083f38990, exit_signal=0, stack=0x72b083738000, stack_size=0x7fff80, tls=0x72b083f386c0}strace: Process 5644 attached
+ => {parent_tid=[5644]}, 88) = 5644
+  created thread: pid 5643, tid 5644
+[pid  5644] +++ exited with 0 +++
+clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLDstrace: Process 5645 attached
+, child_tidptr=0x72b083f39a10) = 5645
+[pid  5643] wait4(5645,   child process:  pid 5645, tid 5645, parent 5643
+ <unfinished ...>
+[pid  5645] +++ exited with 0 +++
+<... wait4 resumed>NULL, 0, NULL)       = 5645
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=5645, si_uid=0, si_status=0, si_utime=0, si_stime=0} ---
+
++++ exited with 0 +++
+$ strace -c -f ./procthread switch > /dev/null
+strace: Process 5650 attached
+strace: Process 5651 attached
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ------------------
+ 76.29   67.807343          16   4000010           rt_sigprocmask
+ 23.71   21.076567          24    861958    374248 futex
+  0.00    0.000086          10         8           write
+  0.00    0.000029          14         2           madvise
+  0.00    0.000022           5         4           sched_setaffinity
+  0.00    0.000000           0         3           read
+  0.00    0.000000           0         4           close
+  0.00    0.000000           0         2           fstat
+  0.00    0.000000           0         9           mmap
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         3           brk
+  0.00    0.000000           0         1           rt_sigaction
+  0.00    0.000000           0         2           pread64
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+  0.00    0.000000           0         2           sched_getaffinity
+  0.00    0.000000           0         1           set_tid_address
+  0.00    0.000000           0         4           openat
+  0.00    0.000000           0         3           set_robust_list
+  0.00    0.000000           0         1           prlimit64
+  0.00    0.000000           0         1           getrandom
+  0.00    0.000000           0         3           rseq
+  0.00    0.000000           0         2           clone3
+------ ----------- ----------- --------- --------- ------------------
+100.00   88.884047          18   4862031    374249 total
+$ ./procthread   (second run)
+Online CPUs: 16
+
+1. Identity
+  main thread:    pid 5652, tid 5652
+  created thread: pid 5652, tid 5653
+  child process:  pid 5654, tid 5654, parent 5652
+
+2. Creation cost (create, wait for exit)
+  fork + _exit + wait:               201.9 us each  (200 runs)
+  fork + exec /bin/true + wait:      613.0 us each  (200 runs)
+  posix_spawn /bin/true + wait:      487.3 us each  (200 runs)
+  pthread_create + join:              76.2 us each  (5000 runs)
+
+3. Switch between two kernel threads (semaphore ping-pong, ns per hand-off)
+  same CPU:                           1322 ns
+  unpinned:                          19316 ns
+
+4. Switch between two contexts on one thread (swapcontext)
+  swapcontext:                       218.3 ns
+$ ./procthread switch   (third run of parts 3-4)
+Online CPUs: 16
+
+3. Switch between two kernel threads (semaphore ping-pong, ns per hand-off)
+  same CPU:                           1489 ns
+  unpinned:                          19801 ns
+
+4. Switch between two contexts on one thread (swapcontext)
+  swapcontext:                       210.8 ns

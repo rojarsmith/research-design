@@ -2,10 +2,11 @@
 
 # 實驗 01：系統呼叫，跨越邊界
 
-> **草稿，待審閱（2026-11-15）。哪些有執行、哪些沒有：**
-> - **xv6 部分（練習 A–D）：未執行。** 撰寫本實驗的機器沒有 RISC-V 工具鏈與 QEMU。標為「*預期*」的內容，都來自 2026-11-15 閱讀的 [xv6-riscv](https://github.com/mit-pdos/xv6-riscv) master。
-> - **Linux 部分（練習 E）：未執行。** 那台機器沒有 Linux 發行版，也沒有 Linux 工具鏈，所以 `linux/boundary.c` 也沒有編譯過。
-> - **Windows 部分（練習 F、G）：已建置並執行**，於 2026-11-15 在那台機器上以 WinLibs 的 gcc 16.2 與 gdb 18.1 完成。完整輸出在 [`windows/example-output.txt`](windows/example-output.txt)，下文引用的數字都取自該檔。
+> **草稿，待審閱（2026-11-15），xv6 與 Linux 部分於 2026-11-16 執行。哪些有執行、哪些沒有：**
+> - **xv6 部分（練習 A–D）：2026-11-16 已執行**，環境是 Windows 11 上 podman 中的 Ubuntu 24.04 容器，podman machine 跑在 WSL 2 上；這不是本課程要你使用的 WSL 2 Ubuntu 發行版。容器內有 QEMU 8.2.2、riscv64-linux-gnu-gcc 13.3.0 與 gdb-multiarch 15.1，[xv6-riscv](https://github.com/mit-pdos/xv6-riscv) master 的 commit 為 `fa2ddcb`（2026-11-05）。練習 C 是用一份只為檢查而寫的 `trapinfo` 驗證，那份程式碼不在本資料夾中。輸出：[`xv6/example-output.txt`](xv6/example-output.txt)。
+> - **Linux 部分（練習 E）：2026-11-16 已執行**，在同一個容器中：podman machine 的核心 6.6.87.2-microsoft-standard-WSL2、glibc 2.39、gcc 13.3.0，以及不需額外容器權限就能運作的 strace 6.8。計時數字來自那台虛擬機器。輸出：[`linux/example-output.txt`](linux/example-output.txt)。
+> - **Windows 部分（練習 F、G）：已建置並執行**，於 2026-11-15 在撰寫本實驗的機器上以 WinLibs 的 gcc 16.2 與 gdb 18.1 完成。完整輸出在 [`windows/example-output.txt`](windows/example-output.txt)，下文引用的數字都取自該檔。
+> - **未執行：** MIT 的 `xv6-labs-2025` 儲存庫及其 `syscall` 分支（使用的是一般的 xv6-riscv），MIT syscall 實驗自己的作業，以及練習 F「換你做」中的主控台測試。
 
 ## 目標
 
@@ -29,9 +30,11 @@
 
 | 檔案 | 內容 | 狀態 |
 | --- | --- | --- |
-| [`xv6/badptr.c`](xv6/badptr.c) | xv6 使用者程式：把四個錯誤位址交給 `write`、`pipe` 與 `fstat`，再自己從核心位址讀取 | 未在此編譯 |
-| [`xv6/trapinfotest.c`](xv6/trapinfotest.c) | 練習 C 新增的 `trapinfo()` 系統呼叫的測試 | 未在此編譯 |
-| [`linux/boundary.c`](linux/boundary.c) | 用三種方式做同一次 `write`、錯誤指標，以及留在使用者模式與進入核心的呼叫成本 | 未在此編譯 |
+| [`xv6/badptr.c`](xv6/badptr.c) | xv6 使用者程式：把四個錯誤位址交給 `write`、`pipe` 與 `fstat`，再自己從核心位址讀取 | 已在 xv6 中執行（容器） |
+| [`xv6/trapinfotest.c`](xv6/trapinfotest.c) | 練習 C 新增的 `trapinfo()` 系統呼叫的測試 | 已在 xv6 中搭配參考用 `trapinfo` 執行（容器） |
+| [`xv6/example-output.txt`](xv6/example-output.txt) | xv6 的輸出紀錄：stub、GDB 追蹤、`trapinfotest`、`badptr` 及其刻意弄壞步驟 | 2026-11-16 記錄 |
+| [`linux/boundary.c`](linux/boundary.c) | 用三種方式做同一次 `write`、錯誤指標，以及留在使用者模式與進入核心的呼叫成本 | 已在 Linux 上建置並執行（容器） |
+| [`linux/example-output.txt`](linux/example-output.txt) | `boundary` 在有無 `strace` 下的輸出紀錄 | 2026-11-16 記錄 |
 | [`windows/nt_boundary.c`](windows/nt_boundary.c) | 對 Win32 與 ntdll 問同樣的問題 | 已在此建置並執行 |
 | [`windows/win32_write.c`](windows/win32_write.c)、[`find_nt_routine.gdb`](windows/find_nt_routine.gdb)、[`user_mode_calls.gdb`](windows/user_mode_calls.gdb) | 只有兩次呼叫的 Win32 程式，以及兩個 GDB 腳本，顯示它進入了哪個 ntdll 常式 | 已在此建置並執行 |
 | [`windows/example-output.txt`](windows/example-output.txt) | Windows 程式的輸出紀錄 | 2026-11-15 記錄 |
@@ -49,7 +52,7 @@
   ```
 
   本實驗的練習 A–D 在那個版本或一般的 xv6-riscv 複本中都能做。MIT 的 [syscall 實驗](https://pdos.csail.mit.edu/6.1810/2025/labs/syscall.html)另有自己的練習：「Using gdb」一節的問題和練習 B 重疊，還有一個沙箱系統呼叫，以及一個攻擊實驗版本未清零記憶體的練習。
-- **Linux：** 實驗 00 的 WSL 2 Ubuntu，再加上 `sudo apt-get install strace`。
+- **Linux：** 實驗 00 的 WSL 2 Ubuntu，再加上 `sudo apt-get install strace`。（本草稿的執行使用開頭說明的容器，在那裡 `strace` 不需額外權限就能運作。）
 - **Windows：** 任何 x86-64 的 MinGW-w64 gcc。WinLibs 版本也附有 `gdb`。
 
 ## 先讀
@@ -65,11 +68,16 @@
 
 ### A. 讀 stub（xv6）
 
-先執行一次 `make`，再打開產生出來的 `user/usys.S`，或在任何 `user/*.asm` 中找 `write:`。
+先執行一次 `make fs.img`，再打開產生出來的 `user/usys.S`，或在任何 `user/*.asm` 中找 `write:`。只執行 `make` 不夠：它只建置 `kernel/kernel`，這兩種檔案都還不存在。
 
 **預測：** 載入 `a7` 的值；`fd`、`buf`、`n` 分別在哪個暫存器；執行 `ret` 時回傳值在哪裡。
 
-*預期（依原始碼）：* 先是 `li a7, SYS_write`，master 的 `kernel/syscall.h` 中 `SYS_write` 為 16，接著是 `ecall`，然後是 `ret`。參數已經在 `a0`、`a1`、`a2`，因為 C 呼叫慣例把它們放在那裡。結果回到 `a0`，因為 `syscall()` 把它存進 `p->trapframe->a0`，而 `userret` 最後才還原 `a0`。RISC-V 上的 Linux 用同樣的慣例：`ecall`、編號放在 `a7`、參數放在 `a0`–`a5`（[syscall(2)](https://man7.org/linux/man-pages/man2/syscall.2.html)）。
+<details>
+<summary>原始碼怎麼說，以及建置的結果。請在預測之後再看。</summary>
+
+`user/usys.S` 中是 `li a7, SYS_write`、`ecall` 與 `ret`。在 `user/cat.asm` 中，它們組譯成 `li a7,16`（2 位元組的壓縮指令）、4 位元組的 `ecall` 與 `ret`；這個版本的 `kernel/syscall.h` 中 `SYS_write` 為 16。參數已經在 `a0`、`a1`、`a2`，因為 C 呼叫慣例把它們放在那裡。結果回到 `a0`，因為 `syscall()` 把它存進 `p->trapframe->a0`，而 `userret` 最後才還原 `a0`。RISC-V 上的 Linux 用同樣的慣例：`ecall`、編號放在 `a7`、參數放在 `a0`–`a5`（[syscall(2)](https://man7.org/linux/man-pages/man2/syscall.2.html)）。
+
+</details>
 
 ### B. 在 GDB 中追蹤一次 `write`（xv6）
 
@@ -80,14 +88,14 @@
 (gdb) c
 ```
 
-如果沒有自然發生的 write，就在 xv6 主控台輸入 `echo hi`。停下後，**先預測，再印出：** `$priv`、`$satp`、`$sepc`、`$sp`、`$a0`、`$a1`、`$a2`、`$stvec`。接著：
+在本實驗記錄的執行中，第一次停下是自然發生的，來自 `init` 印出 `init: starting sh`。如果你的沒有停下，就在 xv6 主控台輸入 `echo hi`。停下後，**先預測，再印出：** `$priv`、`$satp`、`$sepc`、`$sp`、`$a0`、`$a1`、`$a2`、`$stvec`。接著：
 
 ```
 (gdb) x/12i $pc           uservec；這個位址沒有符號，請對照 trampoline.S
 (gdb) si                  （重複到 "csrw satp, t1" 之後；每次都印出 $satp 與 $sp）
 ```
 
-到發出呼叫的程式的 `.asm` 檔中查 `$sepc`（shell 是 `user/sh.asm`）。`x/2i $sepc` 也可能可行，但 GDB 是透過 QEMU、以 CPU 目前的特權讀取記憶體，而監督者模式通常不能讀 `PTE_U` 分頁。如果 GDB 回答 `Cannot access memory`，原因就在這裡。
+到發出呼叫的程式的 `.asm` 檔中查 `$sepc`（第一次停下是 `user/init.asm`，shell 是 `user/sh.asm`）。在記錄的執行中，`x/2i $sepc` 回答 `Cannot access memory at address 0x372`：GDB 是透過 QEMU、以 CPU 目前的特權讀取記憶體，而監督者模式通常不能讀 `PTE_U` 分頁。
 
 執行到 `jalr t0` 就進入 `usertrap()`，核心符號又能用了：
 
@@ -100,8 +108,9 @@
 (gdb) p/x p->trapframe->epc
 (gdb) b syscall
 (gdb) c
-(gdb) next
-(gdb) p num
+(gdb) next                （兩次）
+(gdb) p num               在此印出 <optimized out>：核心以 -O 建置
+(gdb) p p->trapframe->a7
 ```
 
 回程要先算出 `userret` 實際執行的位址。它的符號是核心連結位址，但它在 trampoline 頁中執行：
@@ -112,12 +121,27 @@
 (gdb) c
 (gdb) p/x $a0             usertrap() 回傳的使用者 satp
 (gdb) si                  （重複到 sret；在它之前印出 $sepc 與 $sstatus）
+(gdb) b *$sepc            必要：在記錄的執行中，對 sret 直接 si 不會停下
 (gdb) si
 (gdb) p $priv
 (gdb) p/x $pc
 ```
 
-*預期（依原始碼）：* 在 `uservec` 時，`$priv` 是 1（監督者），`$satp` 仍是使用者分頁表，`$sepc` 指向 `ecall`，`$sp` 是使用者堆疊，`$stvec` 等於 `0x3ffffff000`。`csrw satp, t1` 切換到核心分頁表，程式能繼續執行，是因為 trampoline 頁在兩張分頁表中映射在同一個虛擬位址。`sret` 之後，`$priv` 是 0，`$pc` 是 `ecall` 的下一道指令。
+<details>
+<summary>原始碼怎麼說，以及實際執行的結果。請在預測並執行之後再看。</summary>
+
+依原始碼：在 `uservec` 時，`$priv` 是 1（監督者），`$satp` 仍是使用者分頁表，`$sepc` 指向 `ecall`，`$sp` 是使用者堆疊，`$stvec` 等於 `0x3ffffff000`。`csrw satp, t1` 切換到核心分頁表，程式能繼續執行，是因為 trampoline 頁在兩張分頁表中映射在同一個虛擬位址。`sret` 之後，`$priv` 是 0，`$pc` 是 `ecall` 的下一道指令。
+
+第一次停下時的觀察結果：
+
+- `$priv` 為 1，`$satp` 為 `0x8000000000087f52`（init 的分頁表），`$sepc` 為 `0x372`（`user/init.asm` 中 `write` stub 的 `ecall`），`$sp` 為 `0x3ed0`，`$stvec` 為 `0x3ffffff000`。`a0` 為 1、`a1` 為 `0x3edf`、`a2` 為 1：xv6 的使用者 `printf` 每個字元做一次 `write`。
+- `ld sp, 8(a0)` 先把 `sp` 設為 `0x3fffffe000`，也就是這個行程核心堆疊的頂端；接著 `csrw satp, t1` 把 `satp` 設為 `0x8000000000087fff`，就是實驗 00 看到的核心分頁表。
+- 在 `jalr t0` 時，`t0` 是 `usertrap`。進入 `usertrap` 後，`bt` 顯示 `#1 0x0000003ffffff09c in ?? ()`：`jalr` 之後的 trampoline 位址，也就是 `userret`。`$sstatus` 為 `0x200000020`，所以 SPP 為 0。`p->trapframe->epc` 從 `0x372` 變成 `0x376`。
+- 在 `syscall()` 中，`p num` 兩次都印出 `<optimized out>`，`p p->trapframe->a7` 印出 16。
+- `userret` 在 `0x3ffffff09c` 執行，`a0` 為 `0x8000000000087f52`。就在 `sret` 之前，`$sepc` 為 `0x376`，`$sstatus` 為 `0x200000020`（SPP 為 0、SPIE 為 1）。設好 `b *$sepc` 後，`si` 停在 `0x376`，即 `ecall` 後面的 `ret`，`$priv` 為 0。
+- 沒有這個中斷點時，對 `sret` 的 `si` 不會停下，下一次停下已經是下一個 `write` 的陷阱，停在 `uservec`，`$priv` 為 1。
+
+</details>
 
 ### C. 新增系統呼叫：`trapinfo`（xv6）
 
@@ -132,6 +156,13 @@
 把 `trapinfotest.c` 複製到 `user/`，在 `UPROGS` 加上 `$U/_trapinfotest`，然後執行。
 
 **執行前先預測：** `epc` 是 `ecall` 的位址，還是下一道指令的位址？在 `user/trapinfotest.asm` 中找出兩者。`a0` 是否等於 `&ti`？（trap frame 中的 `a0` 是 `uservec` 保存的值，那時 `syscall()` 還沒寫入回傳值。）`ra` 是什麼？最後三個錯誤的目的位址是否都回傳 -1？
+
+<details>
+<summary>搭配參考用 <code>trapinfo</code> 的觀察結果。請在預測並執行你自己的版本之後再看。</summary>
+
+這個版本的 `SYS_trapinfo` 是 23。`trapinfotest` 印出 `epc 0x0000000000000418`、`ra 0x0000000000000014`、`sp 0x0000000000003F80`、`a0 0x0000000000003F88`（並顯示 `&ti is 0x0000000000003F88: same`），以及 `a7 23`。三個錯誤的目的位址都回傳 -1。在 `user/trapinfotest.asm` 中，`main` 以位於 `0x10` 的 `jal` 呼叫 stub；stub 的 `li a7,23` 在 `0x412`，`ecall` 在 `0x414`，其後的 `ret` 在 `0x418`。
+
+</details>
 
 **接著決定哪些不該複製。** `struct trapframe` 也有 `kernel_satp`、`kernel_sp` 與 `kernel_trap`。使用者程式碼自己讀不到 trap frame 那一頁，因為它映射時沒有 `PTE_U`。寫下：如果 `trapinfo` 把這三個欄位複製出去，行程會得知什麼？為什麼會隨機化自身配置的核心，把這種洩漏當成安全漏洞？
 
@@ -149,7 +180,7 @@
 也預測第 4 部分：使用者程式碼自己從 `KERNBASE` 讀取時會發生什麼、核心會印出什麼、子行程的結束狀態是多少。
 
 <details>
-<summary>原始碼推得的結果。請在預測並執行之後再看。</summary>
+<summary>原始碼推得的結果，以及實際執行的結果。請在預測並執行之後再看。</summary>
 
 依 2026-11-15 的 xv6-riscv master：
 
@@ -159,9 +190,18 @@
 - `KERNBASE` 失敗，是因為使用者分頁表在那裡根本沒有映射：`copyin` 走訪的是行程自己的分頁表，不是核心的。`TRAPFRAME` 在那張表中有映射，但沒有 `PTE_U`。
 - 第 4 部分：讀取造成分頁錯誤（`scause` 13）。`usertrap()` 印出 `usertrap(): unexpected scause 0xd ...`，其中 `stval=0x80000000`，接著把行程標記為已終止，父行程看到的狀態是 -1。
 
+2026-11-16 在 commit `fa2ddcb` 上的觀察結果：以上全部成立。`write(1, 0, 8)` 印出 `badptr` 自己程式碼的八個位元組並回傳 8，另外三個 `write` 案例回傳 0。所有 `pipe` 與 `fstat` 案例都回傳 -1，真正的 `fstat` 回傳 0，類型為 3（`T_DEVICE`）。第 4 部分印出 `usertrap(): unexpected scause 0xd pid=6` 與 `sepc=0xf2 stval=0x80000000`，子行程的結束狀態是 -1。
+
 </details>
 
 **刻意弄壞：** 刪掉 `walkaddr()` 中的 `PTE_U` 檢查。先預測 `write(1, TRAPFRAME, 8)` 現在會印出什麼，再執行。核心現在替行程複製了一個行程自己不能讀的分頁，這類錯誤稱為 confused deputy。最後把檢查加回去。
+
+<details>
+<summary>刪掉 <code>PTE_U</code> 檢查後的觀察結果。請在預測並執行之後再看。</summary>
+
+`write(1, TRAPFRAME, 8)` 回傳 8，印出的位元組是 `ff 7f 08 00 00 00 00 80`，也就是 `0x8000000000087fff`：核心的 `satp`，trap frame 的第一個欄位。`pipe(TRAPFRAME)` 與 `fstat(0, TRAPFRAME)` 這時也回傳 0，表示核心替行程寫進了 trap frame。系統仍繼續運作，因為被覆寫的欄位（`kernel_satp`、`kernel_sp`、`kernel_trap`）在每次返回使用者空間前都會由 `prepare_return()` 重寫。更長的複製接下來會碰到哪個欄位？那時會發生什麼事？
+
+</details>
 
 ### E. Linux 上的同一條邊界（WSL 2）
 
@@ -170,7 +210,10 @@ gcc -O2 -Wall -o boundary linux/boundary.c
 ./boundary
 strace -o boundary.trace ./boundary > /dev/null
 strace -c ./boundary > /dev/null
+strace -o /dev/null ./boundary
 ```
+
+最後一行保留程式自己的輸出，讓你把它的第 3 部分和沒有 `strace` 的執行比較。
 
 **先預測，再到 `boundary.trace` 與 `-c` 摘要中確認：**
 
@@ -178,6 +221,16 @@ strace -c ./boundary > /dev/null
 2. 兩次錯誤指標的 write 回傳什麼？`errno` 是什麼？
 3. `strace -c` 算到幾次 `getpid`？`clock_gettime` 有沒有出現？[vdso(7)](https://man7.org/linux/man-pages/man7/vdso.7.html) 列出 `__vdso_clock_gettime` 是 x86-64 vDSO 符號之一，並說明 vDSO 呼叫不會出現在 `strace` 中。glibc 2.25 起，`getpid()` 每次都會發出真正的系統呼叫（[getpid(2)](https://man7.org/linux/man-pages/man2/getpid.2.html)）。如果 `clock_gettime` 以系統呼叫的形式出現，記錄下來，並找出你的系統為什麼會這樣。
 4. 在 `strace` 下，`syscall(SYS_getpid)` 比沒有 `strace` 時慢多少？
+
+<details>
+<summary>容器中的觀察結果（核心 6.6.87.2-microsoft-standard-WSL2、glibc 2.39、strace 6.8）。請在預測並執行之後再看。</summary>
+
+1. 分不出來。追蹤紀錄中是三行形式相同的 `write(1, "...", n)`。strace 看到的是系統呼叫，而不是發出它的程式碼。
+2. `write(1, 0xffff800000000000, 8)` 每次都回傳 -1，`errno` 為 14（`EFAULT`，"Bad address"）。`write(1, NULL, 8)` 在標準輸出是檔案或管線時回傳 -1 與 `EFAULT`；但在標準輸出為 `/dev/null` 的 `boundary.trace` 中，它回傳 8。核心在驅動程式執行之前先檢查緩衝區的範圍，核心半部的位址過不了這一關；`NULL` 過得了，而 `/dev/null` 的驅動程式從不讀取緩衝區。
+3. `strace -c` 算到 1,000,000 次 `getpid`，完全沒有 `clock_gettime` 呼叫；這台虛擬機器的 clocksource 是 `tsc`。`grep -c clock_gettime boundary.trace` 仍會找到一行：那是寫出標籤文字的 `write`。
+4. 在記錄的執行中，沒有 `strace` 時 `syscall(SYS_getpid)` 四次執行為每次 96–127 ns，在 `strace -o /dev/null` 下是 88,463 ns，約為 900 倍。一般函式呼叫為 1.5–1.6 ns，`clock_gettime` 為 13.7–16.2 ns。
+
+</details>
 
 和 xv6 對照暫存器。x86-64 上，編號放在 `rax`，參數依序放在 `rdi`、`rsi`、`rdx`、`r10`、`r8`、`r9`（[syscall(2)](https://man7.org/linux/man-pages/man2/syscall.2.html)）。第四個參數用 `r10` 而不是 `rcx`，因為 `SYSCALL` 指令把返回位址存進 `rcx`、把旗標存進 `r11`。Linux [`arch/x86/entry/entry_64.S`](https://github.com/torvalds/linux/blob/master/arch/x86/entry/entry_64.S) 中 64 位元進入程式碼上方的註解說明了這點，並補充 `SYSCALL` 不會在堆疊上保存任何東西。RISC-V 的 `ecall` 也不在堆疊上保存任何東西：硬體把陷阱記錄在 `sepc`、`scause`、`stval` 與 `sstatus`，每個通用暫存器都由 `uservec` 自己保存。
 
@@ -278,6 +331,9 @@ gdb -q -batch -x user_mode_calls.gdb win32_write.exe
 
 - **用名稱設在 `uservec` 或 `userret` 的中斷點永遠不觸發。** 這些符號是核心連結位址，但程式碼在 `TRAMPOLINE` 執行。改設在 `*0x3ffffff000` 與算出來的 `userret` 位址。
 - **`0x3ffffff000` 的中斷點一直觸發。** 來自使用者模式的計時器中斷也會進入 `uservec`。加上 `$scause == 8` 條件。
+- **對 `sret` 執行 `si` 後一去不回，或又停在 `uservec`。** 在 QEMU 8.2.2 與 GDB 15.1 下，單步越過 `sret` 不會停下。執行 `si` 之前先設 `b *$sepc`。
+- **`p num` 印出 `<optimized out>`。** 核心以 `-O` 建置。在 `next` 之後印 `p->trapframe->a7`，或在只有一個 hart 時印 `cpus[0].proc->trapframe->a7`。
+- **`user/usys.S` 或 `user/*.asm` 不存在。** 只執行 `make` 只會建置 `kernel/kernel`。請執行 `make fs.img` 或 `make qemu`。
 - **`No symbol "p" in current context`。** 你在錯誤的 frame。先 `bt`，再用 `frame N` 或 `up`。
 - **主控台出現 `unknown sys call 23`。** `syscall()` 找不到處理函式：`syscall.h` 的編號和 `syscalls[]` 的項目對不上，或你沒有重新建置。
 - **`implicit declaration of function 'trapinfo'`。** `user/user.h` 缺少原型。Makefile 用 `-Werror` 建置，任何警告都會讓建置停止。
@@ -285,6 +341,8 @@ gdb -q -batch -x user_mode_calls.gdb win32_write.exe
 - **`exec trapinfotest failed`。** 程式不在 `UPROGS` 中，所以不在 `fs.img` 裡。
 - **你的版本名稱不同：** `fork`／`kfork`、`usertrapret`／`prepare_return`、`printf`／`printk`。設中斷點前先 grep。
 - **`badptr` 在位址 0 的案例之後當掉。** 你的 `copyout` 沒有 `PTE_W` 檢查，所以 `pipe(0)` 覆寫了程式的程式碼。請解釋這次當機，而不是把它藏起來。
+- **`badptr` 印出奇怪的字元。** 從位址 0 的 `write` 把八個位元組的機器碼送到主控台，終端機要怎麼顯示都有可能。
+- **Linux：`write(1, NULL, 8)` 回傳 8。** 標準輸出是 `/dev/null`，它的驅動程式從不讀取緩衝區。把輸出導向檔案或管線，就會看到 `EFAULT`。
 - **Windows：GDB 印出 "Could not find platform independent libraries"。** 在撰寫本實驗的機器上，WinLibs 的 gdb 18.1 會印出這個 Python 警告，但腳本照常運作。
 - **Windows：`Function "NtWriteFile" not defined`。** 程式啟動前 ntdll 還沒載入，所以兩個腳本都先停在 `main`。
 - **Windows：每次執行的時間差很多。** 電源計畫、turbo、背景負載與 hypervisor 都會反映在這些數字上。多跑幾次，回報範圍，而不是只報一次。
