@@ -15,6 +15,7 @@ One-line conclusion: a dynamic language does not start as a "language" with a "p
 | [Portability and runtime evaluation (zh-TW)](research/02-portability-and-runtime-evaluation.zh-TW.md) | Support tiers, toolchains, system dependency layers, ABI stability, binary distribution, constrained targets such as WASI and microcontrollers, and a 10-item checklist |
 | [Design your own dynamic language (zh-TW)](research/03-design-your-own-dynamic-language.zh-TW.md) | Nine stages from problem statement to specification process, with acceptance criteria, decision tables, and common pitfalls |
 | [Runnable example: minilang](examples/minilang/README.md) | A single-file tree-walking interpreter in Python with tests, covering lexing, parsing, closures, and exceptions |
+| [Runnable example: minilang-vm](examples/minilang-vm/README.md) | Roadmap stage 4 for the same language: a bytecode compiler and stack VM that reuses minilang's front end, passes minilang's unchanged test suite, and is benchmarked against the tree-walker |
 | [Sources (zh-TW)](research/04-sources.zh-TW.md) | 55 official and first-hand sources, two secondary sources, evidence boundaries, and open questions |
 
 ## Key findings
@@ -31,6 +32,8 @@ Portability is evaluated in six layers: support policy, implementation language 
 
 The design roadmap has nine stages: problem and scope, syntax and semantics draft, tree-walking interpreter, standard library and modules, bytecode compiler and VM, memory management, host interoperability, platforms and distribution, specification and process. Key decisions (value model, scoping, error model, concurrency, embedded versus standalone) are made in the first two stages because they are hard to change later.
 
+The minilang-vm example carries out stage 4's acceptance test. On Python 3.14.6 the VM ran 1.45x to 2.80x faster than the tree-walker on three fixed benchmarks over two measurement runs, and up to 3.19x with compiler optimizations; nearly all of that extra gain came from one change, storing assignment statements without a DUP/POP pair. The speedup comes from removing host-level work: the tree-walker makes Python function calls for every AST node and passes `return` as an exception. Dispatch itself is not cheaper, since each VM instruction still costs roughly 140 to 200 ns in Python (derived from measured counts and times). A Python prototype therefore validates the compiler design, not the performance a C VM would reach.
+
 ## Boundaries
 
-Platform tiers, toolchain versions, and release schedules are snapshots as of the research date and change between versions; recheck before implementation. Performance figures are each project's own benchmark reports and were not re-measured. Stage sizes are estimates derived from public teaching material and reference implementations; only the minilang example was executed and tested.
+Platform tiers, toolchain versions, and release schedules are snapshots as of the research date and change between versions; recheck before implementation. Performance figures for Python, Node.js, V8 and Lua are each project's own benchmark reports and were not re-measured; the minilang-vm figures were measured on one machine, as described in its README. Stage sizes are estimates derived from public teaching material and reference implementations; only the minilang and minilang-vm examples were executed and tested.

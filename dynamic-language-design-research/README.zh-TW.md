@@ -15,6 +15,7 @@
 | [移植性與執行環境評估](research/02-portability-and-runtime-evaluation.zh-TW.md) | 平台支援層級、ABI、相依層、嵌入式與 WebAssembly、評估檢查表 |
 | [自製動態語言路線圖](research/03-design-your-own-dynamic-language.zh-TW.md) | 從規格到樹走訪直譯器、位元組碼 VM、GC、FFI、工具鏈的階段計畫與決策表 |
 | [可執行範例 minilang](examples/minilang/README.zh-TW.md) | 單檔樹走訪直譯器，示範詞法、語法、閉包、例外與測試 |
+| [可執行範例 minilang-vm](examples/minilang-vm/README.zh-TW.md) | 同一門語言的階段 4：位元組碼編譯器與堆疊式 VM，沿用 minilang 前端、不改一行跑 minilang 的測試，並與樹走訪比較效能 |
 | [來源與查證範圍](research/04-sources.zh-TW.md) | 官方文件、論文與本研究的證據邊界 |
 
 ## 問題一：Python 與 Node.js 是怎麼從 0 到有的
@@ -79,11 +80,12 @@
 - **並行模型**：先選單執行緒加事件迴圈或協程；多執行緒共享堆積是 Python 花了二十年才在 3.13 做出 free-threaded 實驗版的題目。
 - **嵌入或獨立**：Lua 從第一天就是嵌入式函式庫；Python 是獨立直譯器後來才補嵌入 API。這決定 API 形狀與全域狀態的處理。
 
-完整決策表、每階段的細節與常見陷阱見[研究三](research/03-design-your-own-dynamic-language.zh-TW.md)。可執行的最小範例在 [examples/minilang](examples/minilang/README.zh-TW.md)，用 Python 寫成的單檔樹走訪直譯器，含測試，對應階段 2。
+完整決策表、每階段的細節與常見陷阱見[研究三](research/03-design-your-own-dynamic-language.zh-TW.md)。可執行的最小範例在 [examples/minilang](examples/minilang/README.zh-TW.md)，用 Python 寫成的單檔樹走訪直譯器，含測試，對應階段 2；[examples/minilang-vm](examples/minilang-vm/README.zh-TW.md) 是同一門語言的位元組碼編譯器與 VM，對應階段 4。兩次量測中，它在 Python 3.14.6 上比樹走訪快 1.45 至 2.80 倍，開啟編譯器最佳化最多 3.19 倍，額外的增益幾乎都來自「指派陳述不產生 DUP 與 POP」這一項；加速來自省掉每個 AST 節點的 Python 函式呼叫與以例外實作的 `return`，不是分派變便宜（每道指令仍約 140 至 200 奈秒，由量測的計數與時間推算），所以 Python 原型驗證的是編譯器設計，不代表 C 版本能得到的效能。
 
 ## 本研究的邊界
 
 - 歷史事實來自 Python 官方 FAQ 與 Guido van Rossum 的 Python History 部落格、Lua 作者的 HOPL III 論文與 JUCS 論文、Chromium 官方部落格、Node.js 與 V8 官方文件。Node.js 首次展示的日期只有 Wikipedia 等二手來源，文中已標示。
 - 平台層級、版本與工具鏈要求以查閱日當天的官方文件為準；PEP 與 BUILDING.md 會隨版本更新，實作前請重查。
 - 階段規模是依公開教材與參考實作的行數推估，不是量測結果。
+- Python、Node.js、V8、Lua 的效能數字是各專案自行公布，未重測；minilang-vm 的加速倍數是本研究在單一機器上的量測，條件見該範例說明。
 - 本研究沒有宣稱哪種語言設計較優；表格是對照，不是排名。

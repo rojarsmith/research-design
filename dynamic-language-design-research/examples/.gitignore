@@ -1,0 +1,3 @@
+# Python bytecode caches are build output; never commit them.
+__pycache__/
+*.pyc
