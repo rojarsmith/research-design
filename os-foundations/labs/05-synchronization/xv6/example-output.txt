@@ -1,0 +1,545 @@
+Recorded 2026-11-16 in an Ubuntu 24.04.5 container (image oslab:24.04) under
+podman on Windows 11 Pro build 26300. podman runs in a podman machine on
+WSL 2 and reported itself as rootful. QEMU 8.2.2, riscv64-linux-gnu-gcc
+13.3.0, expect. xv6-riscv commit fa2ddcb7ca87a77af579380a6eafd5aff163b44f
+(2026-11-05). The host (Intel Core i7-11700, 16 logical processors) was
+running other work at the same time. Your numbers will differ.
+
+The main record below is the third complete run, started 03:32 UTC:
+  SOLUTION_DIR=<reference patches> sh xv6/run.sh /opt/xv6-riscv
+The percpu and lostwake-b variants used reference solutions that are not
+shipped with this lab. Everything else comes from files in this folder.
+Spin counts from the two earlier boots of each kernel, and the first set
+of push_off break-it runs, are summarized at the end.
+
+==============================================================================
+SOLUTION_DIR=... sh xv6/run.sh /opt/xv6-riscv, third run (main record)
+==============================================================================
+
+===== base =====
+--- applying lab05-lockstat.patch
+--- booting with CPUS=3
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 2 starting
+hart 1 starting
+init: starting sh
+$ kmemstress
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 15 ticks
+lock cons: 1 lock(s), #acquire() 1, #spin 0
+lock uart: 1 lock(s), #acquire() 166, #spin 19430
+lock pr: 1 lock(s), #acquire() 3, #spin 0
+lock kmem: 1 lock(s), #acquire() 120061, #spin 58225
+lock nextpid: 1 lock(s), #acquire() 4, #spin 0
+lock wait_lock: 1 lock(s), #acquire() 13, #spin 0
+lock proc: 64 lock(s), #acquire() 251732, #spin 338
+lock time: 1 lock(s), #acquire() 19, #spin 0
+lock bcache: 1 lock(s), #acquire() 1, #spin 0
+lock sleep lock: 80 lock(s), #acquire() 80, #spin 0
+lock itable: 1 lock(s), #acquire() 7, #spin 0
+lock ftable: 1 lock(s), #acquire() 19, #spin 0
+lock virtio_disk: 1 lock(s), #acquire() 1, #spin 0
+lock log: 1 lock(s), #acquire() 10, #spin 0
+lockstat: 156 locks registered, total #spin 77993
+$ kmemstress
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 15 ticks
+lock cons: 1 lock(s), #acquire() 1, #spin 0
+lock uart: 1 lock(s), #acquire() 165, #spin 17757
+lock pr: 1 lock(s), #acquire() 3, #spin 0
+lock kmem: 1 lock(s), #acquire() 120061, #spin 43481
+lock nextpid: 1 lock(s), #acquire() 4, #spin 0
+lock wait_lock: 1 lock(s), #acquire() 13, #spin 0
+lock proc: 64 lock(s), #acquire() 250370, #spin 5680
+lock time: 1 lock(s), #acquire() 18, #spin 0
+lock bcache: 1 lock(s), #acquire() 1, #spin 0
+lock sleep lock: 80 lock(s), #acquire() 80, #spin 0
+lock itable: 1 lock(s), #acquire() 7, #spin 0
+lock ftable: 1 lock(s), #acquire() 19, #spin 0
+lock virtio_disk: 1 lock(s), #acquire() 1, #spin 0
+lock log: 1 lock(s), #acquire() 10, #spin 0
+lockstat: 156 locks registered, total #spin 66918
+$ kmemstress 1 60000
+kmemstress: 1 process(es) x 60000 rounds of sbrk(4096) + sbrk(-4096) in 34 ticks
+lock cons: 1 lock(s), #acquire() 1, #spin 0
+lock uart: 1 lock(s), #acquire() 165, #spin 19305
+lock pr: 1 lock(s), #acquire() 3, #spin 0
+lock kmem: 1 lock(s), #acquire() 120021, #spin 0
+lock nextpid: 1 lock(s), #acquire() 2, #spin 0
+lock wait_lock: 1 lock(s), #acquire() 5, #spin 0
+lock proc: 64 lock(s), #acquire() 255537, #spin 3818
+lock time: 1 lock(s), #acquire() 37, #spin 0
+lock bcache: 1 lock(s), #acquire() 1, #spin 0
+lock sleep lock: 80 lock(s), #acquire() 80, #spin 0
+lock itable: 1 lock(s), #acquire() 3, #spin 0
+lock ftable: 1 lock(s), #acquire() 7, #spin 0
+lock virtio_disk: 1 lock(s), #acquire() 1, #spin 0
+lock log: 1 lock(s), #acquire() 4, #spin 0
+lockstat: 156 locks registered, total #spin 23123
+$ lostwake
+  ping: 500 rounds
+  ping: 1000 rounds
+  ping: 1500 rounds
+  ping: 2000 rounds
+lostwake: 2000 rounds finished in 5 ticks
+$
+XV6RUN: done
+QEMU: Terminated
+
+--- booting with CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+init: starting sh
+$ kmemstress
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 33 ticks
+lock cons: 1 lock(s), #acquire() 1, #spin 0
+lock uart: 1 lock(s), #acquire() 164, #spin 0
+lock pr: 1 lock(s), #acquire() 3, #spin 0
+lock kmem: 1 lock(s), #acquire() 120061, #spin 0
+lock nextpid: 1 lock(s), #acquire() 4, #spin 0
+lock wait_lock: 1 lock(s), #acquire() 13, #spin 0
+lock proc: 64 lock(s), #acquire() 249223, #spin 0
+lock time: 1 lock(s), #acquire() 36, #spin 0
+lock bcache: 1 lock(s), #acquire() 1, #spin 0
+lock sleep lock: 80 lock(s), #acquire() 80, #spin 0
+lock itable: 1 lock(s), #acquire() 7, #spin 0
+lock ftable: 1 lock(s), #acquire() 19, #spin 0
+lock virtio_disk: 1 lock(s), #acquire() 1, #spin 0
+lock log: 1 lock(s), #acquire() 10, #spin 0
+lockstat: 156 locks registered, total #spin 0
+$
+XV6RUN: done
+QEMU: Terminated
+
+===== percpu =====
+--- applying lab05-lockstat.patch
+--- applying kalloc-percpu.patch
+--- booting with CPUS=3
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 1 starting
+hart 2 starting
+init: starting sh
+$ kmemstress
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 15 ticks
+lock cons: 1 lock(s), #acquire() 1, #spin 0
+lock uart: 1 lock(s), #acquire() 166, #spin 6465
+lock pr: 1 lock(s), #acquire() 3, #spin 0
+lock kmem: 8 lock(s), #acquire() 120086, #spin 0
+lock nextpid: 1 lock(s), #acquire() 4, #spin 0
+lock wait_lock: 1 lock(s), #acquire() 13, #spin 0
+lock proc: 64 lock(s), #acquire() 250971, #spin 15374
+lock time: 1 lock(s), #acquire() 18, #spin 0
+lock bcache: 1 lock(s), #acquire() 1, #spin 0
+lock sleep lock: 80 lock(s), #acquire() 80, #spin 0
+lock itable: 1 lock(s), #acquire() 7, #spin 0
+lock ftable: 1 lock(s), #acquire() 19, #spin 0
+lock virtio_disk: 1 lock(s), #acquire() 1, #spin 0
+lock log: 1 lock(s), #acquire() 10, #spin 0
+lockstat: 163 locks registered, total #spin 21839
+$ kmemstress
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 16 ticks
+lock cons: 1 lock(s), #acquire() 1, #spin 0
+lock uart: 1 lock(s), #acquire() 168, #spin 25026
+lock pr: 1 lock(s), #acquire() 3, #spin 0
+lock kmem: 8 lock(s), #acquire() 120098, #spin 0
+lock nextpid: 1 lock(s), #acquire() 4, #spin 0
+lock wait_lock: 1 lock(s), #acquire() 13, #spin 0
+lock proc: 64 lock(s), #acquire() 251618, #spin 1951
+lock time: 1 lock(s), #acquire() 19, #spin 0
+lock bcache: 1 lock(s), #acquire() 1, #spin 0
+lock sleep lock: 80 lock(s), #acquire() 80, #spin 0
+lock itable: 1 lock(s), #acquire() 7, #spin 0
+lock ftable: 1 lock(s), #acquire() 19, #spin 0
+lock virtio_disk: 1 lock(s), #acquire() 1, #spin 0
+lock log: 1 lock(s), #acquire() 10, #spin 0
+lockstat: 163 locks registered, total #spin 26977
+$ kmemstress 1 60000
+kmemstress: 1 process(es) x 60000 rounds of sbrk(4096) + sbrk(-4096) in 43 ticks
+lock cons: 1 lock(s), #acquire() 1, #spin 0
+lock uart: 1 lock(s), #acquire() 166, #spin 37966
+lock pr: 1 lock(s), #acquire() 3, #spin 0
+lock kmem: 8 lock(s), #acquire() 120028, #spin 0
+lock nextpid: 1 lock(s), #acquire() 2, #spin 0
+lock wait_lock: 1 lock(s), #acquire() 5, #spin 0
+lock proc: 64 lock(s), #acquire() 258446, #spin 2200
+lock time: 1 lock(s), #acquire() 46, #spin 0
+lock bcache: 1 lock(s), #acquire() 1, #spin 0
+lock sleep lock: 80 lock(s), #acquire() 80, #spin 0
+lock itable: 1 lock(s), #acquire() 3, #spin 0
+lock ftable: 1 lock(s), #acquire() 7, #spin 0
+lock virtio_disk: 1 lock(s), #acquire() 1, #spin 0
+lock log: 1 lock(s), #acquire() 4, #spin 0
+lockstat: 163 locks registered, total #spin 40166
+$
+XV6RUN: done
+QEMU: Terminated
+
+===== window =====
+--- applying lab05-lockstat.patch
+--- applying lostwake-window.patch
+--- booting with CPUS=3
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 2 starting
+hart 1 starting
+init: starting sh
+$ lostwake
+  ping: 500 rounds
+  ping: 1000 rounds
+  ping: 1500 rounds
+  ping: 2000 rounds
+lostwake: 2000 rounds finished in 10 ticks
+$ lostwake
+  ping: 500 rounds
+  ping: 1000 rounds
+  ping: 1500 rounds
+  ping: 2000 rounds
+lostwake: 2000 rounds finished in 10 ticks
+$ lostwake
+  ping: 500 rounds
+  ping: 1000 rounds
+  ping: 1500 rounds
+  ping: 2000 rounds
+lostwake: 2000 rounds finished in 10 ticks
+$
+XV6RUN: done
+QEMU: Terminated
+
+===== lostwake-a =====
+--- applying lab05-lockstat.patch
+--- applying lostwake-a.patch
+--- booting with CPUS=3
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 1 starting
+hart 2 starting
+init: starting sh
+$ lostwake
+  watchdog: 100 ticks are up, killing ping (pid 4) and pong (pid 5)
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+$ lostwake
+  watchdog: 100 ticks are up, killing ping (pid 8) and pong (pid 9)
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+$ lostwake
+  watchdog: 100 ticks are up, killing ping (pid 12) and pong (pid 13)
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+$
+XV6RUN: done
+QEMU: Terminated
+
+===== lostwake-b =====
+--- applying lab05-lockstat.patch
+--- applying lostwake-b.patch
+--- booting with CPUS=3
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 2 starting
+hart 1 starting
+init: starting sh
+$ lostwake
+  watchdog: 100 ticks are up, killing ping (pid 4) and pong (pid 5)
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+$ lostwake
+  watchdog: 100 ticks are up, killing ping (pid 8) and pong (pid 9)
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+$ lostwake
+  watchdog: 100 ticks are up, killing ping (pid 12) and pong (pid 13)
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+$
+XV6RUN: done
+QEMU: Terminated
+
+===== pushoff-nointr =====
+--- applying pushoff-nointr.patch
+--- applying lab05-lockstat.patch
+--- booting with CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+panic: pop_off - interruptible
+
+XV6RUN: timeout waiting for boot
+QEMU: Terminated
+
+--- boot ended with status 2
+--- booting with CPUS=3
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 1 starting
+hart 2 starting
+panic: pop_off - interruptible
+
+XV6RUN: timeout waiting for boot
+QEMU: Terminated
+
+--- boot ended with status 2
+===== pushoff-nonest =====
+--- applying pushoff-nonest.patch
+--- applying lab05-lockstat.patch
+--- booting with CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+ppanic: pop_off - interruptible
+
+XV6RUN: timeout waiting for boot
+QEMU: Terminated
+
+--- boot ended with status 2
+--- booting with CPUS=3
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 2 starting
+hart 1 starting
+ppanic: pop_off - interruptible
+
+XV6RUN: timeout waiting for boot
+QEMU: Terminated
+
+--- boot ended with status 2
+===== pushoff-nointr-nocheck =====
+--- applying pushoff-nointr.patch
+--- applying lab05-lockstat.patch
+--- removed the intr_get() check from pop_off()
+--- booting with CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+ppanic: acquire
+
+XV6RUN: timeout waiting for boot
+QEMU: Terminated
+
+--- boot ended with status 2
+--- booting with CPUS=3
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 2 starting
+hart 1 starting
+panic: acquire
+
+XV6RUN: timeout waiting for boot
+QEMU: Terminated
+
+--- boot ended with status 2
+===== pushoff-nonest-nocheck =====
+--- applying pushoff-nonest.patch
+--- applying lab05-lockstat.patch
+--- removed the intr_get() check from pop_off()
+--- booting with CPUS=1
+spawn make CPUS=1 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+ppanic: acquire
+
+XV6RUN: timeout waiting for boot
+QEMU: Terminated
+
+--- boot ended with status 2
+--- booting with CPUS=3
+spawn make CPUS=3 qemu
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+hart 2 starting
+hart 1 starting
+ppanic: acquire
+
+XV6RUN: timeout waiting for boot
+QEMU: Terminated
+
+--- boot ended with status 2
+build trees are in /tmp/lab05.RvZx6t
+
+==============================================================================
+Earlier boots, summary (kmemstress, lockstat kmem line, lostwake)
+==============================================================================
+
+Boot 1 (about 00:00 UTC, with the first versions of run.sh and xv6run.exp;
+the percpu and lostwake-b variants used the same reference patches):
+===== base =====
+--- booting with CPUS=3
+xv6 kernel is booting
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 17 ticks
+lock kmem: 1 lock(s), #acquire() 120061, #spin 99831
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 15 ticks
+lock kmem: 1 lock(s), #acquire() 120061, #spin 56969
+kmemstress: 1 process(es) x 60000 rounds of sbrk(4096) + sbrk(-4096) in 36 ticks
+lock kmem: 1 lock(s), #acquire() 120021, #spin 0
+  ping: 500 rounds
+  ping: 1000 rounds
+  ping: 1500 rounds
+  ping: 2000 rounds
+lostwake: 2000 rounds finished in 6 ticks
+--- booting with CPUS=1
+xv6 kernel is booting
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 35 ticks
+lock kmem: 1 lock(s), #acquire() 120061, #spin 0
+===== percpu =====
+--- booting with CPUS=3
+xv6 kernel is booting
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 15 ticks
+lock kmem: 8 lock(s), #acquire() 120126, #spin 0
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 15 ticks
+lock kmem: 8 lock(s), #acquire() 120068, #spin 0
+kmemstress: 1 process(es) x 60000 rounds of sbrk(4096) + sbrk(-4096) in 36 ticks
+lock kmem: 8 lock(s), #acquire() 120028, #spin 0
+===== window =====
+--- booting with CPUS=3
+xv6 kernel is booting
+  ping: 500 rounds
+  ping: 1000 rounds
+  ping: 1500 rounds
+  ping: 2000 rounds
+lostwake: 2000 rounds finished in 11 ticks
+  ping: 500 rounds
+  ping: 1000 rounds
+  ping: 1500 rounds
+  ping: 2000 rounds
+lostwake: 2000 rounds finished in 10 ticks
+  ping: 500 rounds
+  ping: 1000 rounds
+  ping: 1500 rounds
+  ping: 2000 rounds
+lostwake: 2000 rounds finished in 10 ticks
+===== lostwake-a =====
+--- booting with CPUS=3
+xv6 kernel is booting
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+  ping: 500 rounds
+  ping: 1000 rounds
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+  ping: 500 rounds
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+===== lostwake-b =====
+--- booting with CPUS=3
+xv6 kernel is booting
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+
+Boot 2 (about 03:26 UTC):
+===== base =====
+--- booting with CPUS=3
+xv6 kernel is booting
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 15 ticks
+lock kmem: 1 lock(s), #acquire() 120061, #spin 54094
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 14 ticks
+lock kmem: 1 lock(s), #acquire() 120061, #spin 45433
+kmemstress: 1 process(es) x 60000 rounds of sbrk(4096) + sbrk(-4096) in 33 ticks
+lock kmem: 1 lock(s), #acquire() 120021, #spin 0
+  ping: 500 rounds
+  ping: 1000 rounds
+  ping: 1500 rounds
+  ping: 2000 rounds
+lostwake: 2000 rounds finished in 5 ticks
+--- booting with CPUS=1
+xv6 kernel is booting
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 32 ticks
+lock kmem: 1 lock(s), #acquire() 120061, #spin 0
+===== percpu =====
+--- booting with CPUS=3
+xv6 kernel is booting
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 15 ticks
+lock kmem: 8 lock(s), #acquire() 120088, #spin 0
+kmemstress: 3 process(es) x 20000 rounds of sbrk(4096) + sbrk(-4096) in 15 ticks
+lock kmem: 8 lock(s), #acquire() 120092, #spin 0
+kmemstress: 1 process(es) x 60000 rounds of sbrk(4096) + sbrk(-4096) in 33 ticks
+lock kmem: 8 lock(s), #acquire() 120028, #spin 0
+===== window =====
+--- booting with CPUS=3
+xv6 kernel is booting
+  ping: 500 rounds
+  ping: 1000 rounds
+  ping: 1500 rounds
+  ping: 2000 rounds
+lostwake: 2000 rounds finished in 10 ticks
+  ping: 500 rounds
+  ping: 1000 rounds
+  ping: 1500 rounds
+  ping: 2000 rounds
+lostwake: 2000 rounds finished in 9 ticks
+  ping: 500 rounds
+  ping: 1000 rounds
+  ping: 1500 rounds
+  ping: 2000 rounds
+lostwake: 2000 rounds finished in 10 ticks
+===== lostwake-a =====
+--- booting with CPUS=3
+xv6 kernel is booting
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+===== lostwake-b =====
+--- booting with CPUS=3
+xv6 kernel is booting
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+lostwake: STUCK after 100 ticks: ping exited -1, pong exited -1 (-1 means killed by the watchdog). A wakeup was lost.
+
+==============================================================================
+push_off break-its, first set
+==============================================================================
+
+First set: the variants were built by hand (patch, then sed for the
+"check removed" ones) and booted with kmemstress as the first command.
+--- pushoff-nointr, CPUS=1
+panic: pop_off - interruptible
+XV6RUN: timeout waiting for boot
+--- pushoff-nointr, CPUS=3
+panic: pop_off - interruptible
+XV6RUN: timeout waiting for boot
+--- pushoff-nonest, CPUS=1
+ppanic: pop_off - interruptible
+XV6RUN: timeout waiting for boot
+--- pushoff-nonest, CPUS=3
+ppanic: pop_off - interruptible
+XV6RUN: timeout waiting for boot
+--- pushoff-nointr, intr_get() check removed from pop_off(), CPUS=1
+ppanic: acquire
+XV6RUN: timeout waiting for boot
+--- pushoff-nointr, intr_get() check removed from pop_off(), CPUS=3
+panic: sched interruptible
+XV6RUN: timeout waiting for boot
+--- pushoff-nonest, intr_get() check removed from pop_off(), CPUS=1
+panic: acquire
+XV6RUN: timeout waiting for boot
+--- pushoff-nonest, intr_get() check removed from pop_off(), CPUS=3
+ppanic: acquire
+XV6RUN: timeout waiting for boot

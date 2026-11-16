@@ -1,0 +1,19 @@
+# Build outputs and logs of the companion programs; labs/.gitignore covers
+# build/, *.exe, *.o and *.obj already.
+*.gch
+*.d
+*.log
+*.etl
+fs.img
+kernel/kernel
+lockbench
+lostwake
+crossproc
+futex_mutex
+lockorder
+lockorder-tsan
+strace-*.txt
+
+# Your solutions to exercises B and D (for run.sh's SOLUTION_DIR) stay
+# out of the repository.
+xv6/solution/

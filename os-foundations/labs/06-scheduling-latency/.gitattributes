@@ -1,0 +1,7 @@
+# These files are used inside Linux (WSL 2, a container, the xv6 build).
+# Keep LF line endings even in a Windows checkout with core.autocrlf=true,
+# so that patch and sh accept them.
+*.patch text eol=lf
+*.sh    text eol=lf
+xv6/*.c text eol=lf
+linux/*.c text eol=lf

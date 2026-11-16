@@ -1,0 +1,14 @@
+# Lab 05, exercise B, break it (2): pop_off() turns interrupts back on at
+# every release, even when an outer lock is still held. Applies to xv6-riscv
+# fa2ddcb7, alone or on top of lab05-lockstat.patch. Undo with patch -R -p1.
+diff -ruN a/kernel/spinlock.c b/kernel/spinlock.c
+--- a/kernel/spinlock.c
++++ b/kernel/spinlock.c
+@@ -111,6 +111,6 @@
+   if (c->noff < 1)
+     panic("pop_off");
+   c->noff -= 1;
+-  if (c->noff == 0 && c->intena)
++  if (c->intena) // Lab 05: BROKEN, ignores nesting
+     intr_on();
+ }

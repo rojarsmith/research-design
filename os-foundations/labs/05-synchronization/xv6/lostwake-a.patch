@@ -1,0 +1,94 @@
+# Lab 05, exercise C, broken pair A: pipewrite() wakes only readers that
+# are already SLEEPING, so a reader between sleep_prepare() and sleep()
+# misses its wakeup. Applies to xv6-riscv fa2ddcb7, on top of
+# lab05-lockstat.patch or alone. Undo with patch -R -p1.
+diff -ruN a/kernel/defs.h b/kernel/defs.h
+--- a/kernel/defs.h
++++ b/kernel/defs.h
+@@ -99,6 +99,7 @@
+ void            userinit(void);
+ int             kwait(uint64);
+ void            wakeup(void*);
++void            wakeup_asleep(void*);
+ void            yield(void);
+ int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
+ int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
+diff -ruN a/kernel/pipe.c b/kernel/pipe.c
+--- a/kernel/pipe.c
++++ b/kernel/pipe.c
+@@ -10,6 +10,17 @@
+ 
+ #define PIPESIZE 512
+ 
++// Lab 05: keep the window between "decided to sleep" and "asleep" open
++// for about 100 us (1000 ticks of QEMU's 10 MHz time CSR), so that the
++// lost-wakeup race in piperead() happens often enough to see.
++static void
++race_window(void)
++{
++  uint64 t0 = r_time();
++  while (r_time() - t0 < 1000)
++    ;
++}
++
+ struct pipe {
+   struct spinlock lock;
+   char data[PIPESIZE];
+@@ -86,7 +97,7 @@
+       return -1;
+     }
+     if (pi->nwrite == pi->nread + PIPESIZE) { //DOC: pipewrite-full
+-      wakeup(&pi->nread);
++      wakeup_asleep(&pi->nread); // Lab 05: BROKEN
+       sleep_prepare(&pi->nwrite);
+       release(&pi->lock);
+       sleep();
+@@ -102,7 +113,7 @@
+       i++;
+     }
+   }
+-  wakeup(&pi->nread);
++  wakeup_asleep(&pi->nread); // Lab 05: BROKEN
+   release(&pi->lock);
+ 
+   return i;
+@@ -123,6 +134,7 @@
+     }
+     sleep_prepare(&pi->nread); //DOC: piperead-sleep
+     release(&pi->lock);
++    race_window(); // Lab 05: the reader is registered but still awake
+     sleep();
+     acquire(&pi->lock);
+   }
+diff -ruN a/kernel/proc.c b/kernel/proc.c
+--- a/kernel/proc.c
++++ b/kernel/proc.c
+@@ -594,6 +594,28 @@
+   }
+ }
+ 
++// Lab 05: BROKEN on purpose. Like wakeup(), but it only wakes processes
++// that are already SLEEPING. A process that has called sleep_prepare(chan)
++// and not yet sleep() keeps p->chan set, so its sleep() goes ahead, and
++// the wakeup it was waiting for is lost. Older xv6 trees made exactly
++// this check in wakeup(). It was correct there because their
++// sleep(chan, lk) took p->lock before it released the caller's lock,
++// so no wakeup could look at the process before it was SLEEPING.
++void
++wakeup_asleep(void *chan)
++{
++  struct proc *p;
++
++  for (p = proc; p < &proc[NPROC]; p++) {
++    acquire(&p->lock);
++    if (p->state == SLEEPING && p->chan == chan) {
++      p->chan = 0;
++      p->state = RUNNABLE;
++    }
++    release(&p->lock);
++  }
++}
++
+ // Kill the process with the given pid.
+ // The victim won't exit until it tries to return
+ // to user space (see usertrap() in trap.c).

@@ -1,0 +1,43 @@
+#!/usr/bin/expect -f
+# xv6run.exp - boot xv6 from the current directory, type each argument
+# into the xv6 shell, wait for the next prompt, then quit QEMU.
+#
+# usage: expect xv6run.exp <timeout-seconds> <cpus> "<cmd1>" ["<cmd2>" ...]
+# The timeout applies to the boot and to each command separately.
+# Exit status: 0 done, 2 timeout (for example a hang or a panic), 4 QEMU
+# exited early. On a timeout QEMU is shut down too, so nothing keeps
+# running in the background.
+set timeout [lindex $argv 0]
+set cpus [lindex $argv 1]
+set cmds [lrange $argv 2 end]
+log_user 1
+
+# Ctrl-a x quits QEMU, even after an xv6 panic.
+proc quit_qemu {status msg} {
+  if {$msg ne ""} { puts "\nXV6RUN: $msg" }
+  send "\x01x"
+  set timeout 10
+  expect eof
+  exit $status
+}
+
+spawn make CPUS=$cpus qemu
+expect {
+  "init: starting sh" {}
+  timeout { quit_qemu 2 "timeout waiting for boot" }
+  eof     { puts "\nXV6RUN: make or QEMU exited before boot"; exit 4 }
+}
+expect {
+  -re {\$ $} {}
+  timeout { quit_qemu 2 "timeout waiting for the first prompt" }
+}
+foreach c $cmds {
+  send -- "$c\r"
+  expect {
+    -re {\n\$ $} {}
+    timeout { quit_qemu 2 "timeout running: $c" }
+    eof     { puts "\nXV6RUN: QEMU exited while running: $c"; exit 4 }
+  }
+}
+puts "\nXV6RUN: done"
+quit_qemu 0 ""
