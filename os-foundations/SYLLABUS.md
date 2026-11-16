@@ -2,7 +2,7 @@
 
 **English** | [繁體中文](SYLLABUS.zh-TW.md) | [Course overview](README.md)
 
-> **Draft for review, 2026-11-15.** Only stages 00–06 have lab drafts so far, in [`labs/`](labs/); each lab README says which of its steps were executed. Nothing else here is built yet. Stages, hours and tools are proposals. Technical claims link to the official page they were checked against. The full list is under [Sources](#sources).
+> **Draft for review, 2026-11-15.** Only stages 00–09 have lab drafts so far, in [`labs/`](labs/); each lab README says which of its steps were executed. Nothing else here is built yet. Stages, hours and tools are proposals. Technical claims link to the official page they were checked against. The full list is under [Sources](#sources).
 
 This is a build sequence, not a list of topics. Every stage lists **Prerequisites**, **Hours** (focused hours, reading included) and **Runs on**. Then come **Build**, **Learn as needed**, a **Linux / NT** comparison where it helps, and a **Checkpoint**. As in the graphics course, a stage is finished when you can explain what the code does, not just when it runs.
 
@@ -137,7 +137,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 
 ### 07: File systems
 
-**Prerequisites:** 03, 05. **Hours:** 12–20. **Runs on:** WSL 2. **MIT labs:** `fs`, `mmap`.
+**Prerequisites:** 03, 05. **Hours:** 12–20. **Runs on:** WSL 2, Windows. **MIT labs:** `fs`, `mmap`. **Lab draft:** [`labs/07-file-systems/`](labs/07-file-systems/README.md) (xv6, Linux and Windows parts run; xv6 and Linux in an Ubuntu 24.04 container; writeback threads not traced).
 
 **Build:** extend the xv6 file system and implement file-backed `mmap`. Kill QEMU in the middle of a write, then show that the log recovers a consistent file system on the next boot.
 
@@ -153,7 +153,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 
 ### 08: IPC, shared memory and event loops
 
-**Prerequisites:** 03, 07. **Hours:** 12–20. **Runs on:** WSL 2, Windows.
+**Prerequisites:** 03, 07. **Hours:** 12–20. **Runs on:** WSL 2, Windows. **Lab draft:** [`labs/08-ipc-event-loops/`](labs/08-ipc-event-loops/README.md) (Linux and Windows parts run; Linux in an Ubuntu 24.04 container; io_uring, the Process Explorer step and the libwayland reading not executed).
 
 **Build on Linux:**
 1. A Unix-domain socket server that receives fds with `SCM_RIGHTS` and checks the peer with `SO_PEERCRED` ([unix(7)](https://man7.org/linux/man-pages/man7/unix.7.html)).
@@ -177,7 +177,7 @@ This is a build sequence, not a list of topics. Every stage lists **Prerequisite
 
 ### 09: Part I project, a headless display server
 
-**Prerequisites:** 06 and 08. Also the graphics course's T4 compositing module if it exists; otherwise a stub. **Hours:** 20–35. **Runs on:** WSL 2.
+**Prerequisites:** 06 and 08. Also the graphics course's T4 compositing module if it exists; otherwise a stub. **Hours:** 20–35. **Runs on:** WSL 2. **Lab draft:** [`labs/09-headless-display-server/`](labs/09-headless-display-server/README.md) (harness run in an Ubuntu 24.04 container against a reference server, not shipped, 2026-11-16; design note and Wayland comparison not executed).
 
 **Build:** a server and at least two clients that speak a small protocol you design over a Unix socket. Each client creates a sealed memfd buffer, sends it with `SCM_RIGHTS`, and then sends attach, damage and commit messages. The server:
 - composes the client buffers into an offscreen framebuffer, using the graphics course's compositing module or a stub that blends premultiplied ARGB8888;
