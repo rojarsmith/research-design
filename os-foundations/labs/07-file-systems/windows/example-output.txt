@@ -1,0 +1,181 @@
+Recorded 2026-11-16 (UTC times below) on the machine this lab was written on.
+Windows 11 Pro, build 26300; hypervisor present (Win32_ComputerSystem.HypervisorPresent = True).
+CPU: 11th Gen Intel(R) Core(TM) i7-11700 @ 2.50GHz, 16 logical processors.
+The test files were on drive C: (NTFS). Not elevated.
+Compiler: gcc 16.2.0 (MinGW-W64 x86_64-ucrt-posix-seh, WinLibs).
+Other work was running at the same time, including the podman machine with
+other labs; each run records the total CPU load, sampled once a second for
+3 s before it started and after it ended. The PDH counters in nt_flush count
+the whole machine. Your numbers will differ. Keep your own copy in NOTES.md.
+
+Built with (output went to a scratch directory outside the repository, and
+the programs ran there, with "." as the directory for their test files):
+> gcc -O2 -Wall -o nt_handles.exe nt_handles.c
+> gcc -O2 -Wall -o nt_flush.exe nt_flush.c -lpdh
+
+==============================================================================
+run 1
+==============================================================================
+
+date: 2026-11-16 07:07:44 UTC
+before: total CPU busy, sampled each second for 3 s: 45%, 22%, 26%
+> nt_handles.exe .
+1. DuplicateHandle: two handles, one file object
+  write AAAA via handle a, then BBBB via its duplicate b:  file: "AAAABBBB"
+    after SetFilePointerEx(a, 0, FILE_BEGIN): position via a 0, via b 0
+    handles 00000000000000B0 and 00000000000000B4: CompareObjectHandles TRUE (one file object); file index 000c0000000eb088 and 000c0000000eb088
+2. CreateFile twice: two file objects, one file
+  write cccc via handle c, then dd via handle d:           file: "ddccBBBB"
+    position via c 4, via d 2
+    handles 00000000000000B4 and 00000000000000B0: CompareObjectHandles FALSE (two file objects); file index 000c0000000eb088 and 000c0000000eb088
+3. a child process gets the parent's file object
+  inherited: the child writes child., then the parent writes: file: "child.parent"
+  DuplicateHandle into a child: it writes dup'd., then the parent: file: "child.parentdup'd.PARENT"
+    the parent's position is now 24
+4. access rights belong to the handle, the position to the file object
+    WriteFile via the read-only duplicate: FALSE, error 5 (ERROR_ACCESS_DENIED)
+    ReadFile of 6 bytes via the duplicate; position via a is now 6
+
+> nt_flush.exe . 256 30
+file .\flush.dat on NTFS, 256 MiB
+1. a store through the view, and ReadFile through another handle
+  store 'M' at byte 5 of the view; ReadFile of byte 5 gives 'M'
+  WriteFile 'W' at byte 6; the view shows 'W'
+2. dirty every page of the view, then flush
+  clean, after a first flush:                    modified page list     53.5 MiB | cache dirty     1.1 MiB
+  stores to 65536 pages took 126.7 ms
+  after the stores:                              modified page list     53.5 MiB | cache dirty     1.1 MiB
+  FlushViewOfFile returned after 70.8 ms
+  after FlushViewOfFile:                         modified page list     53.5 MiB | cache dirty     1.1 MiB
+  FlushViewOfFile again (nothing dirty) took 3.433 ms
+  FlushFileBuffers returned after 0.1 ms
+  after FlushFileBuffers:                        modified page list     53.5 MiB | cache dirty     1.1 MiB
+3. dirty every page and keep the view mapped for 30 s
+  after the stores:                              modified page list     53.5 MiB | cache dirty     1.1 MiB
+   1 s later:                                    modified page list     53.6 MiB | cache dirty     1.0 MiB
+   2 s later:                                    modified page list     53.9 MiB | cache dirty     0.9 MiB
+   3 s later:                                    modified page list     54.0 MiB | cache dirty     0.8 MiB
+   4 s later:                                    modified page list     54.1 MiB | cache dirty     1.4 MiB
+   5 s later:                                    modified page list     56.7 MiB | cache dirty     3.8 MiB
+  10 s later:                                    modified page list     54.1 MiB | cache dirty     1.0 MiB
+  15 s later:                                    modified page list     54.3 MiB | cache dirty     1.8 MiB
+  20 s later:                                    modified page list     53.9 MiB | cache dirty     1.3 MiB
+  25 s later:                                    modified page list     54.1 MiB | cache dirty     1.0 MiB
+  30 s later:                                    modified page list     54.1 MiB | cache dirty     2.4 MiB
+  FlushViewOfFile after the wait took 72.6 ms
+4. dirty every page, unmap and close without flushing
+  after the stores:                              modified page list     54.1 MiB | cache dirty     2.4 MiB
+  right after UnmapViewOfFile and CloseHandle:   modified page list    311.1 MiB | cache dirty     2.6 MiB
+   1 s later:                                    modified page list     54.1 MiB | cache dirty     2.1 MiB
+   2 s later:                                    modified page list     54.1 MiB | cache dirty     1.5 MiB
+   3 s later:                                    modified page list     54.0 MiB | cache dirty     1.1 MiB
+   4 s later:                                    modified page list     54.1 MiB | cache dirty     1.1 MiB
+   5 s later:                                    modified page list     54.1 MiB | cache dirty     1.1 MiB
+  10 s later:                                    modified page list     54.3 MiB | cache dirty     0.9 MiB
+  15 s later:                                    modified page list     54.3 MiB | cache dirty     0.7 MiB
+  20 s later:                                    modified page list     68.7 MiB | cache dirty     0.8 MiB
+  25 s later:                                    modified page list     67.6 MiB | cache dirty     0.8 MiB
+  30 s later:                                    modified page list     66.8 MiB | cache dirty     0.2 MiB
+  mapped again: byte 0 is 'd', byte 268431360 is 'd'
+5. the same amount through WriteFile, the cache manager's path
+  WriteFile of 256 MiB took 61.8 ms
+  after the writes:                              modified page list    322.8 MiB | cache dirty   256.3 MiB
+  FlushFileBuffers at once took 104.1 ms
+  WriteFile of 256 MiB took 62.4 ms
+  after the writes:                              modified page list    322.8 MiB | cache dirty   256.3 MiB
+   1 s later:                                    modified page list    276.8 MiB | cache dirty   210.3 MiB
+   2 s later:                                    modified page list    262.3 MiB | cache dirty   196.4 MiB
+   3 s later:                                    modified page list    262.4 MiB | cache dirty   196.5 MiB
+   4 s later:                                    modified page list    251.4 MiB | cache dirty   185.5 MiB
+   5 s later:                                    modified page list    241.5 MiB | cache dirty   175.5 MiB
+  10 s later:                                    modified page list    207.5 MiB | cache dirty   142.6 MiB
+  15 s later:                                    modified page list    172.1 MiB | cache dirty   125.9 MiB
+  20 s later:                                    modified page list    146.9 MiB | cache dirty   105.6 MiB
+  25 s later:                                    modified page list    133.5 MiB | cache dirty    87.9 MiB
+  30 s later:                                    modified page list    118.6 MiB | cache dirty    83.3 MiB
+  FlushFileBuffers after the wait took 24.5 ms
+after: total CPU busy, sampled each second for 3 s: 40%, 33%, 25%
+
+==============================================================================
+run 2
+==============================================================================
+
+date: 2026-11-16 07:13:36 UTC
+before: total CPU busy, sampled each second for 3 s: 41%, 45%, 36%
+> nt_handles.exe .
+1. DuplicateHandle: two handles, one file object
+  write AAAA via handle a, then BBBB via its duplicate b:  file: "AAAABBBB"
+    after SetFilePointerEx(a, 0, FILE_BEGIN): position via a 0, via b 0
+    handles 00000000000000AC and 00000000000000B0: CompareObjectHandles TRUE (one file object); file index 000a0000000e9acd and 000a0000000e9acd
+2. CreateFile twice: two file objects, one file
+  write cccc via handle c, then dd via handle d:           file: "ddccBBBB"
+    position via c 4, via d 2
+    handles 00000000000000B0 and 00000000000000AC: CompareObjectHandles FALSE (two file objects); file index 000a0000000e9acd and 000a0000000e9acd
+3. a child process gets the parent's file object
+  inherited: the child writes child., then the parent writes: file: "child.parent"
+  DuplicateHandle into a child: it writes dup'd., then the parent: file: "child.parentdup'd.PARENT"
+    the parent's position is now 24
+4. access rights belong to the handle, the position to the file object
+    WriteFile via the read-only duplicate: FALSE, error 5 (ERROR_ACCESS_DENIED)
+    ReadFile of 6 bytes via the duplicate; position via a is now 6
+
+> nt_flush.exe . 256 30
+file .\flush.dat on NTFS, 256 MiB
+1. a store through the view, and ReadFile through another handle
+  store 'M' at byte 5 of the view; ReadFile of byte 5 gives 'M'
+  WriteFile 'W' at byte 6; the view shows 'W'
+2. dirty every page of the view, then flush
+  clean, after a first flush:                    modified page list     15.1 MiB | cache dirty     2.5 MiB
+  stores to 65536 pages took 136.7 ms
+  after the stores:                              modified page list     15.0 MiB | cache dirty     2.7 MiB
+  FlushViewOfFile returned after 83.4 ms
+  after FlushViewOfFile:                         modified page list     14.7 MiB | cache dirty     2.7 MiB
+  FlushViewOfFile again (nothing dirty) took 2.220 ms
+  FlushFileBuffers returned after 0.1 ms
+  after FlushFileBuffers:                        modified page list     14.7 MiB | cache dirty     2.7 MiB
+3. dirty every page and keep the view mapped for 30 s
+  after the stores:                              modified page list     14.7 MiB | cache dirty     2.8 MiB
+   1 s later:                                    modified page list     14.2 MiB | cache dirty     2.1 MiB
+   2 s later:                                    modified page list     14.4 MiB | cache dirty     3.0 MiB
+   3 s later:                                    modified page list     14.2 MiB | cache dirty     2.6 MiB
+   4 s later:                                    modified page list     14.2 MiB | cache dirty     2.4 MiB
+   5 s later:                                    modified page list     14.2 MiB | cache dirty     2.2 MiB
+  10 s later:                                    modified page list    131.9 MiB | cache dirty     3.3 MiB
+  15 s later:                                    modified page list     46.8 MiB | cache dirty     2.3 MiB
+  20 s later:                                    modified page list     91.4 MiB | cache dirty     2.2 MiB
+  25 s later:                                    modified page list     91.5 MiB | cache dirty     2.8 MiB
+  30 s later:                                    modified page list     91.7 MiB | cache dirty     2.1 MiB
+  FlushViewOfFile after the wait took 65.6 ms
+4. dirty every page, unmap and close without flushing
+  after the stores:                              modified page list     91.8 MiB | cache dirty     2.1 MiB
+  right after UnmapViewOfFile and CloseHandle:   modified page list    347.8 MiB | cache dirty     2.1 MiB
+   1 s later:                                    modified page list      0.3 MiB | cache dirty     2.1 MiB
+   2 s later:                                    modified page list      0.3 MiB | cache dirty     2.1 MiB
+   3 s later:                                    modified page list      0.3 MiB | cache dirty     2.1 MiB
+   4 s later:                                    modified page list      0.4 MiB | cache dirty     2.8 MiB
+   5 s later:                                    modified page list      3.8 MiB | cache dirty     5.6 MiB
+  10 s later:                                    modified page list      0.7 MiB | cache dirty     1.9 MiB
+  15 s later:                                    modified page list      0.8 MiB | cache dirty     2.6 MiB
+  20 s later:                                    modified page list      1.0 MiB | cache dirty     2.1 MiB
+  25 s later:                                    modified page list      1.2 MiB | cache dirty     2.3 MiB
+  30 s later:                                    modified page list      9.6 MiB | cache dirty     3.1 MiB
+  mapped again: byte 0 is 'd', byte 268431360 is 'd'
+5. the same amount through WriteFile, the cache manager's path
+  WriteFile of 256 MiB took 77.5 ms
+  after the writes:                              modified page list    265.3 MiB | cache dirty   259.2 MiB
+  FlushFileBuffers at once took 93.4 ms
+  WriteFile of 256 MiB took 70.0 ms
+  after the writes:                              modified page list    265.3 MiB | cache dirty   258.2 MiB
+   1 s later:                                    modified page list    265.5 MiB | cache dirty   259.2 MiB
+   2 s later:                                    modified page list    232.5 MiB | cache dirty   227.0 MiB
+   3 s later:                                    modified page list    216.5 MiB | cache dirty   211.9 MiB
+   4 s later:                                    modified page list    202.5 MiB | cache dirty   197.7 MiB
+   5 s later:                                    modified page list    202.4 MiB | cache dirty   198.7 MiB
+  10 s later:                                    modified page list    160.6 MiB | cache dirty   162.0 MiB
+  15 s later:                                    modified page list    128.1 MiB | cache dirty   134.2 MiB
+  20 s later:                                    modified page list    107.7 MiB | cache dirty   116.7 MiB
+  25 s later:                                    modified page list     95.6 MiB | cache dirty    98.7 MiB
+  30 s later:                                    modified page list     79.5 MiB | cache dirty    79.5 MiB
+  FlushFileBuffers after the wait took 24.6 ms
+after: total CPU busy, sampled each second for 3 s: 27%, 39%, 48%
+

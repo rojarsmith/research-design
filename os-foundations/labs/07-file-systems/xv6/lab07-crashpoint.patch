@@ -1,0 +1,139 @@
+# Lab 07, exercises E and F: crash points in commit() and the system call
+# crashpoint(p, k), number 30, that arms one of them for the next commit.
+# It changes neither what commit() writes nor the order; with no crash
+# point armed the kernel behaves as stock. Applies to a clean xv6-riscv
+# fa2ddcb7ca87a77af579380a6eafd5aff163b44f with patch -p1. Copy
+# crashwrite.c to user/ and add $U/_crashwrite to UPROGS as well.
+diff -ruN a/kernel/log.c b/kernel/log.c
+--- a/kernel/log.c
++++ b/kernel/log.c
+@@ -51,6 +51,50 @@
+ static void recover_from_log(void);
+ static void commit();
+ 
++// Lab 07: crash points. crashpoint(p, k) arms one stop in the next
++// commit() that has blocks to write:
++//   1  after write_log(), before write_head() commits the transaction
++//   2  after the commit, just before home block k (from 0) is installed
++//   3  after every block is installed, before the header is cleared
++// At the stop the kernel says what has reached the disk so far, then
++// stops this hart for good, so that the run script can kill QEMU there.
++static int crash_point, crash_k;
++static int head_on_disk; // the n that write_head() last wrote
++
++static void
++crash_stop(int point, int installed)
++{
++  if (crash_point != point || (point == 2 && installed != crash_k))
++    return;
++  printk("lab07: crash point %d, a transaction of %d blocks:", point,
++         log.lh.n);
++  for (int i = 0; i < log.lh.n; i++)
++    printk(" %d", log.lh.block[i]);
++  printk("\nlab07: all %d written to the log; the header on the disk says "
++         "n = %d; %d of %d installed at home\n",
++         log.lh.n, head_on_disk, installed, log.lh.n);
++  printk("lab07: waiting to be killed\n");
++  intr_off();
++  for (;;)
++    ;
++}
++
++uint64
++sys_crashpoint(void)
++{
++  int p, k;
++
++  argint(0, &p);
++  argint(1, &k);
++  if (p < 0 || p > 3 || k < 0)
++    return -1;
++  acquire(&log.lock);
++  crash_point = p;
++  crash_k = k;
++  release(&log.lock);
++  return 0;
++}
++
+ void
+ initlog(int dev, struct superblock *sb)
+ {
+@@ -72,6 +116,8 @@
+   for (tail = 0; tail < log.lh.n; tail++) {
+     if (recovering) {
+       printk("recovering tail %d dst %d\n", tail, log.lh.block[tail]);
++    } else {
++      crash_stop(2, tail);
+     }
+     struct buf *lbuf = bread(log.dev, log.start + tail + 1); // read log block
+     struct buf *dbuf = bread(log.dev, log.lh.block[tail]);   // read dst
+@@ -113,6 +159,7 @@
+   }
+   bwrite(buf);
+   brelse(buf);
++  head_on_disk = log.lh.n;
+ }
+ 
+ static void
+@@ -204,8 +251,15 @@
+ {
+   if (log.lh.n > 0) {
+     write_log();      // Write modified blocks from cache to log
++    crash_stop(1, 0);
+     write_head();     // Write header to disk -- the real commit
+     install_trans(0); // Now install writes to home locations
++    crash_stop(3, log.lh.n);
++    if (crash_point)
++      printk("lab07: crash point %d (k = %d) not reached in a transaction "
++             "of %d blocks; disarmed\n",
++             crash_point, crash_k, log.lh.n);
++    crash_point = 0;
+     log.lh.n = 0;
+     write_head(); // Erase the transaction from the log
+   }
+diff -ruN a/kernel/syscall.c b/kernel/syscall.c
+--- a/kernel/syscall.c
++++ b/kernel/syscall.c
+@@ -103,6 +103,7 @@
+ extern uint64 sys_mkdir(void);
+ extern uint64 sys_close(void);
+ extern uint64 sys_sync(void);
++extern uint64 sys_crashpoint(void);
+ 
+ // An array mapping syscall numbers from syscall.h
+ // to the function that handles the system call.
+@@ -130,6 +131,7 @@
+   [SYS_mkdir]   = sys_mkdir,
+   [SYS_close]   = sys_close,
+   [SYS_sync]    = sys_sync,
++  [SYS_crashpoint] = sys_crashpoint,
+   // clang-format on
+ };
+ 
+diff -ruN a/kernel/syscall.h b/kernel/syscall.h
+--- a/kernel/syscall.h
++++ b/kernel/syscall.h
+@@ -21,3 +21,4 @@
+ #define SYS_mkdir  20
+ #define SYS_close  21
+ #define SYS_sync   22
++#define SYS_crashpoint 30 // lab 07, kernel/log.c
+diff -ruN a/user/user.h b/user/user.h
+--- a/user/user.h
++++ b/user/user.h
+@@ -25,6 +25,7 @@
+ int pause(int);
+ int uptime(void);
+ int sync(void);
++int crashpoint(int, int);
+ 
+ // ulib.c
+ int stat(const char *, struct stat *);
+diff -ruN a/user/usys.pl b/user/usys.pl
+--- a/user/usys.pl
++++ b/user/usys.pl
+@@ -43,3 +43,4 @@
+ entry("pause");
+ entry("uptime");
+ entry("sync");
++entry("crashpoint");

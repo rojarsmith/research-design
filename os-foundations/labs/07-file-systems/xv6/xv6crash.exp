@@ -1,0 +1,84 @@
+#!/usr/bin/expect -f
+# xv6crash.exp - boot xv6 from the current directory, run commands at the
+# shell prompt, type one last command, and then kill QEMU with SIGKILL in
+# the middle of it: the closest thing to pulling the power cord.
+#
+# usage: expect xv6crash.exp <timeout-seconds> <cpus> <when> "cmd1" ... "last"
+#   <when>  marker   kill QEMU as soon as the kernel prints "waiting to be
+#                    killed" (the crash points of lab07-crashpoint.patch)
+#           <secs>   kill QEMU that many seconds after typing the last
+#                    command, wherever the kernel happens to be
+#
+# QEMU is started directly, with the options of the xv6 Makefile at the
+# pinned commit, not through make: SIGKILL must reach QEMU itself, and
+# make must not rebuild fs.img on the next boot. QEMU has already written
+# every disk write the guest saw complete into fs.img (with the default
+# cache mode it is in the host's page cache), so the kill loses only what
+# xv6 had not yet written. Exit status: 0 killed as planned, 2 timeout at
+# boot, 3 timeout in a command or waiting for the marker, 4 QEMU exited
+# by itself.
+set timeout [lindex $argv 0]
+set cpus [lindex $argv 1]
+set when [lindex $argv 2]
+set cmds [lrange $argv 3 end]
+log_user 1
+
+proc killqemu {why} {
+  set pid [exp_pid]
+  exec kill -KILL $pid
+  # Show what QEMU had printed before it died, then say what happened.
+  catch {expect eof}
+  catch {wait}
+  puts "\nXV6CRASH: $why: killed QEMU (pid $pid) with SIGKILL"
+}
+
+proc bail {code msg} {
+  puts "\nXV6CRASH: $msg"
+  catch {exec kill -KILL [exp_pid]}
+  catch {expect eof}
+  catch {wait}
+  exit $code
+}
+
+spawn qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel \
+  -m 128M -smp $cpus -nographic -global virtio-mmio.force-legacy=false \
+  -drive file=fs.img,if=none,format=raw,id=x0 \
+  -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+expect {
+  "init: starting sh" {}
+  timeout { bail 2 "timeout waiting for boot" }
+  eof     { puts "\nXV6CRASH: QEMU exited before boot"; exit 4 }
+}
+expect {
+  -re {\$ $} {}
+  timeout { bail 2 "timeout waiting for the first prompt" }
+}
+
+set n [llength $cmds]
+for {set i 0} {$i < $n - 1} {incr i} {
+  send -- "[lindex $cmds $i]\r"
+  expect {
+    -re {\n\$ $} {}
+    timeout { bail 3 "timeout running: [lindex $cmds $i]" }
+    eof     { puts "\nXV6CRASH: QEMU exited"; exit 4 }
+  }
+}
+
+send -- "[lindex $cmds end]\r"
+if {$when eq "marker"} {
+  expect {
+    "waiting to be killed" { killqemu "the kernel stopped at its crash point" }
+    -re {\n\$ $} { bail 3 "the command finished without reaching a crash point" }
+    timeout { bail 3 "timeout waiting for the crash point" }
+    eof     { puts "\nXV6CRASH: QEMU exited"; exit 4 }
+  }
+} else {
+  # Keep reading the console while waiting, so that QEMU never blocks on it.
+  set timeout $when
+  expect {
+    -re {\n\$ $} { bail 3 "the command finished before the kill" }
+    eof     { puts "\nXV6CRASH: QEMU exited"; exit 4 }
+    timeout { killqemu "$when s after the last command" }
+  }
+}
+exit 0
