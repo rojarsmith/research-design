@@ -1,0 +1,477 @@
+Recorded 2026-11-16 (07:20 to 07:23 UTC) in an Ubuntu 24.04.5 container
+(image oslab:24.04) under podman on Windows 11 Pro build 26300. podman runs
+in a podman machine on WSL 2, so this is not WSL 2 Ubuntu itself, and every
+time below is VM time. Kernel 6.6.87.2-microsoft-standard-WSL2, 16 vCPUs,
+on an Intel Core i7-11700 host (16 logical processors). Other containers were
+running on the same machine; each run prints the VM's /proc/loadavg when it
+starts. Tools: gcc 13.3.0, Python 3.12.3.
+
+The server came from a reference implementation that is not shipped, mounted
+read-only at /solution; run.sh built it from there. The second part runs
+check.py against 14 builds of the same reference, each with one deliberate
+bug (a BUG_* macro), also not shipped. The repository was mounted read-only at
+/work; everything was built and written under /tmp in the container:
+
+  MSYS_NO_PATHCONV=1 podman run --rm -v "<repo>:/work:ro" -v "<reference>:/solution:ro" \
+    oslab:24.04 sh /solution/record.sh
+
+where record.sh (not shipped) runs, three times,
+  SOLUTION_DIR=/solution sh /work/os-foundations/labs/09-headless-display-server/harness/run.sh
+and prints the server.log of each run, then builds and checks the broken
+builds. These are numbers from a VM; yours will differ. Keep your own copy in
+NOTES.md.
+
+==============================================================================
+SOLUTION_DIR=/solution sh harness/run.sh, run 1 of 3 (reference server, not shipped)
+started 2026-11-16 07:20:47 UTC; /proc/loadavg: 0.71 1.04 0.85 1/336 3
+==============================================================================
+
+== environment
+6.6.87.2-microsoft-standard-WSL2
+16
+gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+Python 3.12.3
+
+== building the harness clients in /tmp/lab09.4s5OYC/bin
+built: good-anim good-alpha bad-crash bad-noread bad-damage bad-unsealed
+
+== building the server from /solution
+
+== check.py, server /tmp/lab09.4s5OYC/server-src/server
+-- starting /tmp/lab09.4s5OYC/server-src/server
+-- phase good
+-- phase crash
+-- phase noread
+-- phase damage
+-- phase unsealed
+
+== results
+-- setup
+  ok   A and B got welcome
+  ok   A asked for version 1: welcome version=1 width=320 height=240 refresh_mhz=60000
+  ok   B asked for version 7: welcome version=1 (must be 1 to 7)
+  ok   A and B received their first frame_done
+  note baseline with A and B connected: 9 fds, 4 memfd mappings, VmRSS 2432 KiB
+-- good
+  ok   cadence: 70 frame_done in 1166 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.29 / p99 1.14 / max 1.14 ms, largest gap 17.5 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 69 off by more than 1 ms
+  ok   frame for A redrawn in full, with B over it: frame-000082.ppm matches
+  ok   frame for A partly redrawn (damage 40,30 32x24): frame-000087.ppm matches
+-- crash
+  ok   C was shown (frame_done seq 91)
+  note C ended: killed by SIGKILL
+  ok   server fds back to the baseline: 9 (baseline 9)
+  ok   memfd mappings back to the baseline: 4 (baseline 4)
+  ok   cadence: 37 frame_done in 617 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.27 / p99 0.94 / max 0.94 ms, largest gap 17.4 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 36 off by more than 1 ms
+  ok   frame for C on screen before it crashed: frame-000091.ppm matches
+  ok   frame for C gone after the crash: frame-000124.ppm matches
+-- noread
+  ok   R (read side shut, so replies fail with EPIPE) was disconnected: how=disconnected-epipe sent_bytes=4080 ms=10 last_send_blocked_ms=0
+  note the server disconnected N after N wrote 368640 bytes (disconnected-econnreset)
+  ok   server memory: VmHWM 2432 KiB, 0.0 MiB above the baseline VmRSS (max 16 MiB)
+  ok   server fds back to the baseline: 9 (baseline 9)
+  ok   memfd mappings back to the baseline: 4 (baseline 4)
+  ok   cadence: 155 frame_done in 2582 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.23 / p99 0.62 / max 0.81 ms, largest gap 17.2 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 154 off by more than 1 ms
+  ok   frame for N gone: frame-000279.ppm matches
+-- damage
+  ok   D got no error and every frame_done
+  ok   server fds back to the baseline: 9 (baseline 9)
+  ok   memfd mappings back to the baseline: 4 (baseline 4)
+  ok   cadence: 8 frame_done in 133 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.60 / p99 1.01 / max 1.01 ms, largest gap 16.9 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 7 off by more than 1 ms
+  ok   frame for D state 0 (full damage): frame-000283.ppm matches
+  ok   frame for D state 1 (only the clipped damage copied): frame-000284.ppm matches
+  ok   frame for D state 2 (full damage): frame-000285.ppm matches
+  ok   frame for D gone: frame-000287.ppm matches
+-- unsealed
+  ok   unsealed buffer refused with error bad_buffer (6): variant=unsealed when=create_buffer result=error code=6 name=bad_buffer object=60
+  ok   unsealed: connection closed after the error (closed)
+  ok   too-small buffer refused with error bad_buffer (6): variant=too-small when=create_buffer result=error code=6 name=bad_buffer object=60
+  ok   too-small: connection closed after the error (closed)
+  ok   server fds back to the baseline: 9 (baseline 9)
+  ok   memfd mappings back to the baseline: 4 (baseline 4)
+  ok   cadence: 5 frame_done in 83 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.19 / p99 0.67 / max 0.67 ms, largest gap 17.2 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 4 off by more than 1 ms
+  ok   frame for U never shown: frame-000292.ppm matches
+-- end
+  ok   A: 7 attaches, 7 releases
+  ok   A: 295 frame requests, 294 frame_done (one may be outstanding)
+  ok   server exited after SIGTERM: exit status 0
+-- frames
+  note 15 frame files written
+
+== cadence (client A)
+phase      vblanks  A done  skipped   late  lateness med/p99/max ms   max gap
+good            70      70        0      0       0.29 / 1.14 / 1.14     17.5
+crash           37      37        0      0       0.27 / 0.94 / 0.94     17.4
+noread         155     155        0      0       0.23 / 0.62 / 0.81     17.2
+damage           8       8        0      0       0.60 / 1.01 / 1.01     16.9
+unsealed         5       5        0      0       0.19 / 0.67 / 0.67     17.2
+
+== PASS: 43 checks passed, 0 failed
+
+logs and frames are in /tmp/lab09.4s5OYC/work
+(run.sh exit status 0)
+server.log of this run:
+  | server: listening on /tmp/lab09.4s5OYC/work/display.sock, 320x240 at 60 Hz, frames in /tmp/lab09.4s5OYC/work/frames
+  | server: client 1 connected (pid 66)
+  | server: client 2 connected (pid 68)
+  | server: client 3 connected (pid 70)
+  | server: client 3 (pid 70) gone: hung up
+  | server: client 4 connected (pid 72)
+  | server: client 4 (pid 72) gone: send failed
+  | server: client 5 connected (pid 74)
+  | server: client 5: output queue would exceed 65536 bytes, disconnecting
+  | server: client 5 (pid 74) gone: output queue full
+  | server: client 6 connected (pid 76)
+  | server: client 6 (pid 76) gone: hung up
+  | server: client 7 connected (pid 78)
+  | server: client 7: error 6 on object 60: buffer not sealed against shrinking
+  | server: client 7 (pid 78) gone: protocol error
+  | server: client 8 connected (pid 78)
+  | server: client 8: error 6 on object 60: file smaller than offset + stride * height
+  | server: client 8 (pid 78) gone: protocol error
+  | server: client 1 (pid 66) gone: hung up
+  | server: client 2 (pid 68) gone: hung up
+  | server: signal 15, shutting down
+  | server: summary ticks=295 vblanks_missed=0 ticks_later_than_2ms=0 max_tick_late_us=321 frames_written=15
+
+==============================================================================
+SOLUTION_DIR=/solution sh harness/run.sh, run 2 of 3 (reference server, not shipped)
+started 2026-11-16 07:20:55 UTC; /proc/loadavg: 0.68 1.02 0.85 1/310 83
+==============================================================================
+
+== environment
+6.6.87.2-microsoft-standard-WSL2
+16
+gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+Python 3.12.3
+
+== building the harness clients in /tmp/lab09.2QPaAh/bin
+built: good-anim good-alpha bad-crash bad-noread bad-damage bad-unsealed
+
+== building the server from /solution
+
+== check.py, server /tmp/lab09.2QPaAh/server-src/server
+-- starting /tmp/lab09.2QPaAh/server-src/server
+-- phase good
+-- phase crash
+-- phase noread
+-- phase damage
+-- phase unsealed
+
+== results
+-- setup
+  ok   A and B got welcome
+  ok   A asked for version 1: welcome version=1 width=320 height=240 refresh_mhz=60000
+  ok   B asked for version 7: welcome version=1 (must be 1 to 7)
+  ok   A and B received their first frame_done
+  note baseline with A and B connected: 9 fds, 4 memfd mappings, VmRSS 2560 KiB
+-- good
+  ok   cadence: 70 frame_done in 1165 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.24 / p99 1.03 / max 1.03 ms, largest gap 17.5 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 69 off by more than 1 ms
+  ok   frame for A redrawn in full, with B over it: frame-000082.ppm matches
+  ok   frame for A partly redrawn (damage 40,30 32x24): frame-000087.ppm matches
+-- crash
+  ok   C was shown (frame_done seq 91)
+  note C ended: killed by SIGKILL
+  ok   server fds back to the baseline: 9 (baseline 9)
+  ok   memfd mappings back to the baseline: 4 (baseline 4)
+  ok   cadence: 37 frame_done in 617 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.27 / p99 0.93 / max 0.93 ms, largest gap 17.4 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 36 off by more than 1 ms
+  ok   frame for C on screen before it crashed: frame-000091.ppm matches
+  ok   frame for C gone after the crash: frame-000124.ppm matches
+-- noread
+  ok   R (read side shut, so replies fail with EPIPE) was disconnected: how=disconnected-epipe sent_bytes=0 ms=0 last_send_blocked_ms=0
+  note the server disconnected N after N wrote 421888 bytes (disconnected-econnreset)
+  ok   server memory: VmHWM 2560 KiB, 0.0 MiB above the baseline VmRSS (max 16 MiB)
+  ok   server fds back to the baseline: 9 (baseline 9)
+  ok   memfd mappings back to the baseline: 4 (baseline 4)
+  ok   cadence: 155 frame_done in 2583 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.21 / p99 0.76 / max 1.09 ms, largest gap 17.5 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 154 off by more than 1 ms
+  ok   frame for N gone: frame-000279.ppm matches
+-- damage
+  ok   D got no error and every frame_done
+  ok   server fds back to the baseline: 9 (baseline 9)
+  ok   memfd mappings back to the baseline: 4 (baseline 4)
+  ok   cadence: 8 frame_done in 133 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.57 / p99 0.78 / max 0.78 ms, largest gap 16.7 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 7 off by more than 1 ms
+  ok   frame for D state 0 (full damage): frame-000283.ppm matches
+  ok   frame for D state 1 (only the clipped damage copied): frame-000284.ppm matches
+  ok   frame for D state 2 (full damage): frame-000285.ppm matches
+  ok   frame for D gone: frame-000287.ppm matches
+-- unsealed
+  ok   unsealed buffer refused with error bad_buffer (6): variant=unsealed when=create_buffer result=error code=6 name=bad_buffer object=60
+  ok   unsealed: connection closed after the error (closed)
+  ok   too-small buffer refused with error bad_buffer (6): variant=too-small when=create_buffer result=error code=6 name=bad_buffer object=60
+  ok   too-small: connection closed after the error (closed)
+  ok   server fds back to the baseline: 9 (baseline 9)
+  ok   memfd mappings back to the baseline: 4 (baseline 4)
+  ok   cadence: 5 frame_done in 83 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.14 / p99 0.79 / max 0.79 ms, largest gap 17.3 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 4 off by more than 1 ms
+  ok   frame for U never shown: frame-000292.ppm matches
+-- end
+  ok   A: 7 attaches, 7 releases
+  ok   A: 295 frame requests, 294 frame_done (one may be outstanding)
+  ok   server exited after SIGTERM: exit status 0
+-- frames
+  note 15 frame files written
+
+== cadence (client A)
+phase      vblanks  A done  skipped   late  lateness med/p99/max ms   max gap
+good            70      70        0      0       0.24 / 1.03 / 1.03     17.5
+crash           37      37        0      0       0.27 / 0.93 / 0.93     17.4
+noread         155     155        0      0       0.21 / 0.76 / 1.09     17.5
+damage           8       8        0      0       0.57 / 0.78 / 0.78     16.7
+unsealed         5       5        0      0       0.14 / 0.79 / 0.79     17.3
+
+== PASS: 43 checks passed, 0 failed
+
+logs and frames are in /tmp/lab09.2QPaAh/work
+(run.sh exit status 0)
+server.log of this run:
+  | server: listening on /tmp/lab09.2QPaAh/work/display.sock, 320x240 at 60 Hz, frames in /tmp/lab09.2QPaAh/work/frames
+  | server: client 1 connected (pid 146)
+  | server: client 2 connected (pid 148)
+  | server: client 3 connected (pid 150)
+  | server: client 3 (pid 150) gone: hung up
+  | server: client 4 connected (pid 152)
+  | server: client 4 (pid 152) gone: send failed
+  | server: client 5 connected (pid 154)
+  | server: client 5: output queue would exceed 65536 bytes, disconnecting
+  | server: client 5 (pid 154) gone: output queue full
+  | server: client 6 connected (pid 156)
+  | server: client 6 (pid 156) gone: hung up
+  | server: client 7 connected (pid 158)
+  | server: client 7: error 6 on object 60: buffer not sealed against shrinking
+  | server: client 7 (pid 158) gone: protocol error
+  | server: client 8 connected (pid 158)
+  | server: client 8: error 6 on object 60: file smaller than offset + stride * height
+  | server: client 8 (pid 158) gone: protocol error
+  | server: client 1 (pid 146) gone: hung up
+  | server: client 2 (pid 148) gone: hung up
+  | server: signal 15, shutting down
+  | server: summary ticks=295 vblanks_missed=0 ticks_later_than_2ms=0 max_tick_late_us=620 frames_written=15
+
+==============================================================================
+SOLUTION_DIR=/solution sh harness/run.sh, run 3 of 3 (reference server, not shipped)
+started 2026-11-16 07:21:02 UTC; /proc/loadavg: 0.62 1.01 0.84 1/310 163
+==============================================================================
+
+== environment
+6.6.87.2-microsoft-standard-WSL2
+16
+gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+Python 3.12.3
+
+== building the harness clients in /tmp/lab09.jXoxnH/bin
+built: good-anim good-alpha bad-crash bad-noread bad-damage bad-unsealed
+
+== building the server from /solution
+
+== check.py, server /tmp/lab09.jXoxnH/server-src/server
+-- starting /tmp/lab09.jXoxnH/server-src/server
+-- phase good
+-- phase crash
+-- phase noread
+-- phase damage
+-- phase unsealed
+
+== results
+-- setup
+  ok   A and B got welcome
+  ok   A asked for version 1: welcome version=1 width=320 height=240 refresh_mhz=60000
+  ok   B asked for version 7: welcome version=1 (must be 1 to 7)
+  ok   A and B received their first frame_done
+  note baseline with A and B connected: 9 fds, 4 memfd mappings, VmRSS 2432 KiB
+-- good
+  ok   cadence: 70 frame_done in 1166 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.26 / p99 1.03 / max 1.03 ms, largest gap 17.4 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 69 off by more than 1 ms
+  ok   frame for A redrawn in full, with B over it: frame-000082.ppm matches
+  ok   frame for A partly redrawn (damage 40,30 32x24): frame-000087.ppm matches
+-- crash
+  ok   C was shown (frame_done seq 91)
+  note C ended: killed by SIGKILL
+  ok   server fds back to the baseline: 9 (baseline 9)
+  ok   memfd mappings back to the baseline: 4 (baseline 4)
+  ok   cadence: 37 frame_done in 617 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.30 / p99 1.27 / max 1.27 ms, largest gap 17.3 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 36 off by more than 1 ms
+  ok   frame for C on screen before it crashed: frame-000091.ppm matches
+  ok   frame for C gone after the crash: frame-000124.ppm matches
+-- noread
+  ok   R (read side shut, so replies fail with EPIPE) was disconnected: how=disconnected-epipe sent_bytes=4080 ms=10 last_send_blocked_ms=0
+  note the server disconnected N after N wrote 421888 bytes (disconnected-econnreset)
+  ok   server memory: VmHWM 2432 KiB, 0.0 MiB above the baseline VmRSS (max 16 MiB)
+  ok   server fds back to the baseline: 9 (baseline 9)
+  ok   memfd mappings back to the baseline: 4 (baseline 4)
+  ok   cadence: 155 frame_done in 2583 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.21 / p99 0.62 / max 0.72 ms, largest gap 17.1 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 154 off by more than 1 ms
+  ok   frame for N gone: frame-000279.ppm matches
+-- damage
+  ok   D got no error and every frame_done
+  ok   server fds back to the baseline: 9 (baseline 9)
+  ok   memfd mappings back to the baseline: 4 (baseline 4)
+  ok   cadence: 8 frame_done in 133 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.62 / p99 0.93 / max 0.93 ms, largest gap 16.9 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 7 off by more than 1 ms
+  ok   frame for D state 0 (full damage): frame-000283.ppm matches
+  ok   frame for D state 1 (only the clipped damage copied): frame-000284.ppm matches
+  ok   frame for D state 2 (full damage): frame-000285.ppm matches
+  ok   frame for D gone: frame-000287.ppm matches
+-- unsealed
+  ok   unsealed buffer refused with error bad_buffer (6): variant=unsealed when=create_buffer result=error code=6 name=bad_buffer object=60
+  ok   unsealed: connection closed after the error (closed)
+  ok   too-small buffer refused with error bad_buffer (6): variant=too-small when=create_buffer result=error code=6 name=bad_buffer object=60
+  ok   too-small: connection closed after the error (closed)
+  ok   server fds back to the baseline: 9 (baseline 9)
+  ok   memfd mappings back to the baseline: 4 (baseline 4)
+  ok   cadence: 5 frame_done in 83 ms, 0 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.20 / p99 0.71 / max 0.71 ms, largest gap 17.2 ms
+  ok   frame_done times on the 60 Hz grid: 0 of 4 off by more than 1 ms
+  ok   frame for U never shown: frame-000292.ppm matches
+-- end
+  ok   A: 7 attaches, 7 releases
+  ok   A: 295 frame requests, 294 frame_done (one may be outstanding)
+  ok   server exited after SIGTERM: exit status 0
+-- frames
+  note 15 frame files written
+
+== cadence (client A)
+phase      vblanks  A done  skipped   late  lateness med/p99/max ms   max gap
+good            70      70        0      0       0.26 / 1.03 / 1.03     17.4
+crash           37      37        0      0       0.30 / 1.27 / 1.27     17.3
+noread         155     155        0      0       0.21 / 0.62 / 0.72     17.1
+damage           8       8        0      0       0.62 / 0.93 / 0.93     16.9
+unsealed         5       5        0      0       0.20 / 0.71 / 0.71     17.2
+
+== PASS: 43 checks passed, 0 failed
+
+logs and frames are in /tmp/lab09.jXoxnH/work
+(run.sh exit status 0)
+server.log of this run:
+  | server: listening on /tmp/lab09.jXoxnH/work/display.sock, 320x240 at 60 Hz, frames in /tmp/lab09.jXoxnH/work/frames
+  | server: client 1 connected (pid 226)
+  | server: client 2 connected (pid 228)
+  | server: client 3 connected (pid 230)
+  | server: client 3 (pid 230) gone: hung up
+  | server: client 4 connected (pid 232)
+  | server: client 4 (pid 232) gone: send failed
+  | server: client 5 connected (pid 234)
+  | server: client 5: output queue would exceed 65536 bytes, disconnecting
+  | server: client 5 (pid 234) gone: output queue full
+  | server: client 6 connected (pid 236)
+  | server: client 6 (pid 236) gone: hung up
+  | server: client 7 connected (pid 238)
+  | server: client 7: error 6 on object 60: buffer not sealed against shrinking
+  | server: client 7 (pid 238) gone: protocol error
+  | server: client 8 connected (pid 238)
+  | server: client 8: error 6 on object 60: file smaller than offset + stride * height
+  | server: client 8 (pid 238) gone: protocol error
+  | server: client 1 (pid 226) gone: hung up
+  | server: client 2 (pid 228) gone: hung up
+  | server: signal 15, shutting down
+  | server: summary ticks=295 vblanks_missed=0 ticks_later_than_2ms=0 max_tick_late_us=666 frames_written=15
+
+==============================================================================
+check.py against 14 broken builds of the reference server (not shipped),
+one BUG_* macro each; only the FAIL lines and the verdict of each run
+started 2026-11-16 07:21:09 UTC; /proc/loadavg: 0.60 0.99 0.84 1/310 243
+==============================================================================
+
+--- BUG_BLOCKING
+check.py exit status 1
+  FAIL cadence: 35 frame_done in 2567 ms, 119 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.21 / p99 4.83 / max 4.83 ms, largest gap 2004.6 ms
+== FAIL: 42 checks passed, 1 failed
+
+--- BUG_BLOCKREAD
+check.py exit status 1
+  FAIL cadence: 8 frame_done in 617 ms, 29 vblank(s) skipped (max 2), 0 later than 8 ms (max 3), lateness median 0.23 / p99 1.83 / max 1.83 ms, largest gap 501.1 ms
+== FAIL: 42 checks passed, 1 failed
+
+--- BUG_UNBOUNDED
+check.py exit status 1
+  FAIL server memory: VmHWM 1103872 KiB, 1075.8 MiB above the baseline VmRSS (max 16 MiB)
+== FAIL: 42 checks passed, 1 failed
+
+--- BUG_SIGPIPE
+check.py exit status 1
+  FAIL server died: killed by SIGPIPE
+  note the server died while R (read side shut) was connected: SIGPIPE?
+  note not run because the server is dead: damage, unsealed
+== FAIL: 15 checks passed, 1 failed
+
+--- BUG_NOSEAL
+check.py exit status 1
+  FAIL server died: killed by SIGBUS
+  note U said: U verdict variant=unsealed when=create_buffer result=accepted
+  note U said: U verdict variant=unsealed when=commit result=closed-without-error
+== FAIL: 31 checks passed, 1 failed
+
+--- BUG_NOSIZE
+check.py exit status 1
+  FAIL server died: killed by SIGBUS
+  note U said: U verdict variant=unsealed when=create_buffer result=error code=6 name=bad_buffer object=60
+  note U said: U verdict variant=too-small when=create_buffer result=accepted
+  note U said: U verdict variant=too-small when=commit result=closed-without-error
+== FAIL: 31 checks passed, 1 failed
+
+--- BUG_NOCLIP
+check.py exit status 1
+  FAIL D got no error and every frame_done: D no-frame-done reason=closed
+  FAIL server died: killed by SIGSEGV
+  note not run because the server is dead: unsealed
+== FAIL: 22 checks passed, 2 failed
+
+--- BUG_DAMAGE32
+check.py exit status 1
+  FAIL frame for D state 1 (only the clipped damage copied): frame-000283.ppm: 16 pixels differ by more than 1 (D 16); first at (76, 220): got (0, 188, 240), expected (255, 240, 32)
+== FAIL: 42 checks passed, 1 failed
+
+--- BUG_FULLCOPY
+check.py exit status 1
+  FAIL frame for D state 1 (only the clipped damage copied): frame-000283.ppm: 4060 pixels differ by more than 1 (D 4060); first at (16, 160): got (255, 0, 32), expected (0, 128, 0)
+== FAIL: 42 checks passed, 1 failed
+
+--- BUG_STRIDE
+check.py exit status 1
+  FAIL frame for A redrawn in full, with B over it: frame-000082.ppm: 19038 pixels differ by more than 1 (A 13280, B1 5758); first at (16, 17): got (255, 0, 255), expected (40, 2, 50)
+  FAIL frame for A partly redrawn (damage 40,30 32x24): frame-000087.ppm: 19038 pixels differ by more than 1 (A 13280, B1 5758); first at (16, 17): got (255, 0, 255), expected (40, 2, 50)
+  FAIL frame for C on screen before it crashed: frame-000091.ppm: 19038 pixels differ by more than 1 (A 13280, B1 5758); first at (16, 17): got (255, 0, 255), expected (40, 2, 50)
+  FAIL frame for C gone after the crash: frame-000123.ppm: 19038 pixels differ by more than 1 (A 13280, B1 5758); first at (16, 17): got (255, 0, 255), expected (120, 2, 150)
+  (6 more FAIL lines like these)
+== FAIL: 33 checks passed, 10 failed
+
+--- BUG_OFFSET
+check.py exit status 1
+  FAIL frame for A redrawn in full, with B over it: frame-000082.ppm: 12288 pixels differ by more than 1 (B1 12288); first at (96, 64): got (106, 152, 122), expected (12, 80, 25)
+  FAIL frame for A partly redrawn (damage 40,30 32x24): frame-000087.ppm: 12288 pixels differ by more than 1 (B1 12288); first at (96, 64): got (106, 152, 122), expected (12, 80, 25)
+  FAIL frame for C on screen before it crashed: frame-000091.ppm: 12048 pixels differ by more than 1 (B1 12048); first at (96, 64): got (106, 152, 122), expected (12, 80, 25)
+  FAIL frame for C gone after the crash: frame-000124.ppm: 12288 pixels differ by more than 1 (B1 12288); first at (96, 64): got (157, 152, 187), expected (52, 80, 75)
+  (6 more FAIL lines like these)
+== FAIL: 33 checks passed, 10 failed
+
+--- BUG_XRGB
+check.py exit status 1
+  FAIL frame for A redrawn in full, with B over it: frame-000082.ppm: 3017 pixels differ by more than 1 (B2 3017); first at (232, 16): got (255, 32, 176), expected (255, 0, 128)
+  FAIL frame for A partly redrawn (damage 40,30 32x24): frame-000087.ppm: 3017 pixels differ by more than 1 (B2 3017); first at (232, 16): got (255, 32, 176), expected (255, 0, 128)
+  FAIL frame for C on screen before it crashed: frame-000091.ppm: 3017 pixels differ by more than 1 (B2 3017); first at (232, 16): got (255, 32, 176), expected (255, 0, 128)
+  FAIL frame for C gone after the crash: frame-000124.ppm: 3017 pixels differ by more than 1 (B2 3017); first at (232, 16): got (255, 32, 176), expected (255, 0, 128)
+  (6 more FAIL lines like these)
+== FAIL: 33 checks passed, 10 failed
+
+--- BUG_FDLEAK
+check.py exit status 1
+  FAIL server fds back to the baseline: 10 (baseline 9)
+  FAIL server fds back to the baseline: 10 (baseline 9)
+  FAIL server fds back to the baseline: 10 (baseline 9)
+  FAIL server fds back to the baseline: 10 (baseline 9)
+== FAIL: 39 checks passed, 4 failed
+
+--- BUG_NOUNMAP
+check.py exit status 1
+  FAIL memfd mappings back to the baseline: 6 (baseline 4)
+  FAIL memfd mappings back to the baseline: 7 (baseline 4)
+  FAIL memfd mappings back to the baseline: 7 (baseline 4)
+  FAIL memfd mappings back to the baseline: 7 (baseline 4)
+== FAIL: 39 checks passed, 4 failed
+finished 2026-11-16 07:22:42 UTC; /proc/loadavg: 0.30 0.80 0.78 1/308 675
