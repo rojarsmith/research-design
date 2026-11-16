@@ -760,7 +760,7 @@ DSA 欄抄自前一份報告第 6.2 節，方便對照。其餘欄位是本報�
 | 7–8 | 貪婪、區間、位元；改為交錯練習，加入 Hard | 做 Top K、Ad Click Aggregator、Payment System、Google Docs；重做第 1 到 4 週的題目並改一個條件；第 2、3 次模擬面試 | 隨機抽題練習；強化失敗和衝突故事 | 1 到 2 題，加上擴充追問 | 換弱模型；計時 |
 | 9–12 | 公司標籤題、補弱點 | 目標公司的產品題；Meta 決定 Product Architecture 或 System Design；每週 1 到 2 次模擬面試 | 依目標公司的價值觀重填矩陣（Amazon 每條準則 2 個例子）；準備自我介紹和「為什麼是這家公司」 | 有考才維持每週 1 題 | 使用目標公司的練習環境；確認 HackerRank 或 Chakra 的模式 |
 
-「AI 輔助」欄可以直接用練習包：第 3–4 週做 `build-planner`、第 5–6 週做 `log-alerts`、第 7–8 週做 `room-booking`，第 9 週以後改用開源專案或目標公司的練習環境。
+「AI 輔助」欄可以直接用練習包：第 3–4 週做 `build-planner`、第 5–6 週做 `log-alerts`、第 7–8 週做 `room-booking`，第 9 週以後改用開源專案或目標公司的練習環境。後來加的 `api-gateway`、`netlist-check`、`team-match` 三個情境，在一週有餘力時加做，排法見[練習包說明](ai-round-practice/README.zh-TW.md)。
 
 ### 7.3 時間只剩 3 到 4 週時
 
