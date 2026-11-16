@@ -1,0 +1,8 @@
+# Everything in this lab is built and read on Windows. Let git normalize
+# the text files, and never try to diff or merge a trace or capture that
+# was force-added by mistake.
+*.c   text
+*.txt text
+*.md  text
+*.etl binary
+*.csv -diff

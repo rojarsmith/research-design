@@ -1,0 +1,663 @@
+Recorded 2026-11-16 (UTC times below) on the machine this lab was written on.
+This is NOT the machine stage 10 is planned for, and NOT a local console:
+
+  Windows 11 Pro, build 26300.9711. CPU: 11th Gen Intel(R) Core(TM) i7-11700.
+  GPU: Intel(R) UHD Graphics 750 (the only GPU), driver 31.0.101.5334.
+  The program ran in a Remote Desktop session (session 1). The console
+  session (session 2) had no signed-in user (qwinsta: state Conn). Each
+  session has its own dwm.exe (Get-Process dwm: one in session 1, one in
+  session 2).
+  Win32_VideoController (PowerShell Get-CimInstance, run once, no elevation):
+    Microsoft Remote Display Adapter, driver 10.0.26100.9711, 1440x900 at 32 Hz
+    Intel(R) UHD Graphics 750, driver 31.0.101.5334, 1920x1080 at 60 Hz
+  The 1920x1080 60 Hz display belongs to the console session; this session
+  cannot see it. Every number below is about the Remote Desktop display.
+
+Compiler: gcc 16.2.0 (MinGW-W64 x86_64-ucrt-posix-seh, WinLibs, MinGW-w64 14.0.0).
+Built with (output went to a scratch directory outside the repository):
+> gcc -O2 -Wall -Wextra -o flipstats.exe flipstats.c -ld3d11 -ldxgi -ldwmapi -luser32 -lgdi32 -ladvapi32
+No warnings. Everything ran unelevated.
+
+Window safety on this machine: the windowed and overlap runs open one
+320x240 window (plus a 160x120 one for overlap) near the bottom-right corner,
+with WS_EX_NOACTIVATE and SW_SHOWNOACTIVATE, not topmost, for about 4.3 s.
+"foreground window is ours: no" in every run confirms the focus stayed put.
+
+Not executed here: flipstats.exe borderless (it would cover the screen of the
+person using this machine), PresentMon (not downloaded), any ETW/WPR trace,
+Win+Ctrl+Shift+B, and anything that hangs the GPU.
+
+Order of the runs below: info; windowed and overlap, vsync on and off, run 1;
+the same four, run 2; windowed with --latency 1, twice.
+
+==============================================================================
+flipstats.exe info
+==============================================================================
+
+> flipstats.exe info
+date: 2026-11-16 11:16:12 UTC
+Windows 10.0 build 26300.9711 (RtlGetVersion, UBR from the registry)
+session: this process is in session 1; the console session is 2; GetSystemMetrics(SM_REMOTESESSION) = 1 (a Remote Desktop session)
+DwmIsCompositionEnabled: TRUE; QueryPerformanceFrequency: 10000000 Hz
+IDXGIFactory5::CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING): TRUE
+
+adapter 0: "Intel(R) UHD Graphics 750", LUID 00000000:0000d549, vendor 0x8086 device 0x4c8a, 128 MB dedicated video memory
+  user-mode driver version (CheckInterfaceSupport): 31.0.101.5334
+  output \\.\DISPLAY353: desktop (0,0)-(1440,900), attached yes; EnumDisplaySettings: 1440x900, 32 Hz, 32 bpp
+    IDXGIOutput2::SupportsOverlays: FALSE
+    IDXGIOutput6::CheckHardwareCompositionSupport: S_OK, flags 0x0 ()
+    IDXGIOutput6::GetDesc1: 8 bits per color, color space 0 (sRGB)
+adapter 1: "Intel(R) UHD Graphics 750", LUID 00000008:db80230c, vendor 0x8086 device 0x4c8a, 128 MB dedicated video memory
+  user-mode driver version (CheckInterfaceSupport): 31.0.101.5334
+  (no outputs: this adapter drives no display in this session)
+adapter 2: "Microsoft Basic Render Driver", LUID 00000000:0000d827, vendor 0x1414 device 0x008c, 0 MB dedicated video memory, SOFTWARE
+  user-mode driver version (CheckInterfaceSupport): 10.0.26100.9711
+  (no outputs: this adapter drives no display in this session)
+
+QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS):
+  path 0: adapter LUID 00000008:db80230c, source \\.\DISPLAY353 -> target "(no name)", other; path refresh 32/1 = 32.000 Hz; signal 1440x900 active, vsync 32/1 = 32.000 Hz
+
+DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 2, cFrame 1, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+over 2.00 s with no window of this program: cRefresh +1, cFrame +1
+(exit code 0)
+
+==============================================================================
+windowed, vsync on, run 1
+==============================================================================
+
+> flipstats.exe windowed 4
+date: 2026-11-16 11:16:14 UTC
+Windows 10.0 build 26300.9711 (RtlGetVersion, UBR from the registry)
+session: this process is in session 1; the console session is 2; GetSystemMetrics(SM_REMOTESESSION) = 1 (a Remote Desktop session)
+DwmIsCompositionEnabled: TRUE; QueryPerformanceFrequency: 10000000 Hz
+configuration: windowed, 4.0 s, vsync 1, DXGI_SWAP_EFFECT_FLIP_DISCARD, 2 buffers, default frame latency
+tearing support (DXGI_FEATURE_PRESENT_ALLOW_TEARING): TRUE
+adapter for this monitor: "Intel(R) UHD Graphics 750", LUID 00000000:0000d549
+output \\.\DISPLAY353: desktop (0,0)-(1440,900), attached yes; EnumDisplaySettings: 1440x900, 32 Hz, 32 bpp
+  IDXGIOutput2::SupportsOverlays: FALSE
+  IDXGIOutput6::CheckHardwareCompositionSupport: S_OK, flags 0x0 ()
+  IDXGIOutput6::GetDesc1: 8 bits per color, color space 0 (sRGB)
+  path 0: adapter LUID 00000008:db80230c, source \\.\DISPLAY353 -> target "(no name)", other; path refresh 32/1 = 32.000 Hz; signal 1440x900 active, vsync 32/1 = 32.000 Hz
+IDXGIOutput::WaitForVBlank: 32 intervals, mean 31.251 ms (32.00 Hz), min 30.403, median 31.277, max 32.015 ms
+before: DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 2, cFrame 1, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+D3D11 device: feature level 11_1, maximum frame latency 3
+window: client 320x240 at (1093,585), DPI 96, WS_EX_NOACTIVATE, swap chain flag ALLOW_TEARING
+IDXGISwapChain::GetContainingOutput: \\.\DISPLAY353
+IDXGIOutput3::CheckOverlaySupport(B8G8R8A8_UNORM): S_OK, flags 0x0
+IDXGISwapChainMedia: available
+Present(1, 0)
+
+windows closed 4281 ms after the first Present
+after:  DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 38, cFrame 37, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+
+Present calls (QueryPerformanceCounter around each call):
+  131 calls in 4.02 s = 32.6 per second; DXGI_STATUS_OCCLUDED 0; last error S_OK
+  time inside Present (131 values): min 0.238, median 30.925, p90 31.433, p99 31.868, max 62.498 ms
+  GetLastPresentCount: 1 after the first call, 131 after the last
+  foreground window is ours: no; windows above ours that intersect its client area: 0 of this program, 0 others
+
+GetFrameStatistics:
+  S_OK 147, DXGI_ERROR_FRAME_STATISTICS_DISJOINT 1; 132 distinct values
+  sample 0: PresentCount 0, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 1: PresentCount 1, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 2: PresentCount 2, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 3: PresentCount 3, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 4: PresentCount 4, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  from the first to the last sample: PresentCount +131, PresentRefreshCount +0, SyncRefreshCount +0
+  presents never reported as the newest one shown: 0 of 131 (the statistics were read after every Present call)
+  Present call to the first read that reported it (131 values): min 81.724, median 187.175, p90 187.879, p99 218.804, max 219.033 ms
+  the vblank fields did not advance: these statistics say which present DXGI counted as shown, but not at which vblank
+
+GetFrameStatisticsMedia:
+  S_OK 148; per distinct PresentCount: COMPOSED 131, OVERLAY 0, NONE 1, COMPOSITION_FAILURE 0, other 0; ApprovedPresentDuration 0
+
+DWM over 4.20 s: cRefresh +34 (8.1/s), cFrame +34 (8.1 composed frames/s, all windows)
+
+  second  presents  stats changes  PresentRefreshCount  DWM cFrame  DWM cRefresh  media C/O/N
+       0        36             31                    0           8             8  30/0/1
+       1        32             32                    0           8             8  32/0/0
+       2        32             32                    0           8             8  32/0/0
+       3        31             31                    0           8             8  31/0/0
+       4         0              6                    0           2             2  6/0/0
+(exit code 0)
+
+==============================================================================
+windowed, vsync off, run 1
+==============================================================================
+
+> flipstats.exe windowed 4 --vsync 0
+date: 2026-11-16 11:16:24 UTC
+Windows 10.0 build 26300.9711 (RtlGetVersion, UBR from the registry)
+session: this process is in session 1; the console session is 2; GetSystemMetrics(SM_REMOTESESSION) = 1 (a Remote Desktop session)
+DwmIsCompositionEnabled: TRUE; QueryPerformanceFrequency: 10000000 Hz
+configuration: windowed, 4.0 s, vsync 0, DXGI_SWAP_EFFECT_FLIP_DISCARD, 2 buffers, default frame latency
+tearing support (DXGI_FEATURE_PRESENT_ALLOW_TEARING): TRUE
+adapter for this monitor: "Intel(R) UHD Graphics 750", LUID 00000000:0000d549
+output \\.\DISPLAY353: desktop (0,0)-(1440,900), attached yes; EnumDisplaySettings: 1440x900, 32 Hz, 32 bpp
+  IDXGIOutput2::SupportsOverlays: FALSE
+  IDXGIOutput6::CheckHardwareCompositionSupport: S_OK, flags 0x0 ()
+  IDXGIOutput6::GetDesc1: 8 bits per color, color space 0 (sRGB)
+  path 0: adapter LUID 00000008:db80230c, source \\.\DISPLAY353 -> target "(no name)", other; path refresh 32/1 = 32.000 Hz; signal 1440x900 active, vsync 32/1 = 32.000 Hz
+IDXGIOutput::WaitForVBlank: 31 intervals, mean 32.257 ms (31.00 Hz), min 30.782, median 31.274, max 62.470 ms
+before: DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 2, cFrame 1, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+D3D11 device: feature level 11_1, maximum frame latency 3
+window: client 320x240 at (1093,585), DPI 96, WS_EX_NOACTIVATE, swap chain flag ALLOW_TEARING
+IDXGISwapChain::GetContainingOutput: \\.\DISPLAY353
+IDXGIOutput3::CheckOverlaySupport(B8G8R8A8_UNORM): S_OK, flags 0x0
+IDXGISwapChainMedia: available
+Present(0, DXGI_PRESENT_ALLOW_TEARING)
+
+windows closed 4257 ms after the first Present
+after:  DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 46, cFrame 45, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+
+Present calls (QueryPerformanceCounter around each call):
+  23458 calls in 4.00 s = 5864.5 per second; DXGI_STATUS_OCCLUDED 0; last error S_OK
+  time inside Present (23458 values): min 0.008, median 0.110, p90 0.249, p99 0.380, max 7.740 ms
+  GetLastPresentCount: 1 after the first call, 23458 after the last
+  foreground window is ours: no; windows above ours that intersect its client area: 0 of this program, 0 others
+
+GetFrameStatistics:
+  S_OK 23474, DXGI_ERROR_FRAME_STATISTICS_DISJOINT 1; 130 distinct values
+  sample 0: PresentCount 0, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 1: PresentCount 125, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 2: PresentCount 374, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 3: PresentCount 641, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 4: PresentCount 898, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  from the first to the last sample: PresentCount +23458, PresentRefreshCount +0, SyncRefreshCount +0
+  presents never reported as the newest one shown: 23329 of 23458 (the statistics were read after every Present call)
+  Present call to the first read that reported it (129 values): min 32.425, median 34.725, p90 37.198, p99 40.217, max 55.261 ms
+  the vblank fields did not advance: these statistics say which present DXGI counted as shown, but not at which vblank
+
+GetFrameStatisticsMedia:
+  S_OK 23475; per distinct PresentCount: COMPOSED 129, OVERLAY 0, NONE 1, COMPOSITION_FAILURE 0, other 0; ApprovedPresentDuration 0
+
+DWM over 4.23 s: cRefresh +42 (9.9/s), cFrame +42 (9.9 composed frames/s, all windows)
+
+  second  presents  stats changes  PresentRefreshCount  DWM cFrame  DWM cRefresh  media C/O/N
+       0      8717             32                    0           9             9  31/0/1
+       1      7089             32                    0          10            10  32/0/0
+       2      3973             32                    0          10            10  32/0/0
+       3      3679             32                    0          10            10  32/0/0
+       4         0              2                    0           3             3  2/0/0
+(exit code 0)
+
+==============================================================================
+overlap, vsync on, run 1
+==============================================================================
+
+> flipstats.exe overlap 4
+date: 2026-11-16 11:16:35 UTC
+Windows 10.0 build 26300.9711 (RtlGetVersion, UBR from the registry)
+session: this process is in session 1; the console session is 2; GetSystemMetrics(SM_REMOTESESSION) = 1 (a Remote Desktop session)
+DwmIsCompositionEnabled: TRUE; QueryPerformanceFrequency: 10000000 Hz
+configuration: overlap, 4.0 s, vsync 1, DXGI_SWAP_EFFECT_FLIP_DISCARD, 2 buffers, default frame latency
+tearing support (DXGI_FEATURE_PRESENT_ALLOW_TEARING): TRUE
+adapter for this monitor: "Intel(R) UHD Graphics 750", LUID 00000000:0000d549
+output \\.\DISPLAY353: desktop (0,0)-(1440,900), attached yes; EnumDisplaySettings: 1440x900, 32 Hz, 32 bpp
+  IDXGIOutput2::SupportsOverlays: FALSE
+  IDXGIOutput6::CheckHardwareCompositionSupport: S_OK, flags 0x0 ()
+  IDXGIOutput6::GetDesc1: 8 bits per color, color space 0 (sRGB)
+  path 0: adapter LUID 00000008:db80230c, source \\.\DISPLAY353 -> target "(no name)", other; path refresh 32/1 = 32.000 Hz; signal 1440x900 active, vsync 32/1 = 32.000 Hz
+IDXGIOutput::WaitForVBlank: 32 intervals, mean 31.250 ms (32.00 Hz), min 30.843, median 31.257, max 32.179 ms
+before: DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 2, cFrame 1, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+D3D11 device: feature level 11_1, maximum frame latency 3
+window: client 320x240 at (1093,585), DPI 96, WS_EX_NOACTIVATE, swap chain flag ALLOW_TEARING; overlapping window 160x120 owned by it
+IDXGISwapChain::GetContainingOutput: \\.\DISPLAY353
+IDXGIOutput3::CheckOverlaySupport(B8G8R8A8_UNORM): S_OK, flags 0x0
+IDXGISwapChainMedia: available
+Present(1, 0)
+
+windows closed 4269 ms after the first Present
+after:  DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 38, cFrame 37, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+
+Present calls (QueryPerformanceCounter around each call):
+  131 calls in 4.02 s = 32.6 per second; DXGI_STATUS_OCCLUDED 0; last error S_OK
+  time inside Present (131 values): min 0.081, median 30.963, p90 31.330, p99 31.738, max 62.299 ms
+  GetLastPresentCount: 1 after the first call, 131 after the last
+  foreground window is ours: no; windows above ours that intersect its client area: 1 of this program, 0 others
+
+GetFrameStatistics:
+  S_OK 147, DXGI_ERROR_FRAME_STATISTICS_DISJOINT 1; 132 distinct values
+  sample 0: PresentCount 0, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 1: PresentCount 1, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 2: PresentCount 2, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 3: PresentCount 3, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 4: PresentCount 4, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  from the first to the last sample: PresentCount +131, PresentRefreshCount +0, SyncRefreshCount +0
+  presents never reported as the newest one shown: 0 of 131 (the statistics were read after every Present call)
+  Present call to the first read that reported it (131 values): min 79.264, median 187.209, p90 187.659, p99 218.651, max 218.656 ms
+  the vblank fields did not advance: these statistics say which present DXGI counted as shown, but not at which vblank
+
+GetFrameStatisticsMedia:
+  S_OK 148; per distinct PresentCount: COMPOSED 131, OVERLAY 0, NONE 1, COMPOSITION_FAILURE 0, other 0; ApprovedPresentDuration 0
+
+DWM over 4.21 s: cRefresh +34 (8.1/s), cFrame +34 (8.1 composed frames/s, all windows)
+
+  second  presents  stats changes  PresentRefreshCount  DWM cFrame  DWM cRefresh  media C/O/N
+       0        35             30                    0           8             8  29/0/1
+       1        32             32                    0           8             8  32/0/0
+       2        32             32                    0           8             8  32/0/0
+       3        32             32                    0           8             8  32/0/0
+       4         0              6                    0           2             2  6/0/0
+(exit code 0)
+
+==============================================================================
+overlap, vsync off, run 1
+==============================================================================
+
+> flipstats.exe overlap 4 --vsync 0
+date: 2026-11-16 11:16:46 UTC
+Windows 10.0 build 26300.9711 (RtlGetVersion, UBR from the registry)
+session: this process is in session 1; the console session is 2; GetSystemMetrics(SM_REMOTESESSION) = 1 (a Remote Desktop session)
+DwmIsCompositionEnabled: TRUE; QueryPerformanceFrequency: 10000000 Hz
+configuration: overlap, 4.0 s, vsync 0, DXGI_SWAP_EFFECT_FLIP_DISCARD, 2 buffers, default frame latency
+tearing support (DXGI_FEATURE_PRESENT_ALLOW_TEARING): TRUE
+adapter for this monitor: "Intel(R) UHD Graphics 750", LUID 00000000:0000d549
+output \\.\DISPLAY353: desktop (0,0)-(1440,900), attached yes; EnumDisplaySettings: 1440x900, 32 Hz, 32 bpp
+  IDXGIOutput2::SupportsOverlays: FALSE
+  IDXGIOutput6::CheckHardwareCompositionSupport: S_OK, flags 0x0 ()
+  IDXGIOutput6::GetDesc1: 8 bits per color, color space 0 (sRGB)
+  path 0: adapter LUID 00000008:db80230c, source \\.\DISPLAY353 -> target "(no name)", other; path refresh 32/1 = 32.000 Hz; signal 1440x900 active, vsync 32/1 = 32.000 Hz
+IDXGIOutput::WaitForVBlank: 32 intervals, mean 31.247 ms (32.00 Hz), min 30.819, median 31.234, max 31.688 ms
+before: DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 2, cFrame 1, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+D3D11 device: feature level 11_1, maximum frame latency 3
+window: client 320x240 at (1093,585), DPI 96, WS_EX_NOACTIVATE, swap chain flag ALLOW_TEARING; overlapping window 160x120 owned by it
+IDXGISwapChain::GetContainingOutput: \\.\DISPLAY353
+IDXGIOutput3::CheckOverlaySupport(B8G8R8A8_UNORM): S_OK, flags 0x0
+IDXGISwapChainMedia: available
+Present(0, DXGI_PRESENT_ALLOW_TEARING)
+
+windows closed 4266 ms after the first Present
+after:  DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 46, cFrame 45, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+
+Present calls (QueryPerformanceCounter around each call):
+  23894 calls in 4.00 s = 5973.4 per second; DXGI_STATUS_OCCLUDED 0; last error S_OK
+  time inside Present (23894 values): min 0.008, median 0.109, p90 0.261, p99 0.373, max 6.805 ms
+  GetLastPresentCount: 1 after the first call, 23894 after the last
+  foreground window is ours: no; windows above ours that intersect its client area: 1 of this program, 0 others
+
+GetFrameStatistics:
+  S_OK 23911, DXGI_ERROR_FRAME_STATISTICS_DISJOINT 1; 130 distinct values
+  sample 0: PresentCount 0, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 1: PresentCount 136, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 2: PresentCount 369, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 3: PresentCount 606, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 4: PresentCount 867, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  from the first to the last sample: PresentCount +23894, PresentRefreshCount +0, SyncRefreshCount +0
+  presents never reported as the newest one shown: 23765 of 23894 (the statistics were read after every Present call)
+  Present call to the first read that reported it (129 values): min 33.078, median 34.703, p90 37.395, p99 39.795, max 96.141 ms
+  the vblank fields did not advance: these statistics say which present DXGI counted as shown, but not at which vblank
+
+GetFrameStatisticsMedia:
+  S_OK 23912; per distinct PresentCount: COMPOSED 129, OVERLAY 0, NONE 1, COMPOSITION_FAILURE 0, other 0; ApprovedPresentDuration 0
+
+DWM over 4.23 s: cRefresh +42 (9.9/s), cFrame +42 (9.9 composed frames/s, all windows)
+
+  second  presents  stats changes  PresentRefreshCount  DWM cFrame  DWM cRefresh  media C/O/N
+       0      8436             32                    0           9             9  31/0/1
+       1      8180             32                    0          10            10  32/0/0
+       2      3724             32                    0          10            10  32/0/0
+       3      3554             32                    0          10            10  32/0/0
+       4         0              2                    0           3             3  2/0/0
+(exit code 0)
+
+==============================================================================
+windowed, vsync on, run 2
+==============================================================================
+
+> flipstats.exe windowed 4
+date: 2026-11-16 11:16:57 UTC
+Windows 10.0 build 26300.9711 (RtlGetVersion, UBR from the registry)
+session: this process is in session 1; the console session is 2; GetSystemMetrics(SM_REMOTESESSION) = 1 (a Remote Desktop session)
+DwmIsCompositionEnabled: TRUE; QueryPerformanceFrequency: 10000000 Hz
+configuration: windowed, 4.0 s, vsync 1, DXGI_SWAP_EFFECT_FLIP_DISCARD, 2 buffers, default frame latency
+tearing support (DXGI_FEATURE_PRESENT_ALLOW_TEARING): TRUE
+adapter for this monitor: "Intel(R) UHD Graphics 750", LUID 00000000:0000d549
+output \\.\DISPLAY353: desktop (0,0)-(1440,900), attached yes; EnumDisplaySettings: 1440x900, 32 Hz, 32 bpp
+  IDXGIOutput2::SupportsOverlays: FALSE
+  IDXGIOutput6::CheckHardwareCompositionSupport: S_OK, flags 0x0 ()
+  IDXGIOutput6::GetDesc1: 8 bits per color, color space 0 (sRGB)
+  path 0: adapter LUID 00000008:db80230c, source \\.\DISPLAY353 -> target "(no name)", other; path refresh 32/1 = 32.000 Hz; signal 1440x900 active, vsync 32/1 = 32.000 Hz
+IDXGIOutput::WaitForVBlank: 32 intervals, mean 31.256 ms (31.99 Hz), min 30.928, median 31.250, max 31.661 ms
+before: DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 2, cFrame 1, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+D3D11 device: feature level 11_1, maximum frame latency 3
+window: client 320x240 at (1093,585), DPI 96, WS_EX_NOACTIVATE, swap chain flag ALLOW_TEARING
+IDXGISwapChain::GetContainingOutput: \\.\DISPLAY353
+IDXGIOutput3::CheckOverlaySupport(B8G8R8A8_UNORM): S_OK, flags 0x0
+IDXGISwapChainMedia: available
+Present(1, 0)
+
+windows closed 4268 ms after the first Present
+after:  DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 38, cFrame 37, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+
+Present calls (QueryPerformanceCounter around each call):
+  131 calls in 4.01 s = 32.6 per second; DXGI_STATUS_OCCLUDED 0; last error S_OK
+  time inside Present (131 values): min 0.237, median 30.957, p90 31.395, p99 32.287, max 62.167 ms
+  GetLastPresentCount: 1 after the first call, 131 after the last
+  foreground window is ours: no; windows above ours that intersect its client area: 0 of this program, 0 others
+
+GetFrameStatistics:
+  S_OK 147, DXGI_ERROR_FRAME_STATISTICS_DISJOINT 1; 132 distinct values
+  sample 0: PresentCount 0, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 1: PresentCount 1, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 2: PresentCount 2, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 3: PresentCount 3, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 4: PresentCount 4, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  from the first to the last sample: PresentCount +131, PresentRefreshCount +0, SyncRefreshCount +0
+  presents never reported as the newest one shown: 0 of 131 (the statistics were read after every Present call)
+  Present call to the first read that reported it (131 values): min 77.405, median 187.219, p90 187.926, p99 218.449, max 218.766 ms
+  the vblank fields did not advance: these statistics say which present DXGI counted as shown, but not at which vblank
+
+GetFrameStatisticsMedia:
+  S_OK 148; per distinct PresentCount: COMPOSED 131, OVERLAY 0, NONE 1, COMPOSITION_FAILURE 0, other 0; ApprovedPresentDuration 0
+
+DWM over 4.24 s: cRefresh +34 (8.0/s), cFrame +34 (8.0 composed frames/s, all windows)
+
+  second  presents  stats changes  PresentRefreshCount  DWM cFrame  DWM cRefresh  media C/O/N
+       0        36             31                    0           8             8  30/0/1
+       1        31             31                    0           7             7  31/0/0
+       2        32             32                    0           8             8  32/0/0
+       3        32             32                    0           8             8  32/0/0
+       4         0              6                    0           3             3  6/0/0
+(exit code 0)
+
+==============================================================================
+windowed, vsync off, run 2
+==============================================================================
+
+> flipstats.exe windowed 4 --vsync 0
+date: 2026-11-16 11:17:15 UTC
+Windows 10.0 build 26300.9711 (RtlGetVersion, UBR from the registry)
+session: this process is in session 1; the console session is 2; GetSystemMetrics(SM_REMOTESESSION) = 1 (a Remote Desktop session)
+DwmIsCompositionEnabled: TRUE; QueryPerformanceFrequency: 10000000 Hz
+configuration: windowed, 4.0 s, vsync 0, DXGI_SWAP_EFFECT_FLIP_DISCARD, 2 buffers, default frame latency
+tearing support (DXGI_FEATURE_PRESENT_ALLOW_TEARING): TRUE
+adapter for this monitor: "Intel(R) UHD Graphics 750", LUID 00000000:0000d549
+output \\.\DISPLAY353: desktop (0,0)-(1440,900), attached yes; EnumDisplaySettings: 1440x900, 32 Hz, 32 bpp
+  IDXGIOutput2::SupportsOverlays: FALSE
+  IDXGIOutput6::CheckHardwareCompositionSupport: S_OK, flags 0x0 ()
+  IDXGIOutput6::GetDesc1: 8 bits per color, color space 0 (sRGB)
+  path 0: adapter LUID 00000008:db80230c, source \\.\DISPLAY353 -> target "(no name)", other; path refresh 32/1 = 32.000 Hz; signal 1440x900 active, vsync 32/1 = 32.000 Hz
+IDXGIOutput::WaitForVBlank: 32 intervals, mean 31.390 ms (31.86 Hz), min 26.865, median 31.372, max 36.713 ms
+before: DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 2, cFrame 1, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+D3D11 device: feature level 11_1, maximum frame latency 3
+window: client 320x240 at (1093,585), DPI 96, WS_EX_NOACTIVATE, swap chain flag ALLOW_TEARING
+IDXGISwapChain::GetContainingOutput: \\.\DISPLAY353
+IDXGIOutput3::CheckOverlaySupport(B8G8R8A8_UNORM): S_OK, flags 0x0
+IDXGISwapChainMedia: available
+Present(0, DXGI_PRESENT_ALLOW_TEARING)
+
+windows closed 4250 ms after the first Present
+after:  DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 46, cFrame 45, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+
+Present calls (QueryPerformanceCounter around each call):
+  22744 calls in 4.00 s = 5686.0 per second; DXGI_STATUS_OCCLUDED 0; last error S_OK
+  time inside Present (22744 values): min 0.008, median 0.117, p90 0.277, p99 0.781, max 7.454 ms
+  GetLastPresentCount: 1 after the first call, 22744 after the last
+  foreground window is ours: no; windows above ours that intersect its client area: 0 of this program, 0 others
+
+GetFrameStatistics:
+  S_OK 22759, DXGI_ERROR_FRAME_STATISTICS_DISJOINT 1; 130 distinct values
+  sample 0: PresentCount 0, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 1: PresentCount 64, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 2: PresentCount 231, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 3: PresentCount 404, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 4: PresentCount 603, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  from the first to the last sample: PresentCount +22744, PresentRefreshCount +0, SyncRefreshCount +0
+  presents never reported as the newest one shown: 22615 of 22744 (the statistics were read after every Present call)
+  Present call to the first read that reported it (129 values): min 33.095, median 35.123, p90 37.944, p99 40.136, max 78.559 ms
+  the vblank fields did not advance: these statistics say which present DXGI counted as shown, but not at which vblank
+
+GetFrameStatisticsMedia:
+  S_OK 22760; per distinct PresentCount: COMPOSED 129, OVERLAY 0, NONE 1, COMPOSITION_FAILURE 0, other 0; ApprovedPresentDuration 0
+
+DWM over 4.23 s: cRefresh +42 (9.9/s), cFrame +42 (9.9 composed frames/s, all windows)
+
+  second  presents  stats changes  PresentRefreshCount  DWM cFrame  DWM cRefresh  media C/O/N
+       0      6916             32                    0           9             9  31/0/1
+       1      6271             32                    0          10            10  32/0/0
+       2      6110             32                    0          10            10  32/0/0
+       3      3447             32                    0          10            10  32/0/0
+       4         0              2                    0           3             3  2/0/0
+(exit code 0)
+
+==============================================================================
+overlap, vsync on, run 2
+==============================================================================
+
+> flipstats.exe overlap 4
+date: 2026-11-16 11:17:27 UTC
+Windows 10.0 build 26300.9711 (RtlGetVersion, UBR from the registry)
+session: this process is in session 1; the console session is 2; GetSystemMetrics(SM_REMOTESESSION) = 1 (a Remote Desktop session)
+DwmIsCompositionEnabled: TRUE; QueryPerformanceFrequency: 10000000 Hz
+configuration: overlap, 4.0 s, vsync 1, DXGI_SWAP_EFFECT_FLIP_DISCARD, 2 buffers, default frame latency
+tearing support (DXGI_FEATURE_PRESENT_ALLOW_TEARING): TRUE
+adapter for this monitor: "Intel(R) UHD Graphics 750", LUID 00000000:0000d549
+output \\.\DISPLAY353: desktop (0,0)-(1440,900), attached yes; EnumDisplaySettings: 1440x900, 32 Hz, 32 bpp
+  IDXGIOutput2::SupportsOverlays: FALSE
+  IDXGIOutput6::CheckHardwareCompositionSupport: S_OK, flags 0x0 ()
+  IDXGIOutput6::GetDesc1: 8 bits per color, color space 0 (sRGB)
+  path 0: adapter LUID 00000008:db80230c, source \\.\DISPLAY353 -> target "(no name)", other; path refresh 32/1 = 32.000 Hz; signal 1440x900 active, vsync 32/1 = 32.000 Hz
+IDXGIOutput::WaitForVBlank: 32 intervals, mean 31.244 ms (32.01 Hz), min 30.011, median 31.254, max 31.873 ms
+before: DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 2, cFrame 1, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+D3D11 device: feature level 11_1, maximum frame latency 3
+window: client 320x240 at (1093,585), DPI 96, WS_EX_NOACTIVATE, swap chain flag ALLOW_TEARING; overlapping window 160x120 owned by it
+IDXGISwapChain::GetContainingOutput: \\.\DISPLAY353
+IDXGIOutput3::CheckOverlaySupport(B8G8R8A8_UNORM): S_OK, flags 0x0
+IDXGISwapChainMedia: available
+Present(1, 0)
+
+windows closed 4273 ms after the first Present
+after:  DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 38, cFrame 37, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+
+Present calls (QueryPerformanceCounter around each call):
+  132 calls in 4.02 s = 32.8 per second; DXGI_STATUS_OCCLUDED 0; last error S_OK
+  time inside Present (132 values): min 0.092, median 30.971, p90 31.501, p99 31.941, max 32.038 ms
+  GetLastPresentCount: 1 after the first call, 132 after the last
+  foreground window is ours: no; windows above ours that intersect its client area: 1 of this program, 0 others
+
+GetFrameStatistics:
+  S_OK 148, DXGI_ERROR_FRAME_STATISTICS_DISJOINT 1; 133 distinct values
+  sample 0: PresentCount 0, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 1: PresentCount 1, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 2: PresentCount 2, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 3: PresentCount 3, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 4: PresentCount 4, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  from the first to the last sample: PresentCount +132, PresentRefreshCount +0, SyncRefreshCount +0
+  presents never reported as the newest one shown: 0 of 132 (the statistics were read after every Present call)
+  Present call to the first read that reported it (132 values): min 81.889, median 187.254, p90 187.793, p99 188.306, max 188.437 ms
+  the vblank fields did not advance: these statistics say which present DXGI counted as shown, but not at which vblank
+
+GetFrameStatisticsMedia:
+  S_OK 149; per distinct PresentCount: COMPOSED 132, OVERLAY 0, NONE 1, COMPOSITION_FAILURE 0, other 0; ApprovedPresentDuration 0
+
+DWM over 4.21 s: cRefresh +34 (8.1/s), cFrame +34 (8.1 composed frames/s, all windows)
+
+  second  presents  stats changes  PresentRefreshCount  DWM cFrame  DWM cRefresh  media C/O/N
+       0        36             31                    0           8             8  30/0/1
+       1        32             32                    0           8             8  32/0/0
+       2        32             32                    0           8             8  32/0/0
+       3        32             32                    0           8             8  32/0/0
+       4         0              6                    0           2             2  6/0/0
+(exit code 0)
+
+==============================================================================
+overlap, vsync off, run 2
+==============================================================================
+
+> flipstats.exe overlap 4 --vsync 0
+date: 2026-11-16 11:17:45 UTC
+Windows 10.0 build 26300.9711 (RtlGetVersion, UBR from the registry)
+session: this process is in session 1; the console session is 2; GetSystemMetrics(SM_REMOTESESSION) = 1 (a Remote Desktop session)
+DwmIsCompositionEnabled: TRUE; QueryPerformanceFrequency: 10000000 Hz
+configuration: overlap, 4.0 s, vsync 0, DXGI_SWAP_EFFECT_FLIP_DISCARD, 2 buffers, default frame latency
+tearing support (DXGI_FEATURE_PRESENT_ALLOW_TEARING): TRUE
+adapter for this monitor: "Intel(R) UHD Graphics 750", LUID 00000000:0000d549
+output \\.\DISPLAY353: desktop (0,0)-(1440,900), attached yes; EnumDisplaySettings: 1440x900, 32 Hz, 32 bpp
+  IDXGIOutput2::SupportsOverlays: FALSE
+  IDXGIOutput6::CheckHardwareCompositionSupport: S_OK, flags 0x0 ()
+  IDXGIOutput6::GetDesc1: 8 bits per color, color space 0 (sRGB)
+  path 0: adapter LUID 00000008:db80230c, source \\.\DISPLAY353 -> target "(no name)", other; path refresh 32/1 = 32.000 Hz; signal 1440x900 active, vsync 32/1 = 32.000 Hz
+IDXGIOutput::WaitForVBlank: 32 intervals, mean 31.253 ms (32.00 Hz), min 30.862, median 31.262, max 31.577 ms
+before: DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 2, cFrame 1, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+D3D11 device: feature level 11_1, maximum frame latency 3
+window: client 320x240 at (1093,585), DPI 96, WS_EX_NOACTIVATE, swap chain flag ALLOW_TEARING; overlapping window 160x120 owned by it
+IDXGISwapChain::GetContainingOutput: \\.\DISPLAY353
+IDXGIOutput3::CheckOverlaySupport(B8G8R8A8_UNORM): S_OK, flags 0x0
+IDXGISwapChainMedia: available
+Present(0, DXGI_PRESENT_ALLOW_TEARING)
+
+windows closed 4257 ms after the first Present
+after:  DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 46, cFrame 45, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+
+Present calls (QueryPerformanceCounter around each call):
+  23565 calls in 4.00 s = 5891.1 per second; DXGI_STATUS_OCCLUDED 0; last error S_OK
+  time inside Present (23565 values): min 0.009, median 0.106, p90 0.286, p99 0.710, max 7.379 ms
+  GetLastPresentCount: 1 after the first call, 23565 after the last
+  foreground window is ours: no; windows above ours that intersect its client area: 1 of this program, 0 others
+
+GetFrameStatistics:
+  S_OK 23581, DXGI_ERROR_FRAME_STATISTICS_DISJOINT 1; 130 distinct values
+  sample 0: PresentCount 0, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 1: PresentCount 92, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 2: PresentCount 324, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 3: PresentCount 558, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 4: PresentCount 780, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  from the first to the last sample: PresentCount +23565, PresentRefreshCount +0, SyncRefreshCount +0
+  presents never reported as the newest one shown: 23436 of 23565 (the statistics were read after every Present call)
+  Present call to the first read that reported it (129 values): min 33.044, median 35.011, p90 38.163, p99 47.071, max 57.691 ms
+  the vblank fields did not advance: these statistics say which present DXGI counted as shown, but not at which vblank
+
+GetFrameStatisticsMedia:
+  S_OK 23582; per distinct PresentCount: COMPOSED 129, OVERLAY 0, NONE 1, COMPOSITION_FAILURE 0, other 0; ApprovedPresentDuration 0
+
+DWM over 4.24 s: cRefresh +42 (9.9/s), cFrame +42 (9.9 composed frames/s, all windows)
+
+  second  presents  stats changes  PresentRefreshCount  DWM cFrame  DWM cRefresh  media C/O/N
+       0      8501             32                    0           9             9  31/0/1
+       1      7154             32                    0          10            10  32/0/0
+       2      4917             32                    0          10            10  32/0/0
+       3      2993             32                    0          10            10  32/0/0
+       4         0              2                    0           3             3  2/0/0
+(exit code 0)
+
+==============================================================================
+windowed, vsync on, maximum frame latency 1, run 1
+==============================================================================
+
+> flipstats.exe windowed 4 --latency 1
+date: 2026-11-16 11:17:58 UTC
+Windows 10.0 build 26300.9711 (RtlGetVersion, UBR from the registry)
+session: this process is in session 1; the console session is 2; GetSystemMetrics(SM_REMOTESESSION) = 1 (a Remote Desktop session)
+DwmIsCompositionEnabled: TRUE; QueryPerformanceFrequency: 10000000 Hz
+configuration: windowed, 4.0 s, vsync 1, DXGI_SWAP_EFFECT_FLIP_DISCARD, 2 buffers
+tearing support (DXGI_FEATURE_PRESENT_ALLOW_TEARING): TRUE
+adapter for this monitor: "Intel(R) UHD Graphics 750", LUID 00000000:0000d549
+output \\.\DISPLAY353: desktop (0,0)-(1440,900), attached yes; EnumDisplaySettings: 1440x900, 32 Hz, 32 bpp
+  IDXGIOutput2::SupportsOverlays: FALSE
+  IDXGIOutput6::CheckHardwareCompositionSupport: S_OK, flags 0x0 ()
+  IDXGIOutput6::GetDesc1: 8 bits per color, color space 0 (sRGB)
+  path 0: adapter LUID 00000008:db80230c, source \\.\DISPLAY353 -> target "(no name)", other; path refresh 32/1 = 32.000 Hz; signal 1440x900 active, vsync 32/1 = 32.000 Hz
+IDXGIOutput::WaitForVBlank: 32 intervals, mean 31.229 ms (32.02 Hz), min 27.698, median 31.225, max 34.534 ms
+before: DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 2, cFrame 1, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+D3D11 device: feature level 11_1, maximum frame latency 1
+window: client 320x240 at (1093,585), DPI 96, WS_EX_NOACTIVATE, swap chain flag ALLOW_TEARING
+IDXGISwapChain::GetContainingOutput: \\.\DISPLAY353
+IDXGIOutput3::CheckOverlaySupport(B8G8R8A8_UNORM): S_OK, flags 0x0
+IDXGISwapChainMedia: available
+Present(1, 0)
+
+windows closed 4279 ms after the first Present
+after:  DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 38, cFrame 37, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+
+Present calls (QueryPerformanceCounter around each call):
+  130 calls in 4.01 s = 32.4 per second; DXGI_STATUS_OCCLUDED 0; last error S_OK
+  time inside Present (130 values): min 0.706, median 31.172, p90 31.565, p99 32.185, max 32.579 ms
+  GetLastPresentCount: 1 after the first call, 130 after the last
+  foreground window is ours: no; windows above ours that intersect its client area: 0 of this program, 0 others
+
+GetFrameStatistics:
+  S_OK 147, DXGI_ERROR_FRAME_STATISTICS_DISJOINT 1; 131 distinct values
+  sample 0: PresentCount 0, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 1: PresentCount 1, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 2: PresentCount 2, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 3: PresentCount 3, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 4: PresentCount 4, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  from the first to the last sample: PresentCount +130, PresentRefreshCount +0, SyncRefreshCount +0
+  presents never reported as the newest one shown: 0 of 130 (the statistics were read after every Present call)
+  Present call to the first read that reported it (130 values): min 75.716, median 124.935, p90 125.286, p99 126.246, max 189.604 ms
+  the vblank fields did not advance: these statistics say which present DXGI counted as shown, but not at which vblank
+
+GetFrameStatisticsMedia:
+  S_OK 148; per distinct PresentCount: COMPOSED 130, OVERLAY 0, NONE 1, COMPOSITION_FAILURE 0, other 0; ApprovedPresentDuration 0
+
+DWM over 4.20 s: cRefresh +34 (8.1/s), cFrame +34 (8.1 composed frames/s, all windows)
+
+  second  presents  stats changes  PresentRefreshCount  DWM cFrame  DWM cRefresh  media C/O/N
+       0        34             31                    0           8             8  30/0/1
+       1        32             32                    0           8             8  32/0/0
+       2        32             32                    0           8             8  32/0/0
+       3        32             32                    0           8             8  32/0/0
+       4         0              4                    0           2             2  4/0/0
+(exit code 0)
+
+==============================================================================
+windowed, vsync on, maximum frame latency 1, run 2
+==============================================================================
+
+> flipstats.exe windowed 4 --latency 1
+date: 2026-11-16 11:18:17 UTC
+Windows 10.0 build 26300.9711 (RtlGetVersion, UBR from the registry)
+session: this process is in session 1; the console session is 2; GetSystemMetrics(SM_REMOTESESSION) = 1 (a Remote Desktop session)
+DwmIsCompositionEnabled: TRUE; QueryPerformanceFrequency: 10000000 Hz
+configuration: windowed, 4.0 s, vsync 1, DXGI_SWAP_EFFECT_FLIP_DISCARD, 2 buffers
+tearing support (DXGI_FEATURE_PRESENT_ALLOW_TEARING): TRUE
+adapter for this monitor: "Intel(R) UHD Graphics 750", LUID 00000000:0000d549
+output \\.\DISPLAY353: desktop (0,0)-(1440,900), attached yes; EnumDisplaySettings: 1440x900, 32 Hz, 32 bpp
+  IDXGIOutput2::SupportsOverlays: FALSE
+  IDXGIOutput6::CheckHardwareCompositionSupport: S_OK, flags 0x0 ()
+  IDXGIOutput6::GetDesc1: 8 bits per color, color space 0 (sRGB)
+  path 0: adapter LUID 00000008:db80230c, source \\.\DISPLAY353 -> target "(no name)", other; path refresh 32/1 = 32.000 Hz; signal 1440x900 active, vsync 32/1 = 32.000 Hz
+IDXGIOutput::WaitForVBlank: 32 intervals, mean 31.369 ms (31.88 Hz), min 25.548, median 31.314, max 38.721 ms
+before: DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 2, cFrame 1, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+D3D11 device: feature level 11_1, maximum frame latency 1
+window: client 320x240 at (1093,585), DPI 96, WS_EX_NOACTIVATE, swap chain flag ALLOW_TEARING
+IDXGISwapChain::GetContainingOutput: \\.\DISPLAY353
+IDXGIOutput3::CheckOverlaySupport(B8G8R8A8_UNORM): S_OK, flags 0x0
+IDXGISwapChainMedia: available
+Present(1, 0)
+
+windows closed 4287 ms after the first Present
+after:  DwmGetCompositionTimingInfo(NULL): rateRefresh 10000000/312500 = 32.000 Hz, qpcRefreshPeriod 31.250 ms, rateCompose 10000000/312500, cRefresh 38, cFrame 37, cFramesDisplayed 0, cFramesDropped 0, cFramesMissed 0
+
+Present calls (QueryPerformanceCounter around each call):
+  130 calls in 4.02 s = 32.3 per second; DXGI_STATUS_OCCLUDED 0; last error S_OK
+  time inside Present (130 values): min 0.863, median 31.175, p90 31.749, p99 32.481, max 33.440 ms
+  GetLastPresentCount: 1 after the first call, 130 after the last
+  foreground window is ours: no; windows above ours that intersect its client area: 0 of this program, 0 others
+
+GetFrameStatistics:
+  S_OK 146, DXGI_ERROR_FRAME_STATISTICS_DISJOINT 1; 128 distinct values
+  sample 0: PresentCount 0, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 1: PresentCount 2, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 2: PresentCount 3, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 3: PresentCount 4, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  sample 4: PresentCount 5, PresentRefreshCount 0, SyncRefreshCount 0, SyncQPCTime 0
+  from the first to the last sample: PresentCount +130, PresentRefreshCount +0, SyncRefreshCount +0
+  presents never reported as the newest one shown: 3 of 130 (the statistics were read after every Present call)
+  Present call to the first read that reported it (127 values): min 84.518, median 124.950, p90 125.387, p99 126.316, max 154.675 ms
+  the vblank fields did not advance: these statistics say which present DXGI counted as shown, but not at which vblank
+
+GetFrameStatisticsMedia:
+  S_OK 147; per distinct PresentCount: COMPOSED 127, OVERLAY 0, NONE 1, COMPOSITION_FAILURE 0, other 0; ApprovedPresentDuration 0
+
+DWM over 4.21 s: cRefresh +34 (8.1/s), cFrame +34 (8.1 composed frames/s, all windows)
+
+  second  presents  stats changes  PresentRefreshCount  DWM cFrame  DWM cRefresh  media C/O/N
+       0        34             29                    0           8             8  28/0/1
+       1        32             32                    0           8             8  32/0/0
+       2        32             31                    0           8             8  31/0/0
+       3        32             32                    0           8             8  32/0/0
+       4         0              4                    0           2             2  4/0/0
+(exit code 0)
+
