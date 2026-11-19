@@ -77,6 +77,12 @@
 
 - [Keil MDK Community](https://keil.arm.com/mdk-community)、[Keil MDK v6 商店](https://store.arm.com/mdk-6/)、[Eclipse ThreadX FAQ](https://threadx.io/faq/)、[ThreadX Alliance 公告](https://newsroom.eclipse.org/node/41004)、[Microsoft 捐出 Azure RTOS](https://techcommunity.microsoft.com/blog/iotblog/microsoft-contributes-azure-rtos-to-open-source/3986318)、[IAR 功能安全版](https://blog.iar.com/products/requirements/functional-safety/iar-embedded-workbench-for-arm-functional-safety)、[IAR 購買頁（qt.io）](https://www.qt.io/development/iar-embedded-tools/how-to-buy)、[Memfault 價格](https://memfault.com/pricing/)、[Memfault 報價頁](https://go.memfault.com/get-a-quote-scale)、[Toolradar Memfault](https://toolradar.com/tools/memfault/pricing)
 
+### MCU 軟體的新機會
+
+- CRA：[Telit CRA 通報](https://www.telit.com/blog/cra-vulnerability-reporting-september-2026/)、[TechTarget CRA 通報](https://www.techtarget.com/cybersecurity/feature/EU-Cyber-Resilience-Act-reporting-What-CISOs-need-to-know)
+- AI 韌體新創：[Embedder（YC）](https://ycombinator.com/companies/embedder)、[CraftifAI（YourStory）](https://yourstory.com/2026/10/tech30-craftifai-agentic-ai-software-development-physical-devices)、[Embedd（Supply Chain Dive）](https://www.supplychaindive.com/press-release/20260901-embedd-raises-27m-to-tackle-the-infrastructure-challenge-behind-physical)、[Code Metal（The Robot Report）](https://www.therobotreport.com/code-metal-secures-seed-funding-llm-agents-edge/)
+- HIL 與測試自動化：[BootLoop Test](https://embeddedcomputing.com/technology/debug-and-test/launching-bootloop-test-why-hardware-in-the-loop-testing-stays-out-of-reach-for-most-embedded-teams)、[Linaro 測試自動化](https://www.linaro.org/services/testing-automation)、[Lynx Embedded Board Farm](https://www.lynx.com/solutions/embedded-board-farm)、[Cyberus HWaaS](https://cyberus-technology.de/post/announcing-hwaas-open-source-hardware-in-the-loop-test-automation)、[Red Hat Jumpstarter](https://next.redhat.com/project/jumpstarter-hardware-in-the-loop-testing/)
+
 ### VS Code 生態與除錯
 
 - 付費擴充：[GitLens README](https://cdn.jsdelivr.net/gh/gitkraken/vscode-gitlens@main/README.md)、[Dodo Payments 整理](https://dodopayments.com/blogs/sell-vscode-extensions)
@@ -96,6 +102,7 @@
 - **MCU 熱重載**：LVGL 執行期 XML 載入引擎，Pro 文件說不公開、開源文件卻列在函式庫裡；Moddable Mods 早期標為實驗功能；Crank Storyboard 是否能在執行中重載 Lua 未查證。
 - **MCU 模擬工具**：Wokwi 價格官方與整理站不一致，STM32 支援範圍未確認；Arm AVH 的 AWS AMI 停用，但文件仍在更新；Proteus VSM 是否支援 STM32 未查到；Siemens PAVE360、dSPACE 未查證。
 - **MCU 工具收費**：Keil Community 授權的更新規則，Arm 與 Renesas 說法不一；IAR 功能安全版的認證版本號，兩頁不一致；Memfault 付費方案只有 Toolradar 列出金額；靜態分析工具價格未查證。
+- **MCU 軟體新機會**：AI 韌體新創的資金與功能只來自新聞稿與報導；部分 HIL 產品資料是廠商自撰文章；CRA 對 SBOM 的要求哪些是法定義務，來源說法不一。
 - **Toitware 停止營運**：只見於 HandWiki（引用丹麥商業登記），未直接查證；Toit 2.0 發布也只有單一來源。
 - **上層語言**：MicroPython 最低資源，README 與 FAQ 說法不同；Moddable 的 TypeScript 支援在 2020 年標為實驗性質，後續版本描述為完整支援；WAMR 大小新舊資料不一致（舊資料直譯約 85 KB、AOT 約 50 KB）。
 - 本研究沒有實際試用任何競品，功能比較依據官方描述。
