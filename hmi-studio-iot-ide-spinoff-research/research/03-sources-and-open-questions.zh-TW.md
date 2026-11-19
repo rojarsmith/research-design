@@ -42,6 +42,18 @@
 - Weintek：[Wachendorff](https://www.wachendorff-prozesstechnik.de/en/product-groups/hmi-iiot-edge-gateways/)、[Mouser cMT-SVR](https://www.mouser.tw/new/weintek/weintek-cmt-svr-faceless-hmis/)
 - CODESYS：[授權](https://www.codesys.com/ecosystem/discover-codesys/licensing/)、[Automation Server](https://content.helpme-codesys.com/en/Lizenzierung/_license_tools_as.html)
 
+### 動態語言 MCU 產品
+
+- [Moddable 授權](https://moddable.com/license)、[Mongoose OS 授權](https://mongoose-os.com/licensing.html)、[mJS README](https://github.com/cesanta/mjs/blob/master/README.md)、[Zerynth 授權](https://zerynth.com/license)、[Toit](https://toit.io/)、[Toit 2.0 報導](https://esp32.co.uk/?p=20261017056)、[Ocre（LF Edge）](https://lfedge.org/ocre-comes-to-linux-extended-reach-for-portable-lightweight-containers-powered-by-webassembly/)、[OpenMV 合作夥伴](https://openmv.io/pages/partners)、[Digi XBee MicroPython](https://www.digi.com/blog/post/employing-wireless-edge-intelligence-with-digi-xbe)、[DeviceScript 封存](https://github.com/microsoft/jacscript)
+
+### C/C++ RAD 工具
+
+- [Quantum Leaps 授權](https://www.state-machine.com/licensing)、[itemis CREATE 授權](https://www.itemis.com/en/products/itemis-create/licenses)、[SEGGER emWin 價格](https://www.segger.com/pricelist-emwin.html)、[Altia](https://altia.com/2022/11/17/designing-guis-for-microcontroller-units/)、[Slint 價格](https://slint.dev/pricing)、[MathWorks R2026a](https://nl.mathworks.com/products/new_products/r2026a-transition.html)、[Edge Impulse 方案](https://www.edgeimpulse.com/plans)、[Vendr Edge Impulse](https://www.vendr.com/marketplace/edge-impulse)、[VisualGDB](https://visualgdb.com/buy)、[VisualGDB Live Tracing](https://visualgdb.com/documentation/tracing/)
+
+### MCU 研發調查
+
+- [Eclipse 2024 IoT 與嵌入式開發者調查](https://newsroom.eclipse.org/node/41237)、[JetBrains State of Embedded 2025](https://lp.jetbrains.com/the-state-of-embedded-2025)、[Memfault IoT Visibility Gap 2025](https://memfault.com/wp-content/uploads/2025/08/The-IoT-Visibility-Gap-Report-Memfault.pdf)、[VDC 與 Memfault 2024 摘要](https://go.memfault.com/hubfs/ExecutiveSummaryStateOfIOT.pdf)、[Black Duck 2025](https://blackduck.com/content/dam/black-duck/en-us/reports/state-of-embedded-software-quality-and-safety.pdf)、[QNX 2026](https://qnx.software/en/reports/under-the-hood-2026)、[Electronic Specifier embedded world 2026](https://www.electronicspecifier.com/?p=185036)、[AspenCore 2017（CNX 摘要）](https://cnx-software.com/2017/08/15/aspencore-2017-embedded-markets-study-programming-languages-operating-systems-mcu-vendors-and-more/?amp=1)、[Beningo 除錯時間](https://www.beningo.com/the-embedded-frontier-podcast-episode-006-decreasing-debugging-increasing-productivity/)、[Avnet 調查](https://www.eejournal.com/industry_news/avnet-insights-engineers-get-behind-ai/)、[UST 人才調查](https://www.electronicsweekly.com/news/why-embedded-engineering-is-becoming-a-bottleneck-for-industrial-automation-2026-10/)、[Embedded.com 工具鏈](https://www.embedded.com/where-developer-choice-broke-down-in-embedded-software-development)
+
 ### VS Code 生態與除錯
 
 - 付費擴充：[GitLens README](https://cdn.jsdelivr.net/gh/gitkraken/vscode-gitlens@main/README.md)、[Dodo Payments 整理](https://dodopayments.com/blogs/sell-vscode-extensions)
@@ -56,6 +68,8 @@
 - **MicroEJ**：裝置數自述 4.5 億與 5 億兩種說法；價格不公開；Java 執行緒與 RTOS task 的對應關係未說明；SDK 是否免費未明示。
 - **Particle 被 Digi 收購**只有單一來源，未證實。
 - **ThingsBoard、FlowFuse、Ignition** 的價格，各整理站互相矛盾。
+- **Edge Impulse、Simulink、Altia** 沒有官方公開價；VisualGDB 目前價格未查到。
+- **MCU 研發調查**：沒有 MCU 專屬的權威排名；AspenCore 2023 與 2025 年版結果未找到；Memfault 與 Black Duck 為廠商調查。
 - 本研究沒有實際試用任何競品，功能比較依據官方描述。
 
 ## 未解問題

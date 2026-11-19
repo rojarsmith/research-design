@@ -39,7 +39,9 @@
    - 詳見[方向比較](#三個方向比較)。
 7. **面對 LVGL Pro，付費價值不能放在 UI 編輯器本身。** LVGL Pro 已涵蓋 XML、資料綁定、Figma、UI 測試、CLI、AI agent，但官方頁面沒有列出通訊協定、應用邏輯流程、多執行緒、OTA、板級建置與可寄送的 Demo。EHS 該收費的是「整台連網裝置一天跑起來」、「在設計期擋掉並行 bug」、「給客戶看的 Demo」與「CRA 之後的 OTA 與 SBOM」，並評估與 LVGL XML 互通，採互補而非正面衝突。詳見 [LVGL Pro 分析與付費價值](research/04-lvgl-pro-and-paid-value.zh-TW.md)。
 8. **MicroEJ 證明「完整的 MCU 裝置研發平台」可以收費，但它走的是另一條路。** 它是以 MEJ32 虛擬機為核心的 Pro Code 平台，具備多應用沙箱、完整網路函式庫、應用層 OTA 與 Virtual Device 模擬；以多年期合約賣給大型 OEM，價格不公開。EHS 應借用它的虛擬裝置、晶片商與垂直市場合作、出貨後更新等概念，但不做 VM、不只做企業銷售，站在「Low Code、純 C 輸出、公開價格、中小型 OEM」的位置。詳見 [MicroEJ 比較](research/05-microej-comparison.zh-TW.md)。
-9. **分拆的前提是 EDT 的決策，不是技術。** 現有文件寫明 EHS 是 EDT 自主 IP，EULA 寫明 EDT 擁有全部權利，也沒有任何文件討論過分拆、IP 移轉或授權回用。這必須由 EDT 經營層與法務決定。本研究只提供決策材料，不構成以個人名義另起爐灶的建議。
+9. **MCU 研發最痛的地方，正好是 EHS 可以收費的地方。** 綜合多份調查，排在前面的是除錯（尤其並行與時序 bug）、複雜度與時程、連網、出貨後的 OTA 與現場故障、資安與 CRA。並行 bug、硬體還沒到就要測試、協定整合，EHS 已有或已規劃對應；現場可觀測性則該交給專業服務。詳見 [MCU 研發困擾排行](research/08-mcu-development-pain-points.zh-TW.md)。
+10. **其他付費 MCU 工具的收費模式，都是「工具便宜或免費，執行環境或量產收費」。** Moddable（JavaScript）每台 US$0.50、Slint 每台約 US$1 起、Quantum Leaps 的 QM 工具免費但 QP 框架收商業授權、Toit 語言開源但收雲端 OTA 費用。QP 的 Active Object 模型也可直接作為 EHS 多執行緒設計的理論基礎。詳見 [動態語言 MCU 產品](research/06-dynamic-language-mcu-products.zh-TW.md) 與 [C/C++ RAD 工具](research/07-c-cpp-rad-tools.zh-TW.md)。
+11. **分拆的前提是 EDT 的決策，不是技術。** 現有文件寫明 EHS 是 EDT 自主 IP，EULA 寫明 EDT 擁有全部權利，也沒有任何文件討論過分拆、IP 移轉或授權回用。這必須由 EDT 經營層與法務決定。本研究只提供決策材料，不構成以個人名義另起爐灶的建議。
 
 ## 目前狀態
 
@@ -82,7 +84,7 @@ LVGL 本身不是執行緒安全的。v9 起有 `lv_lock()`／`lv_unlock()`，�
 | 元素 | 設計 | 理由 |
 | --- | --- | --- |
 | UI Task | 唯一擁有 LVGL 的執行緒，其他 Task 不直接呼叫 LVGL | 從結構上避免 LVGL 競態，不靠使用者記得加鎖 |
-| Task 節點 | 在專案中以視覺方式宣告 Task（名稱、優先權、堆疊、週期或事件驅動），每個 Task 有自己的 Logic 圖或程式碼檔 | 讓並行在設計圖上可見 |
+| Task 節點 | 在專案中以視覺方式宣告 Task（名稱、優先權、堆疊、週期或事件驅動），每個 Task 有自己的 Logic 圖或程式碼檔，並以帶事件佇列的 Active Object 實作（參考 [Quantum Leaps QP](research/07-c-cpp-rad-tools.zh-TW.md)） | 讓並行在設計圖上可見；Active Object 有成熟理論，容易向工程師解釋 |
 | Tag Store | 所有跨 Task 資料都經過 Tag。Tag 寫入以訊息佇列送達擁有者，讀取取快照；UI 端用類似 `lv_subject` 的觀察者更新元件 | 沿用現有 Tag 模型，把「共用變數」變成安全的發布／訂閱 |
 | 通訊 Task | Modbus、CAN、MQTT 各自是一個 Task（或由連線設定自動產生），逾時與重試由產生器處理 | 慢速 I/O 不會卡住畫面 |
 | 目標 OS | 第一目標選 **Zephyr**：多板支援、有網路堆疊、MCUboot OTA；第二目標選 FreeRTOS：既有客戶多；裸機 super-loop 保留給小型板 | Zephyr 一次解決多晶片與網路，FreeRTOS 滿足市場慣性 |
@@ -181,4 +183,7 @@ LVGL 本身不是執行緒安全的。v9 起有 `lv_lock()`／`lv_unlock()`，�
 - [全球同類競品比較](research/02-competitors.zh-TW.md)
 - [LVGL Pro 分析與付費價值](research/04-lvgl-pro-and-paid-value.zh-TW.md)
 - [MicroEJ 比較](research/05-microej-comparison.zh-TW.md)
+- [用動態語言開發 MCU 的付費產品](research/06-dynamic-language-mcu-products.zh-TW.md)
+- [以 C/C++ 為輸出的新式 RAD 付費工具](research/07-c-cpp-rad-tools.zh-TW.md)
+- [MCU 軟韌體研發的需求與困擾排行](research/08-mcu-development-pain-points.zh-TW.md)
 - [來源與未解問題](research/03-sources-and-open-questions.zh-TW.md)
