@@ -44,7 +44,7 @@
 
 ### 動態語言 MCU 產品
 
-- [Moddable 授權](https://moddable.com/license)、[Mongoose OS 授權](https://mongoose-os.com/licensing.html)、[mJS README](https://github.com/cesanta/mjs/blob/master/README.md)、[Zerynth 授權](https://zerynth.com/license)、[Toit](https://toit.io/)、[Toit 2.0 報導](https://esp32.co.uk/?p=20261017056)、[Ocre（LF Edge）](https://lfedge.org/ocre-comes-to-linux-extended-reach-for-portable-lightweight-containers-powered-by-webassembly/)、[OpenMV 合作夥伴](https://openmv.io/pages/partners)、[Digi XBee MicroPython](https://www.digi.com/blog/post/employing-wireless-edge-intelligence-with-digi-xbe)、[DeviceScript 封存](https://github.com/microsoft/jacscript)
+- [Moddable 授權](https://moddable.com/license)、[Mongoose OS 授權](https://mongoose-os.com/licensing.html)、[mJS README](https://github.com/cesanta/mjs/blob/master/README.md)、[Zerynth 授權](https://zerynth.com/license)、[Toit](https://toit.io/)、[Toit 2.0 報導](https://esp32.co.uk/?p=20261017056)、[Ocre（LF Edge）](https://lfedge.org/ocre-comes-to-linux-extended-reach-for-portable-lightweight-containers-powered-by-webassembly/)、[OpenMV 合作夥伴](https://openmv.io/pages/partners)、[HandWiki Toit 條目](https://handwiki.org/wiki/Toit)、[eeNews Toit 開源](https://www.eenewseurope.com/en/toit-opens-up-its-iot-programming-language/)、[CNX Toit 效能宣稱](https://www.cnx-software.com/2021/11/28/toit-open-source-language-claims-to-be-30x-faster-than-micropython-on-esp32/?amp=1)、[EOC 2021 Toit 容器演講](https://embeddedonlineconference.com/session/Containers_and_managed_software_on_micro-controllers)、[Instantiations Toit](https://www.instantiations.com/news/bridging-the-gap-with-toit-a-rich-dev-experience-for-microcontrollers/)、[Digi XBee MicroPython](https://www.digi.com/blog/post/employing-wireless-edge-intelligence-with-digi-xbe)、[DeviceScript 封存](https://github.com/microsoft/jacscript)
 
 ### C/C++ RAD 工具
 
@@ -57,6 +57,21 @@
 ### 匯流排架構先例
 
 - [Zephyr zbus API](https://docs.zephyrproject.org/latest/doxygen/html/group__zbus__apis.html)、[PX4 uORB](https://docs.px4.io/main/en/middleware/uorb)、[PX4 全系統重播](https://docs.px4.io/v1.12/en/debug/system_wide_replay.html)、[ESPHome Actions, Triggers, Conditions](https://www.esphome.io/automations/actions)、[ESPHome automation 開發者文件](https://developers.esphome.io/architecture/components/automations/)
+
+### MCU 熱重載
+
+- 商業：[Toit Jaguar](https://github.com/toitlang/jaguar/)、[Toit 文件](https://docs.toit.io/getstarted)、[MicroEJ Kernel 訓練教材 2026-03](https://repository.microej.com/packages/training/kernel/DEV-M0127_0001_Kernel_Development_2.1_20260313.pdf)、[MicroEJ Binary Loader](https://www.microej.com/licensing/binary-loader-ip/)、[Moddable XS Mods](https://moddable.com/documentation/xs/mods)、[runmod](https://github.com/phoddie/runmod)、[LVGL Pro 執行期 XML 載入](https://docs.pro.lvgl.io/integration/xml.html)、[LVGL XML 開源文件](https://docs.lvgl.io/master/details/other-components/xml.html)、[Crank Storyboard 架構](https://resources.cranksoftware.com/cranksoftware/v3.2.0/docs/ch01s03.html)、[TI C2000 LFU](https://ti.com/lit/spruiu9)、[DigiKey 不停機韌體更新](https://www.digikey.com/en/articles/how-to-perform-firmware-updates-without-halting-firmware-execution)
+- 開源與研究：[ESP-IDF hotreload](https://components.espressif.com/components/igrr/hotreload/versions/0.9.0/readme)、[Zephyr LLEXT](https://docs.zephyrproject.org/latest/services/llext/index.html)、[FPBInject](https://osrtos.com/projects/fpbinject)、[HERA 論文](https://www.ndss-symposium.org/wp-content/uploads/2021-159b-paper.pdf)、[Live++ 與 Rider](https://blog.jetbrains.com/dotnet/2024/09/24/hot-reloading-cplusplus-with-liveplusplus-and-jetbrains-rider/)
+
+### MCU 與外部設備模擬
+
+- [Wokwi 價格](https://wokwi.com/pricing)、[Wokwi VS Code 授權](https://wokwi.com/license)、[Wokwi CI](https://docs.wokwi.com/wokwi-ci/getting-started)、[ESP-IDF 的 Wokwi 說明](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/third-party-tools/wokwi.html)、[Renode](https://antmicro.com/platforms/renode)、[STM32H7 Renode 參考平台](https://antmicro.com/blog/2026/07/stm32h7-renode-reference-platform)、[TFLite Micro 的 Renode CI](https://zephyrproject.org/renode-based-ci-for-tensorflow-lite-mcu/)、[ADI 與 Renode](https://antmicro.com/blog/2026/09/how-adi-is-leveraging-renode-to-accelerate-embedded-intelligence)、[Corellium IoT](https://corellium.com/solutions/iot-device-devops)、[Corellium STM32U5](https://support.avh.corellium.com/devices/stm32u5/stm32u5-supported-hardware-components)、[Arm Virtual Hardware](https://www.arm.com/virtual-hardware)、[AVH 版本紀錄](https://arm-software.github.io/AVH/main/overview/html/History.html)、[Proteus VSM](https://labcenter.com/whyvsm/)、[Labcenter 價格](https://labcenter.com/pricing)、[Synopsys Virtualizer CES 2026](https://www.synopsys.com/blogs/chip-design/future-mobility-arm-zena-soafee-workflows-ces.html)、[Synopsys 電子數位雙生平台](https://news.synopsys.com/2026-03-10-Synopsys-Launches-Electronics-Digital-Twin-Platform-to-Accelerate-Physical-AI-System-Development)、[Vector 與 Synopsys](https://www.vector.com/en/business-unit/software-platform/resources/vector-synopsys/)
+
+### 硬體與應用分離、上層語言
+
+- MicroEJ：[架構](https://docs.microej.com/en/latest/VEEPortingGuide/architecture.html)、[Core Engine](https://docs.microej.com/en/latest/VEEPortingGuide/coreEngine.html)、[UI Abstraction Layer](https://docs.microej.com/en/latest/VEEPortingGuide/uiLowLevel.html)、[Mock](https://docs.microej.com/en/latest/VEEPortingGuide/mock.html)、[HIL Engine](https://docs.microej.com/en/latest/VEEPortingGuide/appendix/tools/hil.html)、[Front Panel](https://docs.microej.com/en/latest/VEEPortingGuide/frontpanel.html)、[NXP i.MX RT1170 VEE](https://www.github.com/MicroEJ/nxp-vee-imxrt1170-evk)、[NXP MCX N947 VEE](https://www.github.com/MicroEJ/nxp-vee-mcxn947-frdm)、[Cinterion VEE Port](https://repository.microej.com/packages/documentation/cinterion-vee/1.19/veeport/index.html)
+- Python 與 TypeScript：[Moddable TypeScript](https://moddable.com/blog/typescript/)、[Moddable 7.0.0](https://gh.hhj520.top/Moddable-OpenSource/moddable/releases/tag/7.0.0)、[Hardening XS](https://www.moddable.com/hardening-xs)、[MicroPython README](https://github.com/micropython/micropython)、[MicroPython FAQ](https://github.com/micropython/micropython/wiki/FAQ)
+- 動態的 C：[WAMR（Espressif）](https://components.espressif.com/components/espressif/wasm-micro-runtime)、[WAMR 記憶體用量](https://github.com/bytecodealliance/wasm-micro-runtime/blob/main/doc/memory_usage.md)、[AkiraOS](https://www.cnx-software.com/2026/06/06/docker-for-microcontrollers-akiraos-combines-zephyr-rtos-with-webassembly-wasm-applications/?amp=1)、[ESP32-C3 上的 Wasm](https://aiotwin.eu/aiotwin/results/blog/webassembly_on_tiny_iot_devices_how_far_can_we_push_portability)、[Femto-Containers](https://arxiv.org/abs/2106.12553v2)、[Femto-Containers 隔離驗證](https://arxiv.org/pdf/2210.03432)、[PicoC](https://www.osnews.com/story/28602/a-very-small-c-interpreter-for-scripting/)、[PicoC STM32 移植](https://github.com/RTSYork/picoc)、[Ch 7.5](https://appdevelopermagazine.com/4803/2017/1/4/SoftIntegration's-Ch-7.5-supports-Raspberry-Pi,-Pi-Zero,-and-ARM)
 
 ### VS Code 生態與除錯
 
@@ -74,6 +89,10 @@
 - **ThingsBoard、FlowFuse、Ignition** 的價格，各整理站互相矛盾。
 - **Edge Impulse、Simulink、Altia** 沒有官方公開價；VisualGDB 目前價格未查到。
 - **MCU 研發調查**：沒有 MCU 專屬的權威排名；AspenCore 2023 與 2025 年版結果未找到；Memfault 與 Black Duck 為廠商調查。
+- **MCU 熱重載**：LVGL 執行期 XML 載入引擎，Pro 文件說不公開、開源文件卻列在函式庫裡；Moddable Mods 早期標為實驗功能；Crank Storyboard 是否能在執行中重載 Lua 未查證。
+- **MCU 模擬工具**：Wokwi 價格官方與整理站不一致，STM32 支援範圍未確認；Arm AVH 的 AWS AMI 停用，但文件仍在更新；Proteus VSM 是否支援 STM32 未查到；Siemens PAVE360、dSPACE 未查證。
+- **Toitware 停止營運**：只見於 HandWiki（引用丹麥商業登記），未直接查證；Toit 2.0 發布也只有單一來源。
+- **上層語言**：MicroPython 最低資源，README 與 FAQ 說法不同；Moddable 的 TypeScript 支援在 2020 年標為實驗性質，後續版本描述為完整支援；WAMR 大小新舊資料不一致（舊資料直譯約 85 KB、AOT 約 50 KB）。
 - 本研究沒有實際試用任何競品，功能比較依據官方描述。
 
 ## 未解問題

@@ -42,9 +42,12 @@
 7. **面對 LVGL Pro，付費價值不能放在 UI 編輯器本身。** LVGL Pro 已涵蓋 XML、資料綁定、Figma、UI 測試、CLI、AI agent，但官方頁面沒有列出通訊協定、應用邏輯流程、多執行緒、OTA、板級建置與可寄送的 Demo。EHS 該收費的是「整台連網裝置一天跑起來」、「在設計期擋掉並行 bug」、「給客戶看的 Demo」與「CRA 之後的 OTA 與 SBOM」，並評估與 LVGL XML 互通，採互補而非正面衝突。詳見 [LVGL Pro 分析與付費價值](research/04-lvgl-pro-and-paid-value.zh-TW.md)。
 8. **MicroEJ 證明「完整的 MCU 裝置研發平台」可以收費，但它走的是另一條路。** 它是以 MEJ32 虛擬機為核心的 Pro Code 平台，具備多應用沙箱、完整網路函式庫、應用層 OTA 與 Virtual Device 模擬；以多年期合約賣給大型 OEM，價格不公開。EHS 應借用它的虛擬裝置、晶片商與垂直市場合作、出貨後更新等概念，但不做 VM、不只做企業銷售，站在「Low Code、純 C 輸出、公開價格、中小型 OEM」的位置。詳見 [MicroEJ 比較](research/05-microej-comparison.zh-TW.md)。
 9. **MCU 研發最痛的地方，正好是 EHS 可以收費的地方。** 綜合多份調查，排在前面的是除錯（尤其並行與時序 bug）、複雜度與時程、連網、出貨後的 OTA 與現場故障、資安與 CRA。並行 bug、硬體還沒到就要測試、協定整合，EHS 已有或已規劃對應；現場可觀測性則該交給專業服務。詳見 [MCU 研發困擾排行](research/08-mcu-development-pain-points.zh-TW.md)。
-10. **其他付費 MCU 工具的收費模式，都是「工具便宜或免費，執行環境或量產收費」。** Moddable（JavaScript）每台 US$0.50、Slint 每台約 US$1 起、Quantum Leaps 的 QM 工具免費但 QP 框架收商業授權、Toit 語言開源但收雲端 OTA 費用。QP 的 Active Object 模型也可直接作為 EHS 多執行緒設計的理論基礎。詳見 [動態語言 MCU 產品](research/06-dynamic-language-mcu-products.zh-TW.md) 與 [C/C++ RAD 工具](research/07-c-cpp-rad-tools.zh-TW.md)。
+10. **其他付費 MCU 工具的收費模式，都是「工具便宜或免費，執行環境或量產收費」。** Moddable（JavaScript）每台 US$0.50、Slint 每台約 US$1 起、Quantum Leaps 的 QM 工具免費但 QP 框架收商業授權、Toit 語言開源但收雲端 OTA 費用（Toitware 據報已在 2024 年停止營運，顯示只靠語言加雲端撐不起公司）。QP 的 Active Object 模型也可直接作為 EHS 多執行緒設計的理論基礎。詳見 [動態語言 MCU 產品](research/06-dynamic-language-mcu-products.zh-TW.md) 與 [C/C++ RAD 工具](research/07-c-cpp-rad-tools.zh-TW.md)。
 11. **新架構提案：單元匯流排加可程式化交換中心。** 不受 EHS 現有設計限制，在 MCU 上跑一條軟體匯流排：觸控 GUI、實體按鈕中斷、感測器、Modbus、MQTT 都是匯流排上的設備單元，行為由可程式化的交換中心以 Low Code 規則決定。判斷是值得做：有 Zephyr zbus、PX4 uORB、QP、ESPHome 等先例，又直接解決並行除錯、硬體未到、晶片綁定等痛點；差異化在 IDE（單元描述檔、整機模擬、匯流排錄製重播、跨晶片），風險是即時性、中心瓶頸與記憶體，需先以最小原型量測。詳見 [單元匯流排架構提案](research/09-mcu-unit-bus-architecture.zh-TW.md)。
-12. **分拆的前提是 EDT 的決策，不是技術。** 現有文件寫明 EHS 是 EDT 自主 IP，EULA 寫明 EDT 擁有全部權利，也沒有任何文件討論過分拆、IP 移轉或授權回用。這必須由 EDT 經營層與法務決定。本研究只提供決策材料，不構成以個人名義另起爐灶的建議。
+12. **MCU 上沒有商業產品能熱重載 C 程式碼，這是空缺。** Toit、MicroEJ、Moddable、LVGL Pro 的熱重載或動態更新，都是 C 韌體固定、只換 bytecode、腳本、XML 或容器。EHS 若讓畫面、規則與 Tag 參數在真機上存檔就生效，並和整機模擬、錄製重播合成同一套開發迴圈，就是沒有對手覆蓋的收費功能。詳見 [MCU 熱重載](research/11-mcu-hot-reload.zh-TW.md)。
+13. **PC 端沒有友善的整機模擬工具，這是第二個空缺。** Wokwi 友善但晶片少，Renode 能力強但門檻高，Synopsys 與 Vector 的虛擬原型很貴；它們都是指令集層級的模擬，也都不把畫面、外部設備與雲端放在同一個時間軸上。EHS 可依單元匯流排做行為層級的整機模擬，驅動層交給 Renode。詳見 [MCU 與外部設備的 PC 端模擬](research/12-mcu-device-simulation.zh-TW.md)。
+14. **硬體與應用分離：借 MicroEJ 的邊界，不借它的 VM；使用者擴充用 C 編譯成 WebAssembly。** MicroEJ 靠固定的 API、固定的 C 函式原型與同一條邊界上的 mock，把硬體、App 與模擬器拆開。上層語言換成 Python 或 TypeScript 都可行，TypeScript 較適合 EHS；但「動態的 C」最可行：C 編譯成 Wasm 可熱載入、彼此隔離，且同一個 `.wasm` 能同時跑在 EHS 的 WASM 模擬器與 MCU 上。詳見 [硬體與應用分離及上層語言](research/13-app-layer-separation-and-languages.zh-TW.md)。
+15. **分拆的前提是 EDT 的決策，不是技術。** 現有文件寫明 EHS 是 EDT 自主 IP，EULA 寫明 EDT 擁有全部權利，也沒有任何文件討論過分拆、IP 移轉或授權回用。這必須由 EDT 經營層與法務決定。本研究只提供決策材料，不構成以個人名義另起爐灶的建議。
 
 ## 目前狀態
 
@@ -191,4 +194,7 @@ LVGL 本身不是執行緒安全的。v9 起有 `lv_lock()`／`lv_unlock()`，�
 - [MCU 軟韌體研發的需求與困擾排行](research/08-mcu-development-pain-points.zh-TW.md)
 - [架構提案：MCU 上的單元匯流排與可程式化交換中心](research/09-mcu-unit-bus-architecture.zh-TW.md)
 - [EHS 收費化路線圖](research/10-ehs-paid-product-roadmap.zh-TW.md)
+- [MCU 熱重載：商業產品與 EHS 的機會](research/11-mcu-hot-reload.zh-TW.md)
+- [MCU 與外部設備的 PC 端模擬：商業工具與 EHS 的整機模擬](research/12-mcu-device-simulation.zh-TW.md)
+- [硬體與應用分離：MicroEJ 的做法，以及上層語言的選擇](research/13-app-layer-separation-and-languages.zh-TW.md)
 - [來源與未解問題](research/03-sources-and-open-questions.zh-TW.md)
