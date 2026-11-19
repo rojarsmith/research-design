@@ -4,6 +4,8 @@
 
 ## 結論
 
+> **整合結論**：EHS 要成為有競爭力的收費軟體，必須從「UI 編輯器」轉成「讓整台連網裝置做得出來、出貨後還管得住」的工具。具體改法、收費結構與執行順序見 [EHS 收費化路線圖](research/10-ehs-paid-product-roadmap.zh-TW.md)。
+
 **可以轉，但不建議做成「通用 IoT IDE」。** 建議轉成「有螢幕的連網裝置」的 Low Code 開發環境：以 VS Code 付費擴充為主要付費介面，保留現有 No Code 桌面版給 OEM／ODM 客戶。
 
 1. **技術上綁 EDT 的地方很少。** 程式碼沒有授權金鑰、裝置檢查或 EDT 專屬晶片。三塊實體板中，兩塊是任何人都買得到的 ST Discovery 板。真正綁 EDT 的是**法律與品牌**：EULA、程式內授權文字限定「只能用於 EDT 供應的顯示模組」，另外產品名、檔案格式 ID、MIME 類型與 logo 也都帶 EDT。真正的技術鎖定是 **ST 工具鏈、Windows、LVGL**。詳見[程式碼耦合盤點](research/01-codebase-coupling.zh-TW.md)。
@@ -188,4 +190,5 @@ LVGL 本身不是執行緒安全的。v9 起有 `lv_lock()`／`lv_unlock()`，�
 - [以 C/C++ 為輸出的新式 RAD 付費工具](research/07-c-cpp-rad-tools.zh-TW.md)
 - [MCU 軟韌體研發的需求與困擾排行](research/08-mcu-development-pain-points.zh-TW.md)
 - [架構提案：MCU 上的單元匯流排與可程式化交換中心](research/09-mcu-unit-bus-architecture.zh-TW.md)
+- [EHS 收費化路線圖](research/10-ehs-paid-product-roadmap.zh-TW.md)
 - [來源與未解問題](research/03-sources-and-open-questions.zh-TW.md)

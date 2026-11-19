@@ -6,6 +6,16 @@ The question: if EDT HMI Studio (EHS), today a free No Code LVGL tool that sells
 
 ## Findings
 
+**Bottom line:** to compete as paid software, EHS has to stop selling a UI editor and become a tool that gets a whole connected device built and keeps it manageable after shipping. Without that shift, its features overlap LVGL Pro and SquareLine at a higher price than free tools. The [paid-product roadmap](research/10-ehs-paid-product-roadmap.zh-TW.md) sets out the changes, in order:
+
+1. Remove the EDT-only licence and the ST/Windows lock-in.
+2. Rebuild the core around the unit bus.
+3. Charge for bus record and replay, connectivity units, and OTA plus SBOM.
+4. Ship a hybrid product: a VS Code extension plus a No Code desktop app.
+5. Price by seat and per product, with OEM and chip-vendor channels.
+
+Customer interviews and prototype measurements must come before any investment.
+
 - **Technically feasible.** The tie to EDT is mainly legal (EULA, in-app licence text) and branding. The code has no licence keys, device checks or EDT-only chips, and only one of the three boards is EDT hardware. The real technical lock-in is to ST tooling, Windows build scripts and LVGL.
 - **Large gaps.** EHS has no device networking (TCP/IP, MQTT, HTTP), no OTA, no cloud accounts, no multithreading (the runtime is a bare-metal super-loop) and only STM32 targets. One engineer has built everything.
 - **A general-purpose IoT IDE is not recommended.** Chip vendors give their IDEs and VS Code extensions away, Arduino is now part of Qualcomm, and IoT clouds are becoming free or open source.
@@ -30,3 +40,4 @@ The question: if EDT HMI Studio (EHS), today a free No Code LVGL tool that sells
 - [Modern paid RAD tools that output C/C++](research/07-c-cpp-rad-tools.zh-TW.md)
 - [MCU firmware development needs and pain points](research/08-mcu-development-pain-points.zh-TW.md)
 - [Architecture proposal: an MCU unit bus with a programmable exchange hub](research/09-mcu-unit-bus-architecture.zh-TW.md)
+- [Paid-product roadmap for EHS](research/10-ehs-paid-product-roadmap.zh-TW.md)
