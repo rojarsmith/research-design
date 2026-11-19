@@ -1,6 +1,6 @@
 # MCU 領域還有哪些軟體機會
 
-查核日期：2026 年 11 月 19 日。本文接續 [14 號：錢收在哪裡](14-mcu-software-monetization.zh-TW.md)，回答：**MCU 領域還有哪些軟體機會，是現在才打開、還沒被佔滿的？** 排序是本研究的判斷，依據兩點：有沒有截止日期或資金在推；現有方案是不是太貴或太弱。AI 新創的資金與功能來自新聞稿與報導，沒有實際試用。
+查核日期：2026 年 11 月 19 日。本文接續 [14 號：錢收在哪裡](14-mcu-software-monetization.zh-TW.md)，回答：**MCU 領域還有哪些軟體機會，是現在才打開、還沒被佔滿的？** 排序是本研究的判斷，依據兩點：有沒有截止日期或資金在推；現有方案是不是太貴或太弱。AI 新創的資金與功能來自新聞稿與報導，沒有實際試用。第五節的補充只查證了 RED、電池護照、產線燒錄與 Edge Impulse 收購，其餘是依前面幾份研究推論。
 
 ## 結論
 
@@ -9,6 +9,8 @@
 MCU 軟體還能賺錢的地方，是**幫設備商證明「這台東西是對的、是安全的、出貨後管得住」**，而不是幫他們把程式寫得更快。
 
 對 EHS 來說，最好的切入點是把 AI、整機模擬和 CRA 證據綁在一起：**AI 產生 → 模擬驗證 → 一鍵輸出 SBOM 與更新紀錄。** 目前沒有任何一家工具完整覆蓋這條鏈。
+
+再往外延伸（見第五節），EHS 可以從「開發工具」變成**涵蓋產品一生的工具**：開發 → 模擬驗證 → 出廠測試 → 現場設定與維修 → 更新與合規證據，每一段都用同一份專案與單元描述檔。
 
 ## 一、六個有機會的方向
 
@@ -47,9 +49,47 @@ MCU 軟體還能賺錢的地方，是**幫設備商證明「這台東西是對�
 - 優先 3 的 SBOM 不只是附加功能：CRA 通報義務已經開始，這是管理層會撥預算、而且有截止日期的項目。
 - 客戶訪談（路線圖第七節）要加問：是否已在準備 CRA、目前怎麼產生 SBOM、有沒有用 AI 寫韌體，以及 AI 產生的程式怎麼驗證。
 
-## 五、待驗證
+## 五、補充：其他七個可能性
+
+### 法規還有兩個缺口
+
+| 可能性 | 現況 | 缺口 | 和 EHS 的契合度 |
+| --- | --- | --- | --- |
+| **歐盟無線設備指令（RED）的資安要求** | 比 CRA 更早生效：所有無線產品從 [2025-08-01 起](https://www.bsigroup.com/en-US/products-and-services/assessment-and-certification/product-testing-certification/radio-equipment-directive-cybersecurity-testing-for-radio-products/)要符合 EN 18031-1/-2/-3；[西班牙政府的指引](https://digital.gob.es/content/dam/portal-mtdfp/avance-digital/telecomunicacion-e-infraestructuras-digitales/areas_interes/equipos-telecomunicacion/documents/Guia-aplicacion-EN-18031.pdf)指出這些標準被引用時附有限制條件 | 有 Wi-Fi 或藍牙的 MCU 產品現在就要交證據，但市面上多半是驗證實驗室的顧問服務，少有給工程師用的檢查工具 | **高**。可和 CRA 做成同一套功能：依專案設定逐項檢查（預設密碼、加密通訊、更新機制），再產生技術文件草稿 |
+| **電池數位護照** | [2027-02-18 起強制](https://single-market-economy.ec.europa.eu/batteries_en)，適用電動車電池、輕型交通工具電池，以及容量大於 2 kWh 的工業電池 | 健康度、充放電紀錄等部分資料要由電池管理系統（BMS）的韌體提供 | **低到中**。只有 EDT 有電池或儲能類客戶時才值得做 |
+
+### 生產與出貨後
+
+| 可能性 | 現況 | 缺口 | 和 EHS 的契合度 |
+| --- | --- | --- | --- |
+| **產線燒錄、金鑰注入與出廠測試** | 晶片商各有服務：[NXP](https://www.nxp.com/applications/technologies/security/trust-provisioning-service-for-secure-manufacturing:TRUST-PROVISIONING)、[Microchip](https://www.microchip.com/en-us/products/security/trust-platform)、[Silicon Labs](https://www.silabs.com/services/custom-part-manufacturing-service?tab=why)；第三方有 [Data I/O](https://dataio.com/Solutions/SentriX)、[SEALSQ](https://sealsq.com/managed-pki-for-iot/secure-factory-provisioning) | 這些服務各自綁定晶片或燒錄機；中小廠的出廠測試程式多半手寫，也沒有序號與測試結果的追溯紀錄 | **高**。EHS 知道整機有哪些單元，可以自動產生出廠測試畫面與流程；EDT 自己的產線就能先用 |
+| **現場維修與設定工具** | 技術人員常要用筆電加專用軟體改參數、看故障碼 | 每家廠商都自己寫一套，品質參差 | **很高**。依單元描述檔自動產生手機或網頁的設定與診斷介面，透過藍牙或 Modbus 連線，等於「HMI 的第二個螢幕」，是 EHS 本業的自然延伸 |
+| **設備端功能解鎖與授權** | 廠商想要硬體相同、按功能收費 | MCU 上缺少現成且安全的功能授權機制 | **中**。和 OTA、簽章機制一起做；要先確認客戶真有這種商業模式 |
+
+### 知識與人才
+
+| 可能性 | 說明 | 和 EHS 的契合度 |
+| --- | --- | --- |
+| **給 AI 用的結構化晶片知識** | AI 韌體工具的瓶頸在 datasheet 與暫存器資料的品質；整理並驗證過的周邊與元件模型可以授權（Embedd 走的就是這條路） | **中**。EHS 的單元描述檔累積多了，本身就是這類資料 |
+| **教育訓練與認證課程** | 嵌入式人才不足（見 [08](08-mcu-development-pain-points.zh-TW.md)）；課程可帶動工具普及 | **中**。適合當推廣管道，不適合當主要營收 |
+
+### 這次確認機會不大的
+
+- **邊緣 AI 與 TinyML 平台**：最大的獨立平台 Edge Impulse 已被 [Qualcomm 收購](https://www.hackster.io/news/qualcomm-to-acquire-edge-impulse-as-it-seeks-to-gain-ground-in-the-artificial-intelligence-of-things-2db3bb6f0d63)，晶片商都會自己做；EHS 只需能串接模型。
+- **功耗量測與最佳化**：主要靠量測硬體，軟體很難單獨收費。
+
+### 補充的重點
+
+- **RED 比 CRA 更急**：CRA 是「快要來」，RED 是「現在就要交證據」。兩者應做成同一套合規功能。
+- **現場維修與設定工具**開發成本最低，因為直接重用 EHS 的畫面與單元描述能力。
+- 和出廠測試合起來看，同一份專案與單元描述檔可以貫穿開發、模擬、出廠測試、現場維修與更新，這是單點工具做不到的。
+
+## 六、待驗證
 
 - CRA 對 SBOM 的要求，哪些是法定義務、哪些只是實務上需要，各家來源說法不同，要以法規原文與調和標準為準。
 - AI 韌體新創的實際功能與客戶群；資金數字只來自新聞稿與報導。
 - BootLoop Test 等 HIL 產品的資料有些來自廠商自己撰寫的文章，價格與支援的 MCU 範圍未查證。
 - 工業設備群（Modbus、CAN）的現場維運是否真的沒有專門的商業方案。
+- RED 的 EN 18031 引用限制條件細節，以及 2025-08 之後的實際執法情況。
+- 電池護照的 QR code 要求範圍：CMS 與 Scantrust 寫所有電池都要，比完整護照的適用範圍更廣，要以法規原文為準。
+- 現場設定工具、出廠測試產生器、功能解鎖三項是否有既有商業產品，這次沒有查證。

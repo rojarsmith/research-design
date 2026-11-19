@@ -48,7 +48,7 @@
 13. **PC 端沒有友善的整機模擬工具，這是第二個空缺。** Wokwi 友善但晶片少，Renode 能力強但門檻高，Synopsys 與 Vector 的虛擬原型很貴；它們都是指令集層級的模擬，也都不把畫面、外部設備與雲端放在同一個時間軸上。EHS 可依單元匯流排做行為層級的整機模擬，驅動層交給 Renode。詳見 [MCU 與外部設備的 PC 端模擬](research/12-mcu-device-simulation.zh-TW.md)。
 14. **硬體與應用分離：借 MicroEJ 的邊界，不借它的 VM；使用者擴充用 C 編譯成 WebAssembly。** MicroEJ 靠固定的 API、固定的 C 函式原型與同一條邊界上的 mock，把硬體、App 與模擬器拆開。上層語言換成 Python 或 TypeScript 都可行，TypeScript 較適合 EHS；但「動態的 C」最可行：C 編譯成 Wasm 可熱載入、彼此隔離，且同一個 `.wasm` 能同時跑在 EHS 的 WASM 模擬器與 MCU 上。詳見 [硬體與應用分離及上層語言](research/13-app-layer-separation-and-languages.zh-TW.md)。
 15. **MCU 軟韌體的錢不收在編輯器上。** IDE、RTOS、UI 編輯器與語言都在變免費；收費集中在功能安全認證與合規證據、量產授權、出貨後維運、除錯與移植服務。ThreadX 改為 MIT 授權後只對安全文件收費，是「程式碼免費、責任收費」的典型。EHS 應收在量產授權、出貨後管理與整機除錯。詳見 [MCU 軟韌體開發：錢收在哪裡](research/14-mcu-software-monetization.zh-TW.md)。
-16. **MCU 軟體的新機會在法規、AI 與測試，不在寫程式更舒服。** 歐盟 CRA 通報義務已在 2026-09 開始，AI 韌體新創在 2025 至 2026 年陸續拿到資金，小團隊仍負擔不起 HIL 測試。EHS 最好的切入點是把 AI 產生、整機模擬驗證與 SBOM 和更新紀錄綁成同一條鏈。詳見 [MCU 領域還有哪些軟體機會](research/15-mcu-software-opportunities.zh-TW.md)。
+16. **MCU 軟體的新機會在法規、AI 與測試，不在寫程式更舒服。** 歐盟 CRA 通報義務已在 2026-09 開始，AI 韌體新創在 2025 至 2026 年陸續拿到資金，小團隊仍負擔不起 HIL 測試。EHS 最好的切入點是把 AI 產生、整機模擬驗證與 SBOM 和更新紀錄綁成同一條鏈；再延伸到 RED 資安檢查、出廠測試與現場設定工具，就能成為涵蓋產品一生的工具。詳見 [MCU 領域還有哪些軟體機會](research/15-mcu-software-opportunities.zh-TW.md)。
 17. **分拆的前提是 EDT 的決策，不是技術。** 現有文件寫明 EHS 是 EDT 自主 IP，EULA 寫明 EDT 擁有全部權利，也沒有任何文件討論過分拆、IP 移轉或授權回用。這必須由 EDT 經營層與法務決定。本研究只提供決策材料，不構成以個人名義另起爐灶的建議。
 
 ## 目前狀態

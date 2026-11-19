@@ -82,6 +82,9 @@
 - CRA：[Telit CRA 通報](https://www.telit.com/blog/cra-vulnerability-reporting-september-2026/)、[TechTarget CRA 通報](https://www.techtarget.com/cybersecurity/feature/EU-Cyber-Resilience-Act-reporting-What-CISOs-need-to-know)
 - AI 韌體新創：[Embedder（YC）](https://ycombinator.com/companies/embedder)、[CraftifAI（YourStory）](https://yourstory.com/2026/10/tech30-craftifai-agentic-ai-software-development-physical-devices)、[Embedd（Supply Chain Dive）](https://www.supplychaindive.com/press-release/20260901-embedd-raises-27m-to-tackle-the-infrastructure-challenge-behind-physical)、[Code Metal（The Robot Report）](https://www.therobotreport.com/code-metal-secures-seed-funding-llm-agents-edge/)
 - HIL 與測試自動化：[BootLoop Test](https://embeddedcomputing.com/technology/debug-and-test/launching-bootloop-test-why-hardware-in-the-loop-testing-stays-out-of-reach-for-most-embedded-teams)、[Linaro 測試自動化](https://www.linaro.org/services/testing-automation)、[Lynx Embedded Board Farm](https://www.lynx.com/solutions/embedded-board-farm)、[Cyberus HWaaS](https://cyberus-technology.de/post/announcing-hwaas-open-source-hardware-in-the-loop-test-automation)、[Red Hat Jumpstarter](https://next.redhat.com/project/jumpstarter-hardware-in-the-loop-testing/)
+- RED 與電池護照：[BSI RED 資安測試](https://www.bsigroup.com/en-US/products-and-services/assessment-and-certification/product-testing-certification/radio-equipment-directive-cybersecurity-testing-for-radio-products/)、[西班牙政府 EN 18031 指引](https://digital.gob.es/content/dam/portal-mtdfp/avance-digital/telecomunicacion-e-infraestructuras-digitales/areas_interes/equipos-telecomunicacion/documents/Guia-aplicacion-EN-18031.pdf)、[歐盟執委會電池頁](https://single-market-economy.ec.europa.eu/batteries_en)、[CMS 電池法規](https://cms.law/en/svk/legal-updates/eu-sustainable-batteries-regulation-where-are-we-now)、[Scantrust 電池護照](https://www.scantrust.com/eu-battery-regulation-eu-battery-passport-requirements/)
+- 產線燒錄與金鑰注入：[NXP Trust Provisioning](https://www.nxp.com/applications/technologies/security/trust-provisioning-service-for-secure-manufacturing:TRUST-PROVISIONING)、[Microchip Trust Platform](https://www.microchip.com/en-us/products/security/trust-platform)、[Silicon Labs CPMS](https://www.silabs.com/services/custom-part-manufacturing-service?tab=why)、[Data I/O SentriX](https://dataio.com/Solutions/SentriX)、[SEALSQ](https://sealsq.com/managed-pki-for-iot/secure-factory-provisioning)
+- 邊緣 AI：[Qualcomm 收購 Edge Impulse（Hackster）](https://www.hackster.io/news/qualcomm-to-acquire-edge-impulse-as-it-seeks-to-gain-ground-in-the-artificial-intelligence-of-things-2db3bb6f0d63)
 
 ### VS Code 生態與除錯
 
@@ -102,7 +105,7 @@
 - **MCU 熱重載**：LVGL 執行期 XML 載入引擎，Pro 文件說不公開、開源文件卻列在函式庫裡；Moddable Mods 早期標為實驗功能；Crank Storyboard 是否能在執行中重載 Lua 未查證。
 - **MCU 模擬工具**：Wokwi 價格官方與整理站不一致，STM32 支援範圍未確認；Arm AVH 的 AWS AMI 停用，但文件仍在更新；Proteus VSM 是否支援 STM32 未查到；Siemens PAVE360、dSPACE 未查證。
 - **MCU 工具收費**：Keil Community 授權的更新規則，Arm 與 Renesas 說法不一；IAR 功能安全版的認證版本號，兩頁不一致；Memfault 付費方案只有 Toolradar 列出金額；靜態分析工具價格未查證。
-- **MCU 軟體新機會**：AI 韌體新創的資金與功能只來自新聞稿與報導；部分 HIL 產品資料是廠商自撰文章；CRA 對 SBOM 的要求哪些是法定義務，來源說法不一。
+- **MCU 軟體新機會**：AI 韌體新創的資金與功能只來自新聞稿與報導；部分 HIL 產品資料是廠商自撰文章；CRA 對 SBOM 的要求哪些是法定義務，來源說法不一；RED 資料多來自 BSI 的行銷頁面；電池護照的 QR code 範圍，CMS 與 Scantrust 的寫法比執委會的完整護照範圍更廣。
 - **Toitware 停止營運**：只見於 HandWiki（引用丹麥商業登記），未直接查證；Toit 2.0 發布也只有單一來源。
 - **上層語言**：MicroPython 最低資源，README 與 FAQ 說法不同；Moddable 的 TypeScript 支援在 2020 年標為實驗性質，後續版本描述為完整支援；WAMR 大小新舊資料不一致（舊資料直譯約 85 KB、AOT 約 50 KB）。
 - 本研究沒有實際試用任何競品，功能比較依據官方描述。
