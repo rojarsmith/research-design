@@ -58,6 +58,11 @@
 
 - [Zephyr zbus API](https://docs.zephyrproject.org/latest/doxygen/html/group__zbus__apis.html)、[PX4 uORB](https://docs.px4.io/main/en/middleware/uorb)、[PX4 全系統重播](https://docs.px4.io/v1.12/en/debug/system_wide_replay.html)、[ESPHome Actions, Triggers, Conditions](https://www.esphome.io/automations/actions)、[ESPHome automation 開發者文件](https://developers.esphome.io/architecture/components/automations/)
 
+### MCU 熱重載
+
+- 商業：[Toit Jaguar](https://github.com/toitlang/jaguar/)、[Toit 文件](https://docs.toit.io/getstarted)、[MicroEJ Kernel 訓練教材 2026-03](https://repository.microej.com/packages/training/kernel/DEV-M0127_0001_Kernel_Development_2.1_20260313.pdf)、[MicroEJ Binary Loader](https://www.microej.com/licensing/binary-loader-ip/)、[Moddable XS Mods](https://moddable.com/documentation/xs/mods)、[runmod](https://github.com/phoddie/runmod)、[LVGL Pro 執行期 XML 載入](https://docs.pro.lvgl.io/integration/xml.html)、[LVGL XML 開源文件](https://docs.lvgl.io/master/details/other-components/xml.html)、[Crank Storyboard 架構](https://resources.cranksoftware.com/cranksoftware/v3.2.0/docs/ch01s03.html)、[TI C2000 LFU](https://ti.com/lit/spruiu9)、[DigiKey 不停機韌體更新](https://www.digikey.com/en/articles/how-to-perform-firmware-updates-without-halting-firmware-execution)
+- 開源與研究：[ESP-IDF hotreload](https://components.espressif.com/components/igrr/hotreload/versions/0.9.0/readme)、[Zephyr LLEXT](https://docs.zephyrproject.org/latest/services/llext/index.html)、[FPBInject](https://osrtos.com/projects/fpbinject)、[HERA 論文](https://www.ndss-symposium.org/wp-content/uploads/2021-159b-paper.pdf)、[Live++ 與 Rider](https://blog.jetbrains.com/dotnet/2024/09/24/hot-reloading-cplusplus-with-liveplusplus-and-jetbrains-rider/)
+
 ### VS Code 生態與除錯
 
 - 付費擴充：[GitLens README](https://cdn.jsdelivr.net/gh/gitkraken/vscode-gitlens@main/README.md)、[Dodo Payments 整理](https://dodopayments.com/blogs/sell-vscode-extensions)
@@ -74,6 +79,7 @@
 - **ThingsBoard、FlowFuse、Ignition** 的價格，各整理站互相矛盾。
 - **Edge Impulse、Simulink、Altia** 沒有官方公開價；VisualGDB 目前價格未查到。
 - **MCU 研發調查**：沒有 MCU 專屬的權威排名；AspenCore 2023 與 2025 年版結果未找到；Memfault 與 Black Duck 為廠商調查。
+- **MCU 熱重載**：LVGL 執行期 XML 載入引擎，Pro 文件說不公開、開源文件卻列在函式庫裡；Moddable Mods 早期標為實驗功能；Crank Storyboard 是否能在執行中重載 Lua 未查證。
 - 本研究沒有實際試用任何競品，功能比較依據官方描述。
 
 ## 未解問題
