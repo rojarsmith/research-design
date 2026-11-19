@@ -8,7 +8,7 @@
 
 | 主題 | 範圍 | 英文 | 繁體中文 |
 | --- | --- | --- | --- |
-| HMI Studio 分拆與 IoT 開發環境 | EDT HMI Studio 能否脫離硬體公司、轉型為 IoT 開發環境：程式碼中的 EDT 綁定、缺口（連網、OTA、多執行緒、多晶片）、「有螢幕的連網裝置」Low Code 定位、多執行緒與 IDE 能力設計、獨立 IDE 對 VS Code 付費擴充對混合方案、LVGL Pro 與 MicroEJ 專文、約二十項全球競品、定價、分拆前提與分階段路線；另含動態語言 MCU 付費產品、C/C++ 新式 RAD 工具、MCU 研發困擾排行、MCU 單元匯流排架構提案、EHS 收費化路線圖，MCU 熱重載與 PC 端整機模擬調查，硬體與應用分離和上層語言研究，以及 MCU 軟韌體工具的收費重點 | [English overview](hmi-studio-iot-ide-spinoff-research/README.md) | [完整研究](hmi-studio-iot-ide-spinoff-research/README.zh-TW.md) |
+| HMI Studio 分拆與 IoT 開發環境 | EDT HMI Studio 能否脫離硬體公司、轉型為 IoT 開發環境：程式碼中的 EDT 綁定、缺口（連網、OTA、多執行緒、多晶片）、「有螢幕的連網裝置」Low Code 定位、多執行緒與 IDE 能力設計、獨立 IDE 對 VS Code 付費擴充對混合方案、LVGL Pro 與 MicroEJ 專文、約二十項全球競品、定價、分拆前提與分階段路線；另含動態語言 MCU 付費產品、C/C++ 新式 RAD 工具、MCU 研發困擾排行、MCU 單元匯流排架構提案、EHS 收費化路線圖，MCU 熱重載與 PC 端整機模擬調查，硬體與應用分離和上層語言研究，MCU 軟韌體工具的收費重點，以及 MCU 領域的新軟體機會 | [English overview](hmi-studio-iot-ide-spinoff-research/README.md) | [完整研究](hmi-studio-iot-ide-spinoff-research/README.zh-TW.md) |
 | 高級工程師演算法以外的面試回合 | 不背答案的準備方式：系統設計框架、容量估算、需求觸發與設計模式對照、14 題選題；對應 Meta 與 Amazon 評估訊號的 6 到 8 個 STAR 故事；LLD/OOD；Meta、Canva、Google 與 HackerRank Chakra 的 AI 輔助回合；時間分配，以及與 DSA 計畫並排的 12 週計畫；已驗證的 VS Code 三階段 AI 輔助回合練習包、會量出每次需求變更逼你改了多少程式的 LLD/OOD 練習包，以及容量估算練習 | [English overview](senior-interview-beyond-dsa-research/README.md) | [完整研究](senior-interview-beyond-dsa-research/README.zh-TW.md) |
 | 高級工程師 HackerRank 與 LeetCode 刷題 | 不背答案的模式化練習：學習科學依據、每題固定流程、觸發條件與模式對照、題單與題量、8 至 12 週計畫、HackerRank 線上測驗格式、2026 AI 輔助面試回合、兩個解答 repo 評估，以及已驗證、74 題的 VS Code C++ 練習專案（含計時模擬面試與準備度報告） | [English overview](coding-interview-practice-research/README.md) | [完整研究](coding-interview-practice-research/README.zh-TW.md) |
 | 限價訂單簿 DEX 與 ICO 發幣平台 | 每條 EVM 鏈各自部署的全鏈上訂單簿、合約設計、MetaMask 多鏈、2026 技術選型、收費方式、無審查的極限、ICO rug pull 與法律風險、開發路線 | [English overview](orderbook-dex-launchpad-research/README.md) | [完整研究](orderbook-dex-launchpad-research/README.zh-TW.md) |
@@ -62,7 +62,7 @@
 
 | 目錄 | 內容 |
 | --- | --- |
-| `hmi-studio-iot-ide-spinoff-research/` | 主報告、程式碼耦合盤點、全球競品比較、LVGL Pro 與 MicroEJ 分析、動態語言與 C/C++ RAD 工具調查、MCU 研發困擾排行、單元匯流排架構提案、收費化路線圖、MCU 熱重載與整機模擬調查、硬體與應用分離及上層語言、MCU 工具收費重點、來源與未解問題 |
+| `hmi-studio-iot-ide-spinoff-research/` | 主報告、程式碼耦合盤點、全球競品比較、LVGL Pro 與 MicroEJ 分析、動態語言與 C/C++ RAD 工具調查、MCU 研發困擾排行、單元匯流排架構提案、收費化路線圖、MCU 熱重載與整機模擬調查、硬體與應用分離及上層語言、MCU 工具收費重點、MCU 軟體新機會、來源與未解問題 |
 | `senior-interview-beyond-dsa-research/` | 面試研究報告；`ai-round-practice/` VS Code 練習包：三階段 AI 輔助回合情境、共用測試框架與練習命令列工具；`lld-practice/`：4 題 LLD/OOD 題目、一次揭曉一個的「如果……」變體，以及計算每個變體改了多少類別、函式和程式碼行的命令列工具；`estimation-practice/`：容量估算練習，檢查單位、依數量級計分並統計偏差 |
 | `coding-interview-practice-research/` | 刷題研究報告與 `cpp-practice/` VS Code C++ 練習專案：題目、範本、測試框架、練習流程命令列工具與說明文件 |
 | `orderbook-dex-launchpad-research/` | 僅主報告，無延伸文件 |
