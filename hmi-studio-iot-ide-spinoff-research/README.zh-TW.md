@@ -46,7 +46,8 @@
 11. **新架構提案：單元匯流排加可程式化交換中心。** 不受 EHS 現有設計限制，在 MCU 上跑一條軟體匯流排：觸控 GUI、實體按鈕中斷、感測器、Modbus、MQTT 都是匯流排上的設備單元，行為由可程式化的交換中心以 Low Code 規則決定。判斷是值得做：有 Zephyr zbus、PX4 uORB、QP、ESPHome 等先例，又直接解決並行除錯、硬體未到、晶片綁定等痛點；差異化在 IDE（單元描述檔、整機模擬、匯流排錄製重播、跨晶片），風險是即時性、中心瓶頸與記憶體，需先以最小原型量測。詳見 [單元匯流排架構提案](research/09-mcu-unit-bus-architecture.zh-TW.md)。
 12. **MCU 上沒有商業產品能熱重載 C 程式碼，這是空缺。** Toit、MicroEJ、Moddable、LVGL Pro 的熱重載或動態更新，都是 C 韌體固定、只換 bytecode、腳本、XML 或容器。EHS 若讓畫面、規則與 Tag 參數在真機上存檔就生效，並和整機模擬、錄製重播合成同一套開發迴圈，就是沒有對手覆蓋的收費功能。詳見 [MCU 熱重載](research/11-mcu-hot-reload.zh-TW.md)。
 13. **PC 端沒有友善的整機模擬工具，這是第二個空缺。** Wokwi 友善但晶片少，Renode 能力強但門檻高，Synopsys 與 Vector 的虛擬原型很貴；它們都是指令集層級的模擬，也都不把畫面、外部設備與雲端放在同一個時間軸上。EHS 可依單元匯流排做行為層級的整機模擬，驅動層交給 Renode。詳見 [MCU 與外部設備的 PC 端模擬](research/12-mcu-device-simulation.zh-TW.md)。
-14. **分拆的前提是 EDT 的決策，不是技術。** 現有文件寫明 EHS 是 EDT 自主 IP，EULA 寫明 EDT 擁有全部權利，也沒有任何文件討論過分拆、IP 移轉或授權回用。這必須由 EDT 經營層與法務決定。本研究只提供決策材料，不構成以個人名義另起爐灶的建議。
+14. **硬體與應用分離：借 MicroEJ 的邊界，不借它的 VM；使用者擴充用 C 編譯成 WebAssembly。** MicroEJ 靠固定的 API、固定的 C 函式原型與同一條邊界上的 mock，把硬體、App 與模擬器拆開。上層語言換成 Python 或 TypeScript 都可行，TypeScript 較適合 EHS；但「動態的 C」最可行：C 編譯成 Wasm 可熱載入、彼此隔離，且同一個 `.wasm` 能同時跑在 EHS 的 WASM 模擬器與 MCU 上。詳見 [硬體與應用分離及上層語言](research/13-app-layer-separation-and-languages.zh-TW.md)。
+15. **分拆的前提是 EDT 的決策，不是技術。** 現有文件寫明 EHS 是 EDT 自主 IP，EULA 寫明 EDT 擁有全部權利，也沒有任何文件討論過分拆、IP 移轉或授權回用。這必須由 EDT 經營層與法務決定。本研究只提供決策材料，不構成以個人名義另起爐灶的建議。
 
 ## 目前狀態
 
@@ -195,4 +196,5 @@ LVGL 本身不是執行緒安全的。v9 起有 `lv_lock()`／`lv_unlock()`，�
 - [EHS 收費化路線圖](research/10-ehs-paid-product-roadmap.zh-TW.md)
 - [MCU 熱重載：商業產品與 EHS 的機會](research/11-mcu-hot-reload.zh-TW.md)
 - [MCU 與外部設備的 PC 端模擬：商業工具與 EHS 的整機模擬](research/12-mcu-device-simulation.zh-TW.md)
+- [硬體與應用分離：MicroEJ 的做法，以及上層語言的選擇](research/13-app-layer-separation-and-languages.zh-TW.md)
 - [來源與未解問題](research/03-sources-and-open-questions.zh-TW.md)
