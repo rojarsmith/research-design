@@ -44,7 +44,7 @@
 
 ### 動態語言 MCU 產品
 
-- [Moddable 授權](https://moddable.com/license)、[Mongoose OS 授權](https://mongoose-os.com/licensing.html)、[mJS README](https://github.com/cesanta/mjs/blob/master/README.md)、[Zerynth 授權](https://zerynth.com/license)、[Toit](https://toit.io/)、[Toit 2.0 報導](https://esp32.co.uk/?p=20261017056)、[Ocre（LF Edge）](https://lfedge.org/ocre-comes-to-linux-extended-reach-for-portable-lightweight-containers-powered-by-webassembly/)、[OpenMV 合作夥伴](https://openmv.io/pages/partners)、[Digi XBee MicroPython](https://www.digi.com/blog/post/employing-wireless-edge-intelligence-with-digi-xbe)、[DeviceScript 封存](https://github.com/microsoft/jacscript)
+- [Moddable 授權](https://moddable.com/license)、[Mongoose OS 授權](https://mongoose-os.com/licensing.html)、[mJS README](https://github.com/cesanta/mjs/blob/master/README.md)、[Zerynth 授權](https://zerynth.com/license)、[Toit](https://toit.io/)、[Toit 2.0 報導](https://esp32.co.uk/?p=20261017056)、[Ocre（LF Edge）](https://lfedge.org/ocre-comes-to-linux-extended-reach-for-portable-lightweight-containers-powered-by-webassembly/)、[OpenMV 合作夥伴](https://openmv.io/pages/partners)、[HandWiki Toit 條目](https://handwiki.org/wiki/Toit)、[eeNews Toit 開源](https://www.eenewseurope.com/en/toit-opens-up-its-iot-programming-language/)、[CNX Toit 效能宣稱](https://www.cnx-software.com/2021/11/28/toit-open-source-language-claims-to-be-30x-faster-than-micropython-on-esp32/?amp=1)、[EOC 2021 Toit 容器演講](https://embeddedonlineconference.com/session/Containers_and_managed_software_on_micro-controllers)、[Instantiations Toit](https://www.instantiations.com/news/bridging-the-gap-with-toit-a-rich-dev-experience-for-microcontrollers/)、[Digi XBee MicroPython](https://www.digi.com/blog/post/employing-wireless-edge-intelligence-with-digi-xbe)、[DeviceScript 封存](https://github.com/microsoft/jacscript)
 
 ### C/C++ RAD 工具
 
@@ -91,6 +91,7 @@
 - **MCU 研發調查**：沒有 MCU 專屬的權威排名；AspenCore 2023 與 2025 年版結果未找到；Memfault 與 Black Duck 為廠商調查。
 - **MCU 熱重載**：LVGL 執行期 XML 載入引擎，Pro 文件說不公開、開源文件卻列在函式庫裡；Moddable Mods 早期標為實驗功能；Crank Storyboard 是否能在執行中重載 Lua 未查證。
 - **MCU 模擬工具**：Wokwi 價格官方與整理站不一致，STM32 支援範圍未確認；Arm AVH 的 AWS AMI 停用，但文件仍在更新；Proteus VSM 是否支援 STM32 未查到；Siemens PAVE360、dSPACE 未查證。
+- **Toitware 停止營運**：只見於 HandWiki（引用丹麥商業登記），未直接查證；Toit 2.0 發布也只有單一來源。
 - **上層語言**：MicroPython 最低資源，README 與 FAQ 說法不同；Moddable 的 TypeScript 支援在 2020 年標為實驗性質，後續版本描述為完整支援；WAMR 大小新舊資料不一致（舊資料直譯約 85 KB、AOT 約 50 KB）。
 - 本研究沒有實際試用任何競品，功能比較依據官方描述。
 

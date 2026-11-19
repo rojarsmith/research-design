@@ -21,7 +21,7 @@
 
 | 產品 | 熱重載的是什麼 | 收費 | 注意 |
 | --- | --- | --- | --- |
-| [Toit 與 Jaguar](https://github.com/toitlang/jaguar/) | 整個 Toit 應用，透過 Wi-Fi 推到 ESP32；`jag watch` 存檔後自動重載，官方說不到 2 秒，不必重燒、不必重開機 | 語言與 Jaguar 開源，付費的是雲端裝置群管理與 OTA（見 [06](06-dynamic-language-mcu-products.zh-TW.md)） | 開發體驗最接近「真的熱重載」，但只支援 ESP32，也不管 UI 設計 |
+| [Toit 與 Jaguar](https://github.com/toitlang/jaguar/) | 整個 Toit 應用，透過 Wi-Fi 推到 ESP32；`jag watch` 存檔後自動重載，官方說不到 2 秒，不必重燒、不必重開機 | 語言與 Jaguar 開源，原本付費的是雲端裝置群管理與 OTA；Toitware 據報已在 2024 年停止營運，現為社群維護（見 [06](06-dynamic-language-mcu-products.zh-TW.md) 第五節） | 開發體驗最接近「真的熱重載」，但只支援 ESP32，也不管 UI 設計 |
 | [MicroEJ Kernel 與 Features](https://repository.microej.com/packages/training/kernel/DEV-M0127_0001_Kernel_Development_2.1_20260313.pdf) | 沙箱應用可在執行中安裝、啟動、停止、移除，Kernel 會先檢查相容性；另有 [Binary Loader](https://www.microej.com/licensing/binary-loader-ip/) | 多年期合約，價格不公開（見 [05](05-microej-comparison.zh-TW.md)） | 偏向出貨後動態更新與 App Store，不是開發時的即時迴圈 |
 | [Moddable Mods](https://moddable.com/documentation/xs/mods) | 預先編譯的 JavaScript bytecode 加上圖片、憑證等資源，原廠韌體不動；可用 Hardened JavaScript 沙箱隔離 | 每台 US$0.50 的商業授權 | 官方早期稱 Mods 為實驗功能；[runmod](https://github.com/phoddie/runmod) 範例透過 WebSocket 安裝，並註明不是正式產品程式碼 |
 | [LVGL Pro 執行期 XML 載入](https://docs.pro.lvgl.io/integration/xml.html) | 只換 UI：XML 或打包檔可從 SD 卡、序列埠、藍牙、Wi-Fi 或伺服器載入，執行中建立畫面 | 隨 LVGL Pro 授權 | 需要自訂 C 程式的元件無法載入；Pro 文件說這個引擎不公開，[開源文件](https://docs.lvgl.io/master/details/other-components/xml.html)卻寫在函式庫裡，**授權說法互相衝突，要向原廠確認** |
