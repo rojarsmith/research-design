@@ -54,6 +54,10 @@
 
 - [Eclipse 2024 IoT 與嵌入式開發者調查](https://newsroom.eclipse.org/node/41237)、[JetBrains State of Embedded 2025](https://lp.jetbrains.com/the-state-of-embedded-2025)、[Memfault IoT Visibility Gap 2025](https://memfault.com/wp-content/uploads/2025/08/The-IoT-Visibility-Gap-Report-Memfault.pdf)、[VDC 與 Memfault 2024 摘要](https://go.memfault.com/hubfs/ExecutiveSummaryStateOfIOT.pdf)、[Black Duck 2025](https://blackduck.com/content/dam/black-duck/en-us/reports/state-of-embedded-software-quality-and-safety.pdf)、[QNX 2026](https://qnx.software/en/reports/under-the-hood-2026)、[Electronic Specifier embedded world 2026](https://www.electronicspecifier.com/?p=185036)、[AspenCore 2017（CNX 摘要）](https://cnx-software.com/2017/08/15/aspencore-2017-embedded-markets-study-programming-languages-operating-systems-mcu-vendors-and-more/?amp=1)、[Beningo 除錯時間](https://www.beningo.com/the-embedded-frontier-podcast-episode-006-decreasing-debugging-increasing-productivity/)、[Avnet 調查](https://www.eejournal.com/industry_news/avnet-insights-engineers-get-behind-ai/)、[UST 人才調查](https://www.electronicsweekly.com/news/why-embedded-engineering-is-becoming-a-bottleneck-for-industrial-automation-2026-10/)、[Embedded.com 工具鏈](https://www.embedded.com/where-developer-choice-broke-down-in-embedded-software-development)
 
+### 匯流排架構先例
+
+- [Zephyr zbus API](https://docs.zephyrproject.org/latest/doxygen/html/group__zbus__apis.html)、[PX4 uORB](https://docs.px4.io/main/en/middleware/uorb)、[PX4 全系統重播](https://docs.px4.io/v1.12/en/debug/system_wide_replay.html)、[ESPHome Actions, Triggers, Conditions](https://www.esphome.io/automations/actions)、[ESPHome automation 開發者文件](https://developers.esphome.io/architecture/components/automations/)
+
 ### VS Code 生態與除錯
 
 - 付費擴充：[GitLens README](https://cdn.jsdelivr.net/gh/gitkraken/vscode-gitlens@main/README.md)、[Dodo Payments 整理](https://dodopayments.com/blogs/sell-vscode-extensions)

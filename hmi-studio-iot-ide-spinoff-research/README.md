@@ -2,7 +2,7 @@
 
 Research date: November 19, 2026, Asia/Taipei. This is an English navigation overview; the full research is in Traditional Chinese.
 
-The question: if EDT HMI Studio (EHS), today a free No Code LVGL tool that sells EDT display modules, were spun off into an independent software company, could it become an IoT integrated development environment? The study also covers three follow-up requests: Low Code is acceptable, strong multithreading and IDE features are wanted, and a paid VS Code extension is a candidate direction. It compares the product against LVGL Pro, MicroEJ and about twenty other products worldwide. Later additions cover paid dynamic-language MCU products, modern C/C++ RAD tools, and a ranking of MCU development pain points.
+The question: if EDT HMI Studio (EHS), today a free No Code LVGL tool that sells EDT display modules, were spun off into an independent software company, could it become an IoT integrated development environment? The study also covers three follow-up requests: Low Code is acceptable, strong multithreading and IDE features are wanted, and a paid VS Code extension is a candidate direction. It compares the product against LVGL Pro, MicroEJ and about twenty other products worldwide. Later additions cover paid dynamic-language MCU products, modern C/C++ RAD tools, a ranking of MCU development pain points, and an architecture proposal for an MCU unit bus with a programmable exchange hub.
 
 ## Findings
 
@@ -15,6 +15,7 @@ The question: if EDT HMI Studio (EHS), today a free No Code LVGL tool that sells
 - **MicroEJ shows a complete MCU device platform can be sold.** It is Pro Code and VM-based, sold to large OEMs on unpublished multi-year contracts. It is a ceiling reference rather than a direct rival.
 - **The worst MCU development pains match what EHS can charge for.** Across several surveys, the top pains are debugging (especially concurrency and timing bugs), complexity and schedule, connectivity, post-shipment OTA and field failures, and security and the CRA. EHS already covers or plans for concurrency bugs, testing before hardware exists and protocol integration. Field observability is better left to specialist services.
 - **Other paid MCU tools charge for the runtime or production, not the tool.** Examples: Moddable (JavaScript) at US$0.50 per unit, Slint from about US$1 per unit, Quantum Leaps with a free QM tool but a commercial QP framework, and Toit with an open language and a paid OTA cloud. QP's Active Object model is also a ready theory for the EHS multithreading design.
+- **Architecture proposal: a unit bus with a programmable exchange hub.** Free of current EHS design limits, the MCU runs a software bus. Device units such as a touch GUI, a button interrupt, sensors, Modbus and MQTT attach to the bus, and Low Code rules in a programmable hub decide behaviour. The verdict is worth pursuing: Zephyr zbus, PX4 uORB, QP and ESPHome are precedents, and the design targets concurrency debugging, missing hardware and chip lock-in. The differentiation is the IDE: unit descriptors, whole-system simulation, bus record and replay, and cross-chip buses. Real-time behaviour, a hub bottleneck and memory use must first be measured on a minimal prototype.
 - **A spin-off is EDT's decision.** EDT owns the IP, and no document discusses a spin-off, IP transfer or licence-back. This study is decision material only.
 
 ## Documents
@@ -28,3 +29,4 @@ The question: if EDT HMI Studio (EHS), today a free No Code LVGL tool that sells
 - [Paid products for MCU development in dynamic languages](research/06-dynamic-language-mcu-products.zh-TW.md)
 - [Modern paid RAD tools that output C/C++](research/07-c-cpp-rad-tools.zh-TW.md)
 - [MCU firmware development needs and pain points](research/08-mcu-development-pain-points.zh-TW.md)
+- [Architecture proposal: an MCU unit bus with a programmable exchange hub](research/09-mcu-unit-bus-architecture.zh-TW.md)
