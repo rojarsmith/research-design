@@ -73,6 +73,10 @@
 - Python 與 TypeScript：[Moddable TypeScript](https://moddable.com/blog/typescript/)、[Moddable 7.0.0](https://gh.hhj520.top/Moddable-OpenSource/moddable/releases/tag/7.0.0)、[Hardening XS](https://www.moddable.com/hardening-xs)、[MicroPython README](https://github.com/micropython/micropython)、[MicroPython FAQ](https://github.com/micropython/micropython/wiki/FAQ)
 - 動態的 C：[WAMR（Espressif）](https://components.espressif.com/components/espressif/wasm-micro-runtime)、[WAMR 記憶體用量](https://github.com/bytecodealliance/wasm-micro-runtime/blob/main/doc/memory_usage.md)、[AkiraOS](https://www.cnx-software.com/2026/06/06/docker-for-microcontrollers-akiraos-combines-zephyr-rtos-with-webassembly-wasm-applications/?amp=1)、[ESP32-C3 上的 Wasm](https://aiotwin.eu/aiotwin/results/blog/webassembly_on_tiny_iot_devices_how_far_can_we_push_portability)、[Femto-Containers](https://arxiv.org/abs/2106.12553v2)、[Femto-Containers 隔離驗證](https://arxiv.org/pdf/2210.03432)、[PicoC](https://www.osnews.com/story/28602/a-very-small-c-interpreter-for-scripting/)、[PicoC STM32 移植](https://github.com/RTSYork/picoc)、[Ch 7.5](https://appdevelopermagazine.com/4803/2017/1/4/SoftIntegration's-Ch-7.5-supports-Raspberry-Pi,-Pi-Zero,-and-ARM)
 
+### MCU 工具收費模式
+
+- [Keil MDK Community](https://keil.arm.com/mdk-community)、[Keil MDK v6 商店](https://store.arm.com/mdk-6/)、[Eclipse ThreadX FAQ](https://threadx.io/faq/)、[ThreadX Alliance 公告](https://newsroom.eclipse.org/node/41004)、[Microsoft 捐出 Azure RTOS](https://techcommunity.microsoft.com/blog/iotblog/microsoft-contributes-azure-rtos-to-open-source/3986318)、[IAR 功能安全版](https://blog.iar.com/products/requirements/functional-safety/iar-embedded-workbench-for-arm-functional-safety)、[IAR 購買頁（qt.io）](https://www.qt.io/development/iar-embedded-tools/how-to-buy)、[Memfault 價格](https://memfault.com/pricing/)、[Memfault 報價頁](https://go.memfault.com/get-a-quote-scale)、[Toolradar Memfault](https://toolradar.com/tools/memfault/pricing)
+
 ### VS Code 生態與除錯
 
 - 付費擴充：[GitLens README](https://cdn.jsdelivr.net/gh/gitkraken/vscode-gitlens@main/README.md)、[Dodo Payments 整理](https://dodopayments.com/blogs/sell-vscode-extensions)
@@ -91,6 +95,7 @@
 - **MCU 研發調查**：沒有 MCU 專屬的權威排名；AspenCore 2023 與 2025 年版結果未找到；Memfault 與 Black Duck 為廠商調查。
 - **MCU 熱重載**：LVGL 執行期 XML 載入引擎，Pro 文件說不公開、開源文件卻列在函式庫裡；Moddable Mods 早期標為實驗功能；Crank Storyboard 是否能在執行中重載 Lua 未查證。
 - **MCU 模擬工具**：Wokwi 價格官方與整理站不一致，STM32 支援範圍未確認；Arm AVH 的 AWS AMI 停用，但文件仍在更新；Proteus VSM 是否支援 STM32 未查到；Siemens PAVE360、dSPACE 未查證。
+- **MCU 工具收費**：Keil Community 授權的更新規則，Arm 與 Renesas 說法不一；IAR 功能安全版的認證版本號，兩頁不一致；Memfault 付費方案只有 Toolradar 列出金額；靜態分析工具價格未查證。
 - **Toitware 停止營運**：只見於 HandWiki（引用丹麥商業登記），未直接查證；Toit 2.0 發布也只有單一來源。
 - **上層語言**：MicroPython 最低資源，README 與 FAQ 說法不同；Moddable 的 TypeScript 支援在 2020 年標為實驗性質，後續版本描述為完整支援；WAMR 大小新舊資料不一致（舊資料直譯約 85 KB、AOT 約 50 KB）。
 - 本研究沒有實際試用任何競品，功能比較依據官方描述。
