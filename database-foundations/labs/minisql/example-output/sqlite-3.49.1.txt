@@ -1,0 +1,106 @@
+SQLite 3.49.1
+
+== 1. 沒有索引：只能全表掃描 ==
+SELECT id, amount FROM orders WHERE customer_id = 42
+QUERY PLAN
+└─ SCAN orders
+
+== 2. 建立 orders(customer_id) 索引後：改成在索引 B-tree 裡搜尋 ==
+SELECT id, amount FROM orders WHERE customer_id = 42
+QUERY PLAN
+└─ SEARCH orders USING INDEX orders_customer_id (customer_id=?)
+
+== 3. 只需要索引裡就有的欄位：覆蓋索引，不必回表 ==
+SELECT COUNT(*) FROM orders WHERE customer_id = 42
+QUERY PLAN
+└─ SEARCH orders USING COVERING INDEX orders_customer_id (customer_id=?)
+
+== 4. 範圍很大的條件（尚未 ANALYZE） ==
+SELECT id, amount FROM orders WHERE customer_id > 10
+QUERY PLAN
+└─ SEARCH orders USING INDEX orders_customer_id (customer_id>?)
+
+== 5. ORDER BY 的欄位沒有索引：先放進暫存 B-tree 排序 ==
+SELECT id, amount FROM orders ORDER BY amount DESC LIMIT 5
+QUERY PLAN
+├─ SCAN orders
+└─ USE TEMP B-TREE FOR ORDER BY
+
+== 6. demo 查詢（尚未 ANALYZE） ==
+SELECT c.city, COUNT(*) AS n, SUM(o.amount) AS total
+FROM customers c JOIN orders o ON o.customer_id = c.id
+WHERE o.status = 'paid' AND c.city <> 'Tainan'
+GROUP BY c.city
+HAVING COUNT(*) > 200
+ORDER BY total DESC
+LIMIT 3
+QUERY PLAN
+├─ SCAN c
+├─ SEARCH o USING INDEX orders_customer_id (customer_id=?)
+├─ USE TEMP B-TREE FOR GROUP BY
+└─ USE TEMP B-TREE FOR ORDER BY
+
+== 7. 三表連接，FROM 的順序是 cities, orders, customers ==
+SELECT ci.region, COUNT(*) AS n FROM cities ci, orders o, customers c
+WHERE o.customer_id = c.id AND c.city = ci.name AND ci.region = 'South'
+GROUP BY ci.region
+QUERY PLAN
+├─ SCAN ci
+├─ SEARCH c USING AUTOMATIC COVERING INDEX (city=?)
+└─ SEARCH o USING COVERING INDEX orders_customer_id (customer_id=?)
+
+== 8. ANALYZE 之後，sqlite_stat1 存下的統計 ==
+('cities', None, '6')
+('customers', None, '200')
+('orders', 'orders_customer_id', '3000 15')
+
+== 9. 範圍很大的條件（ANALYZE 之後） ==
+SELECT id, amount FROM orders WHERE customer_id > 10
+QUERY PLAN
+└─ SEARCH orders USING INDEX orders_customer_id (customer_id>?)
+
+== 10. demo 查詢（ANALYZE 之後） ==
+SELECT c.city, COUNT(*) AS n, SUM(o.amount) AS total
+FROM customers c JOIN orders o ON o.customer_id = c.id
+WHERE o.status = 'paid' AND c.city <> 'Tainan'
+GROUP BY c.city
+HAVING COUNT(*) > 200
+ORDER BY total DESC
+LIMIT 3
+QUERY PLAN
+├─ SCAN c
+├─ SEARCH o USING INDEX orders_customer_id (customer_id=?)
+├─ USE TEMP B-TREE FOR GROUP BY
+└─ USE TEMP B-TREE FOR ORDER BY
+
+== 11. 三表連接（ANALYZE 之後） ==
+SELECT ci.region, COUNT(*) AS n FROM cities ci, orders o, customers c
+WHERE o.customer_id = c.id AND c.city = ci.name AND ci.region = 'South'
+GROUP BY ci.region
+QUERY PLAN
+├─ SCAN ci
+├─ SCAN c
+└─ SEARCH o USING COVERING INDEX orders_customer_id (customer_id=?)
+
+== 12. 同一條點查詢編譯成的 bytecode（EXPLAIN）==
+SELECT id, amount FROM orders WHERE customer_id = 42
+addr  opcode          p1  p2  p3  p4
+   0  Init             0  12   0  
+   1  OpenRead         0   6   0  3
+   2  OpenRead         1  25   0  k(2,,)
+   3  Integer         42   1   0  
+   4  SeekGE           1  11   1  1
+   5  IdxGT            1  11   1  1
+   6  DeferredSeek     1   0   0  
+   7  Column           0   0   2  
+   8  Column           0   2   3  
+   9  ResultRow        2   2   0  
+  10  Next             1   5   1  
+  11  Halt             0   0   0  
+  12  Transaction      0   0   5  0
+  13  Goto             0   1   0  
+
+== 13. 與 minisql 對照結果 ==
+相同：SELECT c.city, COUNT(*) AS n, SUM(o.amount) AS total
+相同：SELECT id, amount FROM orders WHERE customer_id = 42 ORDER BY id
+相同：SELECT ci.region, COUNT(*) AS n FROM cities ci, orders o, customers c

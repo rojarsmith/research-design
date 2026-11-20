@@ -1,0 +1,107 @@
+
+==============================================================================
+兩表連接、篩選、分組（與 demo 相同）
+SELECT c.city, COUNT(*) AS n, SUM(o.amount) AS total
+FROM customers c JOIN orders o ON o.customer_id = c.id
+WHERE o.status = 'paid' AND c.city <> 'Tainan'
+GROUP BY c.city
+HAVING COUNT(*) > 200
+ORDER BY total DESC
+LIMIT 3
+
+== 未最佳化（依定義翻譯） ==
+Limit 3  [est 2, actual 3]
+└─ Project c.city, count(*) AS n, sum(o.amount) AS total  [est 2, actual 3]
+   └─ Sort sum(o.amount) DESC  [est 2, actual 3]
+      └─ Filter count(*) > 200  [est 2, actual 5]
+         └─ HashAggregate GROUP BY c.city: count(*), sum(o.amount)  [est 6, actual 5]
+            └─ Filter o.status = 'paid' AND c.city <> 'Tainan'  [est 597, actual 1,323]
+               └─ Filter o.customer_id = c.id  [est 2,985, actual 2,988]
+                  └─ NestedLoopJoin ×  [est 600,000, actual 600,000]
+                     ├─ SeqScan customers AS c  [est 200, actual 200]
+                     └─ SeqScan orders AS o  [est 3,000, actual 3,000]
+所有運算子合計產出 607,530 列；耗時 227.6 ms；結果 3 列
+
+== 最佳化後 ==
+Limit 3  [est 2, actual 3]
+└─ Project c.city, count(*) AS n, sum(o.amount) AS total  [est 2, actual 3]
+   └─ Sort sum(o.amount) DESC  [est 2, actual 3]
+      └─ Filter count(*) > 200  [est 2, actual 5]
+         └─ HashAggregate GROUP BY c.city: count(*), sum(o.amount)  [est 6, actual 5]
+            └─ HashJoin o.customer_id = c.id  (hash table built on the 2nd input)  [est 597, actual 1,323]
+               ├─ Filter o.status = 'paid'  [est 750, actual 1,621]
+               │  └─ SeqScan orders AS o  [est 3,000, actual 3,000]
+               └─ Filter c.city <> 'Tainan'  [est 160, actual 163]
+                  └─ SeqScan customers AS c  [est 200, actual 200]
+所有運算子合計產出 6,326 列；耗時 3.2 ms；結果 3 列
+
+兩個計畫的結果相同：True
+
+==============================================================================
+用索引找一位客戶的訂單
+SELECT id, amount, status FROM orders WHERE customer_id = 42 ORDER BY id
+
+== 未最佳化（依定義翻譯） ==
+Project id, amount, status  [est 15, actual 14]
+└─ Sort id  [est 15, actual 14]
+   └─ Filter customer_id = 42  [est 15, actual 14]
+      └─ SeqScan orders  [est 3,000, actual 3,000]
+所有運算子合計產出 3,042 列；耗時 1.1 ms；結果 14 列
+
+== 最佳化後 ==
+Project id, amount, status  [est 15, actual 14]
+└─ Sort id  [est 15, actual 14]
+   └─ IndexScan orders USING orders_customer_id (orders.customer_id = 42)  [est 15, actual 14]
+所有運算子合計產出 42 列；耗時 0.7 ms；結果 14 列
+
+兩個計畫的結果相同：True
+
+==============================================================================
+三表連接，FROM 的順序故意不好（cities 與 orders 之間沒有連接條件）
+SELECT ci.region, COUNT(*) AS n FROM cities ci, orders o, customers c
+WHERE o.customer_id = c.id AND c.city = ci.name AND ci.region = 'South'
+GROUP BY ci.region
+
+== 未最佳化（依定義翻譯） ==
+Project ci.region, count(*) AS n  [est 3, actual 1]
+└─ HashAggregate GROUP BY ci.region: count(*)  [est 3, actual 1]
+   └─ Filter o.customer_id = c.id AND c.city = ci.name AND ci.region = 'South'  [est 995, actual 847]
+      └─ NestedLoopJoin ×  [est 3,600,000, actual 3,600,000]
+         ├─ NestedLoopJoin ×  [est 18,000, actual 18,000]
+         │  ├─ SeqScan cities AS ci  [est 6, actual 6]
+         │  └─ SeqScan orders AS o  [est 3,000, actual 3,000]
+         └─ SeqScan customers AS c  [est 200, actual 200]
+所有運算子合計產出 3,622,055 列；耗時 1,688.8 ms；結果 1 列
+
+== 最佳化後 ==
+Project ci.region, count(*) AS n  [est 3, actual 1]
+└─ HashAggregate GROUP BY ci.region: count(*)  [est 3, actual 1]
+   └─ HashJoin o.customer_id = c.id  (hash table built on the 2nd input)  [est 995, actual 847]
+      ├─ SeqScan orders AS o  [est 3,000, actual 3,000]
+      └─ HashJoin c.city = ci.name  (hash table built on the 2nd input)  [est 67, actual 57]
+         ├─ SeqScan customers AS c  [est 200, actual 200]
+         └─ Filter ci.region = 'South'  [est 2, actual 2]
+            └─ SeqScan cities AS ci  [est 6, actual 6]
+所有運算子合計產出 4,114 列；耗時 2.1 ms；結果 1 列
+
+兩個計畫的結果相同：True
+
+==============================================================================
+LIMIT 讓掃描提早停止（兩種計畫相同）
+SELECT id, amount FROM orders WHERE status = 'refunded' LIMIT 5
+
+== 未最佳化（依定義翻譯） ==
+Limit 5  [est 5, actual 5]
+└─ Project id, amount  [est 750, actual 5]
+   └─ Filter status = 'refunded'  [est 750, actual 5]
+      └─ SeqScan orders  [est 3,000, actual 71]
+所有運算子合計產出 86 列；耗時 0.0 ms；結果 5 列
+
+== 最佳化後 ==
+Limit 5  [est 5, actual 5]
+└─ Project id, amount  [est 750, actual 5]
+   └─ Filter status = 'refunded'  [est 750, actual 5]
+      └─ SeqScan orders  [est 3,000, actual 71]
+所有運算子合計產出 86 列；耗時 0.0 ms；結果 5 列
+
+兩個計畫的結果相同：True
