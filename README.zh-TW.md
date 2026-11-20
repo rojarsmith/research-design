@@ -38,6 +38,7 @@
 | Claude Startups 申請 | 最新資格與福利、HMI Studio 申請主體評估、Max API 額度與英文詢問草稿 | [English overview](claude-startups-research/README.md) | [完整研究](claude-startups-research/README.zh-TW.md) |
 | 網路交友與婚育規劃 | 高雄與跨國認識管道、平台限制、自介與30天行動、來源與研究紀錄 | [English overview](marriage-and-dating/README.md) | [完整研究](marriage-and-dating/README.zh-TW.md) |
 | 機車事故證據與求償 | 對向機車左轉、閃避摔車個案的證據保全、警方資料、醫療、機車修復與求償程序 | [研究目錄](motorcycle-accident-research/README.zh-TW.md) | [個案行動指南](motorcycle-accident-research/README.zh-TW.md) |
+| 鼻子聞到鐵鏽味 | 不定時聞到鐵鏽、金屬或血腥味的可能原因：先分辨真的有血或幻嗅，常見的鼻竇、鼻黏膜出血、牙周與藥物原因，需排除的癲癇、偏頭痛與鼻咽癌警訊，就醫科別（耳鼻喉科優先、神經內科次之）、急診時機與症狀紀錄表 | [研究目錄](metallic-smell-research/README.zh-TW.md) | [完整研究](metallic-smell-research/README.zh-TW.md) |
 | C 語言、編譯器與處理器 | C 的起源、編譯器的建構與自舉、一天內的處理器 C 支援評估流程、契約堆疊學習路線、具 RV32 與 x86-64 後端的可執行 C 子集編譯器，以及 19 種 clang 目標的實測比較 | [English overview](c-compiler-foundations/README.md) | [完整研究](c-compiler-foundations/README.zh-TW.md) |
 | 作業系統：從核心到合成器（草稿） | 待審閱的課綱草稿，附階段 00–10 的實驗草稿，含第一部分的無螢幕顯示伺服器專題與第二部分第一個 Windows 合成實驗（Windows 部分已執行，xv6 與 Linux 部分已在 Ubuntu 容器中執行，階段 04 的核心模組除外）：以 xv6-riscv 動手學作業系統基礎並對照 Linux 與 Windows NT，再進入顯示與視窗系統（DRM/KMS、平面與 vblank、dma-buf 與顯式同步、輸入、座位、隔離），最後完成最小 Wayland 合成器專題；另有一篇讀物說明執行緒與情境切換的原理，以及 RTOS 的執行緒和 Linux、Windows 有何不同 | [English course](os-foundations/README.md) | [繁體中文課程](os-foundations/README.zh-TW.md) |
 | MCU 跨平台學習課程 | 給有軟體開發經驗者從零學微控制器：共通架構與軟體堆疊、以同一個資料採集器逐關推進並移植到第二平台的實作路線、選型與文件閱讀，以及學習紀錄。課程涵蓋從 reset 到 main、GPIO 與時脈、timer 與中斷、UART 環形緩衝區與封包、ADC 與 DMA 的 buffer 所有權、RTOS 的 task 與 queue、watchdog 恢復與設定保存，以及換平台移植，每課附桌機可執行的 C 實驗與上板驗收條件 | [僅繁體中文](mcu-foundations/README.md) | [繁體中文課程](mcu-foundations/README.md) |
@@ -90,6 +91,7 @@
 | `claude-startups-research/` | 計畫研究、申請資料包、申請主體專案評估，以及來源與待確認事項 |
 | `marriage-and-dating/` | 平台研究、自介與行動計畫、跨國交友與安全、來源、研究紀錄、付費方案評估及每週檢討範本 |
 | `motorcycle-accident-research/` | 機車事故個案行動指南、六篇參考文章摘要與查核、官方程序與證據清單 |
+| `metallic-smell-research/` | 鐵鏽味幻嗅與嗅覺異常主報告，以及標示讀取狀態的來源清單 |
 | `c-compiler-foundations/` | C 語言與編譯器起源、處理器 C 支援評估、tinyc 編譯器、RV32IM 模擬器與探針實作 |
 | `os-foundations/` | 作業系統課程草稿：階段 00–09 的 xv6-riscv 實驗草稿、階段 10 的 Windows 合成實驗、無螢幕顯示伺服器專題與測試框架、Linux 與 NT 對照、DRM/KMS 與 Wayland 合成器課綱，以及一般作業系統與 RTOS 執行緒對照的讀物 |
 | `mcu-foundations/` | 繁體中文 MCU 課程：共通架構、實作路線、選型與文件閱讀、第一課至第九課與桌機可執行的 C 實驗、學習紀錄及官方參考資料 |
@@ -102,6 +104,6 @@
 2. 再依延伸研究與決策紀錄查看證據及實作細節。
 3. 解讀版本、價格與條款時，以報告標示的研究日期為準；實作前重新查核可能變動的資訊。
 
-文件通常提供英文與對應的 `*.zh-TW.md` 繁體中文版，各語言導覽連至同語言文件。美國公司經營攻略與 Blender 研究以繁體中文為完整版本，英文入口明示為概要。機車事故個案行動指南與 MCU 跨平台學習課程僅提供繁體中文版。
+文件通常提供英文與對應的 `*.zh-TW.md` 繁體中文版，各語言導覽連至同語言文件。美國公司經營攻略與 Blender 研究以繁體中文為完整版本，英文入口明示為概要。機車事故個案行動指南、鐵鏽味研究與 MCU 跨平台學習課程僅提供繁體中文版。
 
 研究以證據與使用者需求為中心，對廠商採用相同查證標準，並區分已記載的功能、估算與建議設計。閱讀建議、工期及成本估算時，應一併考量其假設與限制。
