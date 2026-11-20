@@ -1,0 +1,107 @@
+
+== 0. 範例資料 ==
+cities：6 列（name TEXT, region TEXT）；索引：無
+customers：200 列（id INT, name TEXT, city TEXT）；索引：customers_id
+orders：3,000 列（id INT, customer_id INT, amount INT, status TEXT, day INT）；索引：orders_customer_id
+
+== 1. SQL 原文 ==
+SELECT c.city, COUNT(*) AS n, SUM(o.amount) AS total
+FROM customers c JOIN orders o ON o.customer_id = c.id
+WHERE o.status = 'paid' AND c.city <> 'Tainan'
+GROUP BY c.city
+HAVING COUNT(*) > 200
+ORDER BY total DESC
+LIMIT 3
+
+== 2. 詞法分析：字元 → 記號（token） ==
+KEYWORD SELECT · IDENT c · OP . · IDENT city · OP , · IDENT count · OP ( · OP * · OP ) · KEYWORD AS · IDENT n · OP , · IDENT sum · OP ( · IDENT o · OP . · IDENT amount · OP ) · KEYWORD AS · IDENT total · KEYWORD FROM · IDENT customers · IDENT c · KEYWORD JOIN · IDENT orders · IDENT o · KEYWORD ON · IDENT o · OP . · IDENT customer_id · OP = · IDENT c · OP . · IDENT id · KEYWORD WHERE · IDENT o · OP . · IDENT status · OP = · STRING 'paid' · KEYWORD AND · IDENT c · OP . · IDENT city · OP <> · STRING 'Tainan' · KEYWORD GROUP · KEYWORD BY · IDENT c · OP . · IDENT city · KEYWORD HAVING · IDENT count · OP ( · OP * · OP ) · OP > · NUMBER 200 · KEYWORD ORDER · KEYWORD BY · IDENT total · KEYWORD DESC · KEYWORD LIMIT · NUMBER 3 · END
+（共 65 個記號）
+
+== 3. 語法分析：記號 → 語法樹（AST） ==
+Select
+├─ SELECT
+│  ├─ item
+│  │  └─ Column c.city
+│  ├─ AS n
+│  │  └─ Call count
+│  │     └─ *
+│  └─ AS total
+│     └─ Call sum
+│        └─ Column o.amount
+├─ FROM
+│  ├─ Table customers AS c
+│  └─ Table orders AS o
+│     └─ ON
+│        └─ Binary =
+│           ├─ Column o.customer_id
+│           └─ Column c.id
+├─ WHERE
+│  └─ Binary AND
+│     ├─ Binary =
+│     │  ├─ Column o.status
+│     │  └─ Literal 'paid'
+│     └─ Binary <>
+│        ├─ Column c.city
+│        └─ Literal 'Tainan'
+├─ GROUP BY
+│  └─ Column c.city
+├─ HAVING
+│  └─ Binary >
+│     ├─ Call count
+│     │  └─ *
+│     └─ Literal 200
+├─ ORDER BY
+│  └─ DESC
+│     └─ Column total
+└─ LIMIT 3
+
+== 4. 依定義翻譯成關聯代數（未最佳化：FROM 是笛卡兒積，WHERE 是上面的選擇） ==
+limit[3](π[c.city, count(*) AS n, sum(o.amount) AS total](τ[sum(o.amount) DESC](σ[count(*) > 200](γ[c.city; count(*), sum(o.amount)](σ[o.status = 'paid' AND c.city <> 'Tainan'](σ[o.customer_id = c.id]((customers AS c × orders AS o))))))))
+
+Limit 3  [est 2]
+└─ Project c.city, count(*) AS n, sum(o.amount) AS total  [est 2]
+   └─ Sort sum(o.amount) DESC  [est 2]
+      └─ Filter count(*) > 200  [est 2]
+         └─ HashAggregate GROUP BY c.city: count(*), sum(o.amount)  [est 6]
+            └─ Filter o.status = 'paid' AND c.city <> 'Tainan'  [est 597]
+               └─ Filter o.customer_id = c.id  [est 2,985]
+                  └─ NestedLoopJoin ×  [est 600,000]
+                     ├─ SeqScan customers AS c  [est 200]
+                     └─ SeqScan orders AS o  [est 3,000]
+
+== 5. 最佳化器改寫成等價但較便宜的實體計畫 ==
+Limit 3  [est 2]
+└─ Project c.city, count(*) AS n, sum(o.amount) AS total  [est 2]
+   └─ Sort sum(o.amount) DESC  [est 2]
+      └─ Filter count(*) > 200  [est 2]
+         └─ HashAggregate GROUP BY c.city: count(*), sum(o.amount)  [est 6]
+            └─ HashJoin o.customer_id = c.id  (hash table built on the 2nd input)  [est 597]
+               ├─ Filter o.status = 'paid'  [est 750]
+               │  └─ SeqScan orders AS o  [est 3,000]
+               └─ Filter c.city <> 'Tainan'  [est 160]
+                  └─ SeqScan customers AS c  [est 200]
+
+- 下推：o.status = 'paid' 只用到 o，移到 o 的掃描正上方
+- 下推：c.city <> 'Tainan' 只用到 c，移到 c 的掃描正上方
+- 連接順序：先取估計列數最小的 c（約 160 列）
+- 接上 o：有等值條件 o.customer_id = c.id，用 HashJoin，雜湊表建在估計較小的 c 一側
+
+== 6. 執行：父節點呼叫 next() 向子節點一次要一列（Volcano 迭代器） ==
+Limit 3  [est 2, actual 3]
+└─ Project c.city, count(*) AS n, sum(o.amount) AS total  [est 2, actual 3]
+   └─ Sort sum(o.amount) DESC  [est 2, actual 3]
+      └─ Filter count(*) > 200  [est 2, actual 5]
+         └─ HashAggregate GROUP BY c.city: count(*), sum(o.amount)  [est 6, actual 5]
+            └─ HashJoin o.customer_id = c.id  (hash table built on the 2nd input)  [est 597, actual 1,323]
+               ├─ Filter o.status = 'paid'  [est 750, actual 1,621]
+               │  └─ SeqScan orders AS o  [est 3,000, actual 3,000]
+               └─ Filter c.city <> 'Tainan'  [est 160, actual 163]
+                  └─ SeqScan customers AS c  [est 200, actual 200]
+
+== 7. 結果 ==
+c.city     | n   | total 
+-----------+-----+-------
+Hsinchu    | 331 | 817480
+Taichung   | 292 | 702500
+New Taipei | 242 | 621100
+(3 rows)
