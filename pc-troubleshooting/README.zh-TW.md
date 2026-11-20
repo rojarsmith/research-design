@@ -6,9 +6,15 @@
 
 以瀏覽器開啟[離線雙語查閱頁](dist/index.html)。預設英文；瀏覽器儲存可用時記住語言選擇，並支援搜尋與優先順序篩選。不需安裝或網路服務。其他 PC 症狀及證據蒐集請見[通用排查流程](research/workflow.zh-TW.md)。
 
-新增個案：[裝置管理員：四個 Other devices 與 USB Port Reset Failed](research/device-manager-bluetooth-usb.zh-TW.md)。分開確認停用狀態、缺驅動與 USB 列舉失敗。
+## 個案索引
 
-儲存個案：[Kingston 開機 SSD 從 BIOS 消失，斷電才恢復](cases/2026-10-14-kingston-nvme-dropout.zh-TW.md)。包含 51°C 與 91°C 欄位差異、唯讀 NVMe 實測、兩次 bugcheck 及實體交叉排查步驟；根因仍未確定。
+| 日期 | 個案 | 內容與狀態 |
+| --- | --- | --- |
+| 2026-10-03 | [事件檢視器截圖](#截圖個案2026-10-03) | 29,756 筆 Administrative Events 的判讀界線；根因未定 |
+| 2026-10-12 | [裝置管理員：四個 Other devices 與 USB Port Reset Failed](research/device-manager-bluetooth-usb.zh-TW.md) | 分開確認停用狀態、缺驅動與 USB 列舉失敗；[實機掃描](cases/2026-10-12-device-manager-live-scan.zh-TW.md)已定位裝置拓撲，實體根因未確認 |
+| 2026-10-14 | [Kingston 開機 SSD 從 BIOS 消失，斷電才恢復](cases/2026-10-14-kingston-nvme-dropout.zh-TW.md) | 51°C 與 91°C 欄位差異、唯讀 NVMe 實測、兩次 bugcheck 及實體交叉排查步驟；根因未定 |
+| 2026-10-14 | [雙螢幕長時間離席後無法自行喚醒](cases/2026-10-14-display-wake/README.zh-TW.md) | RTX 5070 Ti 接 Acer ET322QK、ASUS VG289 與 Philips HDMI；型號設定、20 項第一方來源、社群案例與觀察紀錄表；尚未在電腦上實測 |
+| 2026-10-14 | [LOXJIE A40 USB 爆音與斷聲](cases/2026-10-14-loxjie-a40-usb/README.zh-TW.md) | 本機唯讀盤點、USB 拓撲、網路案例、唯讀採集腳本與單一變因對照表；根因未確認 |
 
 ## 截圖個案：2026-10-03
 

@@ -219,7 +219,7 @@ Before starting Part II, finish the graphics course's Part I through lab 05. By 
 
 The older [DWM overview](https://learn.microsoft.com/en-us/windows/win32/dwm/dwm-overview) page still describes the DWM service as one that can be switched on and off. The API page carries the Windows 8+ statement.
 
-**Checkpoint:** use your PresentMon logs to explain which frames DWM composed, which reached the screen without composition, and why each switch happened. List what a Windows developer can and cannot change in this path. Then connect it to [`display-wake-research`](../display-wake-research/README.md): what does the Win+Ctrl+Shift+B graphics reset restart?
+**Checkpoint:** use your PresentMon logs to explain which frames DWM composed, which reached the screen without composition, and why each switch happened. List what a Windows developer can and cannot change in this path. Then connect it to [`pc-troubleshooting/cases/2026-10-14-display-wake`](../pc-troubleshooting/cases/2026-10-14-display-wake/README.md): what does the Win+Ctrl+Shift+B graphics reset restart?
 
 ### 11: Wayland from the client side
 
@@ -294,7 +294,7 @@ VKMS is a software-only model of a KMS driver. Through configfs you can create i
 - VRR on a capable monitor. The ASUS VG289Q lists 40–60 Hz ([spec](https://www.asus.com/displays-desktops/monitors/tuf-gaming/tuf-gaming-vg289q/techspec/)).
 - Pulling a real cable, including recovery from `link-status` `BAD`.
 
-**Checkpoint:** while the program runs, disable and re-enable the QEMU output, and recover without restarting. Show an overlay-plane composition captured from VKMS writeback. Compare with `display-wake-research`, where Windows may treat a sleeping DisplayPort monitor as disconnected. Which KMS events would that produce on Linux?
+**Checkpoint:** while the program runs, disable and re-enable the QEMU output, and recover without restarting. Show an overlay-plane composition captured from VKMS writeback. Compare with `pc-troubleshooting/cases/2026-10-14-display-wake`, where Windows may treat a sleeping DisplayPort monitor as disconnected. Which KMS events would that produce on Linux?
 
 ### 14: Buffer sharing and synchronization
 

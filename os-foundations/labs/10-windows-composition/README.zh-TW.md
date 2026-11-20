@@ -229,7 +229,7 @@ foreach ($r in Import-Csv borderless-vsync0.csv) {
 
 在一次無邊框擷取（`--vsync 0`、較長的 `--timed`）期間，讓某個東西出現在程式上方：按音量鍵讓音量面板出現、打開開始功能表，或按 Alt+Tab。在 CSV 中找出每次切換，並對應到你做的動作。
 
-接著是 [`display-wake-research`](../../../display-wake-research/README.zh-TW.md) 的問題：Win+Ctrl+Shift+B 的圖形重置重新啟動了什麼？該資料夾引用的 Microsoft 支援頁面，把它描述為要求 Windows 重置圖形驅動程式。在主控台上執行 `.\flipstats.exe windowed 20`，在執行期間按下 Win+Ctrl+Shift+B，並記錄：
+接著是 [螢幕喚醒個案](../../../pc-troubleshooting/cases/2026-10-14-display-wake/README.zh-TW.md) 的問題：Win+Ctrl+Shift+B 的圖形重置重新啟動了什麼？該資料夾引用的 Microsoft 支援頁面，把它描述為要求 Windows 重置圖形驅動程式。在主控台上執行 `.\flipstats.exe windowed 20`，在執行期間按下 Win+Ctrl+Shift+B，並記錄：
 
 1. `Present` 有沒有回傳錯誤？程式會停下來並印出錯誤；若是 `DXGI_ERROR_DEVICE_REMOVED` 或 `DXGI_ERROR_DEVICE_RESET`，還會印出 `GetDeviceRemovedReason`。
 2. 如果執行繼續：`GetFrameStatistics` 有沒有再次回傳 `DXGI_ERROR_FRAME_STATISTICS_DISJOINT`？DWM 的計數器有沒有重新開始（比較 `before:` 與 `after:`）？

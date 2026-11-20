@@ -68,6 +68,8 @@ LVGL Open 是可整合到不同環境的 C 圖形函式庫，官方要求包含 
 
 官方系列頁區分 CANopen 與 Custom CAN ID：前者提供預綁 GUI 的物件字典，後者允許自訂 CAN ID、資料框架及 DBC 匯入。頁面列 CAN 2.0A/B；不應延伸為 CAN FD 支援。[CAN 系列](https://www.winstar.com.tw/zh-tw/products/smart-display/can-display.html)。
 
+2026 年 10 月 21 日補充的 RS485／Modbus、專屬 UART、GUI Builder 版本與代表型號，見[華凌智慧顯示器系列](04-winstar-smart-display.zh-TW.md)。
+
 目前列表的一個具體例子是 WL0F00043000WGAAASA00：4.3 吋、480×272、STM32F750、16 MB Flash、5 V、CANopen。鄰近型號有 Custom CAN ID、12 V 與 GPIO 差異，不能把所有功能視為一個 SKU 同時具備。[型號表](https://www.winstar.com.tw/zh-tw/products/smart-display/can-display.html)。
 
 工程判斷：適合需要整合模組與 CAN 變數綁定的設備。GUI Builder 路線與客製 LVGL／TouchGFX 韌體路線應分別估工；支援框架不等於 GUI Builder 專案可直接轉成另一框架，轉換能力與 BSP 交付待確認。
