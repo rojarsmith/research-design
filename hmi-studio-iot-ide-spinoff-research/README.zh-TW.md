@@ -50,7 +50,9 @@
 15. **MCU 軟韌體的錢不收在編輯器上。** IDE、RTOS、UI 編輯器與語言都在變免費；收費集中在功能安全認證與合規證據、量產授權、出貨後維運、除錯與移植服務。ThreadX 改為 MIT 授權後只對安全文件收費，是「程式碼免費、責任收費」的典型。EHS 應收在量產授權、出貨後管理與整機除錯。詳見 [MCU 軟韌體開發：錢收在哪裡](research/14-mcu-software-monetization.zh-TW.md)。
 16. **MCU 軟體的新機會在法規、AI 與測試，不在寫程式更舒服。** 歐盟 CRA 通報義務已在 2026-09 開始，AI 韌體新創在 2025 至 2026 年陸續拿到資金，小團隊仍負擔不起 HIL 測試。EHS 最好的切入點是把 AI 產生、整機模擬驗證與 SBOM 和更新紀錄綁成同一條鏈；再延伸到 RED 資安檢查、出廠測試與現場設定工具，就能成為涵蓋產品一生的工具。詳見 [MCU 領域還有哪些軟體機會](research/15-mcu-software-opportunities.zh-TW.md)。
 17. **全球證據支持轉型，但天花板是「小而賺錢的工具公司」，最可能的結局是被晶片商或工具整合商收購。** 2019 至 2026 年 Google、IBM、AWS、Microsoft、Arm 等陸續收掉 IoT 平台上層，活下來的是本機工具加可帶走輸出（Ignition）或被晶片商、作業系統公司買走（Memfault、Golioth、Particle）。AI 讓拖拉編輯器貶值，讓 AI 讀得懂的專案模型、確定性程式碼產生與驗證升值；垂直市場以充電樁證據最強；台灣可用企業併購法新設分割或技術作價入股。詳見 [全球證據：市場、出場、平台退場、AI、區域與台灣分拆](research/16-global-evidence.zh-TW.md)。
-18. **分拆的前提是 EDT 的決策，不是技術。** 現有文件寫明 EHS 是 EDT 自主 IP，EULA 寫明 EDT 擁有全部權利，也沒有任何文件討論過分拆、IP 移轉或授權回用。這必須由 EDT 經營層與法務決定。本研究只提供決策材料，不構成以個人名義另起爐灶的建議。
+18. **NOVAKON（iFace Designer）的「軟體免費、靠硬體賺錢」模式可行但規模小，而且靠母公司。** NOVAKON 是上櫃工業電腦廠廣積持股 70% 的子公司，約 20 至 30 人，2025 年營收 NT$2.31 億、營業利益率約 29%；硬體很可能由母公司生產，不是完全委外。由營業利益率反推，毛利率約 42% 至 57%（推論）。同業中只有步科、信捷揭露 HMI 毛利（約 41%、33%）。這個模式適合 EDT 或 EDT 持股的子公司（EDT 自供面板），不適合沒有硬體的純軟公司；硬體損益每年約 2,500 至 4,000 台才打平。詳見 [NOVAKON 模式：硬體價格、毛利率與推估方法](research/17-novakon-hardware-model.zh-TW.md)。
+19. **做這類競品，執行環境要從 MCU 韌體改成 Cortex-A 或 x86 上的固定執行環境。** 主流工業 HMI 都在 Linux 上跑固定執行環境、只下載專案檔。EHS 的設計器、專案格式、產生器、LVGL 都能沿用；建議在 PC 把產生的 C 編成模組，下載到固定執行環境，保留 Emulator 與實機一致。一人用 Claude Code 做 MVP 約 9 至 14 人月，到第一台能賣的產品約 12 至 18 個月，兩到三人約 6 至 9 個月（推論）。詳見 [把 EHS 搬到 Cortex-A 與 x86](research/18-mpu-runtime.zh-TW.md)。
+20. **分拆的前提是 EDT 的決策，不是技術。** 現有文件寫明 EHS 是 EDT 自主 IP，EULA 寫明 EDT 擁有全部權利，也沒有任何文件討論過分拆、IP 移轉或授權回用。這必須由 EDT 經營層與法務決定。本研究只提供決策材料，不構成以個人名義另起爐灶的建議。
 
 ## 目前狀態
 
@@ -203,4 +205,6 @@ LVGL 本身不是執行緒安全的。v9 起有 `lv_lock()`／`lv_unlock()`，�
 - [MCU 軟韌體開發：錢收在哪裡](research/14-mcu-software-monetization.zh-TW.md)
 - [MCU 領域還有哪些軟體機會](research/15-mcu-software-opportunities.zh-TW.md)
 - [全球證據：市場、出場、平台退場、AI、區域與台灣分拆](research/16-global-evidence.zh-TW.md)（研究筆記在 [research/notes/16-global-evidence](research/notes/16-global-evidence/)）
+- [NOVAKON 模式：硬體價格、毛利率與推估方法](research/17-novakon-hardware-model.zh-TW.md)（研究筆記在 [research/notes/17-novakon-hardware-model](research/notes/17-novakon-hardware-model/)）
+- [把 EHS 從 MCU 搬到 Cortex-A 與 x86：工業 HMI 的執行環境](research/18-mpu-runtime.zh-TW.md)（研究筆記在 [research/notes/18-mpu-runtime](research/notes/18-mpu-runtime/)）
 - [來源與未解問題](research/03-sources-and-open-questions.zh-TW.md)
