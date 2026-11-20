@@ -13,4 +13,10 @@ The first decision is where graphics, application behavior, and communications r
 - [Architecture, resource calculations, and a shared evaluation protocol](research/02-architecture-and-evaluation.zh-TW.md)
 - [Official sources and unresolved questions](research/03-sources-and-open-questions.zh-TW.md)
 
+An October 21, 2026 supplement, formerly a separate Winstar study, extends Winstar coverage from CAN displays to the whole Smart Display portfolio: RS485/Modbus, proprietary UART, GUI Builder, representative modules, and integration constraints. It also rechecks the requested CAN category.
+
+- [Winstar portfolio comparison and representative modules](research/04-winstar-smart-display.zh-TW.md)
+- [Winstar GUI Builder capabilities and integration evaluation](research/05-winstar-gui-builder-and-integration.zh-TW.md)
+- [Winstar sources, coverage audit, and unresolved specification differences](research/06-winstar-sources-and-open-questions.zh-TW.md)
+
 The report treats EDT and all other vendors by the same evidence standard. Vendor descriptions are distinguished from engineering inferences and measured results. This edition contains public-source research, not a completed hardware benchmark or procurement quotation.

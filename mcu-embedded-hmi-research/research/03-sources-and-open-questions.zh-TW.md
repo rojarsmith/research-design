@@ -63,6 +63,8 @@ DWIN V2.9 PDF 連結擷取逾時；Levetop UI_Editor-II 英文手冊超出擷取
 | ARTERY AT32 | 精確料號／封裝、顯示及外部 RAM 方案、SDK／範例授權、LVGL 版本與工具支援、供貨 | 板級可行性與完整 BOM |
 | HMI Studio | 目標硬體、執行環境、輸出格式、協定清單、商業授權、正式版狀態、版本遷移與部署復原 | Alpha 評估能否轉成可維護交付 |
 
+華凌各系列的優先待確認資料已在 2026 年 10 月 21 日細分到 CANopen、Custom CAN ID、RS485、UART、GUI Builder 與自寫韌體，見[華凌來源與待確認事項](06-winstar-sources-and-open-questions.zh-TW.md#優先待確認資料)。
+
 需求端則需固定解析度、觸控方式、資料頻率、CAN／UART／Modbus 等介面、量產數量、開發團隊能力及所需原始碼權利。這些尚未指定時，維持情境式選型，不選出單一最佳產品。
 
 ## 後續研究記錄

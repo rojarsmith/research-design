@@ -135,7 +135,7 @@ QEMU 的執行方式：QEMU 提供 Windows 版本（Stefan Weil 的安裝檔或 
 - [`c-compiler-foundations/`](../c-compiler-foundations/README.zh-TW.md) 整理了契約堆疊（語言、ABI、ISA），階段 01–02 把它往下延伸：trap frame 與 `swtch` 要搭配 RISC-V 呼叫慣例才看得懂。其中的 `rv32sim` 是選修特權模式支線的起點。
 - [`mcu-foundations/`](../mcu-foundations/README.md) 談單一位址空間中的 reset 到 `main`、中斷、DMA 緩衝區所有權與 ISR 規則。本課程在有記憶體保護、多個行程的環境下問同樣的問題。
 - [`mcu-embedded-hmi-research/`](../mcu-embedded-hmi-research/README.zh-TW.md) 研究由單一應用程式獨占顯示器、沒有合成器的嵌入式圖形（LVGL、TouchGFX、智慧顯示器）。第二部分處理的是多用戶端的情況。
-- [`display-wake-research/`](../display-wake-research/README.zh-TW.md) 研究同一台 RTX 5070 Ti 桌機上的 Windows 顯示路徑，包括休眠中的 DisplayPort 螢幕被當成已中斷連線，以及 Win+Ctrl+Shift+B 重置圖形驅動。階段 10 與 13 會從作業系統端遇到同樣的事件：WDDM 復原與 KMS 熱插拔。
+- [`pc-troubleshooting/cases/2026-10-14-display-wake/`](../pc-troubleshooting/cases/2026-10-14-display-wake/README.zh-TW.md) 研究同一台 RTX 5070 Ti 桌機上的 Windows 顯示路徑，包括休眠中的 DisplayPort 螢幕被當成已中斷連線，以及 Win+Ctrl+Shift+B 重置圖形驅動。階段 10 與 13 會從作業系統端遇到同樣的事件：WDDM 復原與 KMS 熱插拔。
 
 ## 檔案
 

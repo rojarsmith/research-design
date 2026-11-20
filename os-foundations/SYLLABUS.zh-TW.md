@@ -219,7 +219,7 @@
 
 較舊的 [DWM 概觀](https://learn.microsoft.com/en-us/windows/win32/dwm/dwm-overview)頁面仍把 DWM 服務描述成可以開關；Windows 8 以後的說法以 API 頁面為準。
 
-**檢核：** 根據 PresentMon 紀錄，說明哪些影格由 DWM 合成、哪些未經合成就到達螢幕，以及每次切換的原因。列出 Windows 開發者在這條路徑上能改與不能改的部分。再連到 [`display-wake-research`](../display-wake-research/README.zh-TW.md)：Win+Ctrl+Shift+B 重置圖形驅動時，重新啟動的是什麼？
+**檢核：** 根據 PresentMon 紀錄，說明哪些影格由 DWM 合成、哪些未經合成就到達螢幕，以及每次切換的原因。列出 Windows 開發者在這條路徑上能改與不能改的部分。再連到 [`pc-troubleshooting/cases/2026-10-14-display-wake`](../pc-troubleshooting/cases/2026-10-14-display-wake/README.zh-TW.md)：Win+Ctrl+Shift+B 重置圖形驅動時，重新啟動的是什麼？
 
 ### 11 — 從用戶端看 Wayland
 
@@ -294,7 +294,7 @@ VKMS 是純軟體的 KMS 驅動模型，可透過 configfs 建立具有指定平
 - 在支援 VRR 的螢幕上測 VRR。ASUS VG289Q 規格列出 40–60 Hz（[規格](https://www.asus.com/displays-desktops/monitors/tuf-gaming/tuf-gaming-vg289q/techspec/)）。
 - 實際拔掉纜線，並從 `link-status` 變成 `BAD` 的狀態恢復。
 
-**檢核：** 程式執行中停用再重新啟用 QEMU 輸出，並在不重啟的情況下恢復。展示一張從 VKMS writeback 擷取的 overlay 平面合成結果。與 `display-wake-research` 比較：Windows 可能把休眠中的 DisplayPort 螢幕當成已中斷連線，同樣的情況在 Linux 上會產生哪些 KMS 事件？
+**檢核：** 程式執行中停用再重新啟用 QEMU 輸出，並在不重啟的情況下恢復。展示一張從 VKMS writeback 擷取的 overlay 平面合成結果。與 `pc-troubleshooting/cases/2026-10-14-display-wake` 比較：Windows 可能把休眠中的 DisplayPort 螢幕當成已中斷連線，同樣的情況在 Linux 上會產生哪些 KMS 事件？
 
 ### 14 — 緩衝區共享與同步
 

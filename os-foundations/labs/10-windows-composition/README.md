@@ -229,7 +229,7 @@ Also look at `AllowsTearing`, `SyncInterval`, `PresentFlags`, and the display co
 
 During a borderless capture (`--vsync 0`, a longer `--timed`), make something appear over the program: press a volume key so the volume flyout appears, open the Start menu, or press Alt+Tab. Find each switch in the CSV and match it to what you did.
 
-Then the question from [`display-wake-research`](../../../display-wake-research/README.md): what does the Win+Ctrl+Shift+B graphics reset restart? Microsoft's support page (cited there) describes it as asking Windows to reset the graphics driver. Run `.\flipstats.exe windowed 20` at your console, press Win+Ctrl+Shift+B during the run, and record:
+Then the question from [the display wake case](../../../pc-troubleshooting/cases/2026-10-14-display-wake/README.md): what does the Win+Ctrl+Shift+B graphics reset restart? Microsoft's support page (cited there) describes it as asking Windows to reset the graphics driver. Run `.\flipstats.exe windowed 20` at your console, press Win+Ctrl+Shift+B during the run, and record:
 
 1. Did `Present` return an error? The program stops and prints it, with `GetDeviceRemovedReason` for `DXGI_ERROR_DEVICE_REMOVED` or `DXGI_ERROR_DEVICE_RESET`.
 2. If the run went on: did `GetFrameStatistics` return `DXGI_ERROR_FRAME_STATISTICS_DISJOINT` again, and did DWM's counters restart (compare `before:` and `after:`)?

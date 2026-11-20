@@ -135,7 +135,7 @@ This is the graphics course's loop with one addition from `mcu-foundations`: **p
 - [`c-compiler-foundations/`](../c-compiler-foundations/README.md) has the contract stack (language, ABI, ISA). Stages 01–02 extend it downward: trap frames and `swtch` only make sense with the RISC-V calling convention in mind. Its `rv32sim` is the starting point for the optional privileged-mode side quest.
 - [`mcu-foundations/`](../mcu-foundations/README.md) (Traditional Chinese only) covers reset to `main`, interrupts, DMA buffer ownership and ISR rules in one address space. This course asks the same questions with memory protection and many processes.
 - [`mcu-embedded-hmi-research/`](../mcu-embedded-hmi-research/README.md) covers embedded graphics where one application owns the display and there is no compositor (LVGL, TouchGFX, smart displays). Part II is the multi-client case.
-- [`display-wake-research/`](../display-wake-research/README.md) covers the Windows display path on the same RTX 5070 Ti desktop. It includes a sleeping DisplayPort monitor being treated as disconnected, and the Win+Ctrl+Shift+B graphics driver reset. Stages 10 and 13 meet the same events from the OS side: WDDM recovery and KMS hotplug.
+- [`pc-troubleshooting/cases/2026-10-14-display-wake/`](../pc-troubleshooting/cases/2026-10-14-display-wake/README.md) covers the Windows display path on the same RTX 5070 Ti desktop. It includes a sleeping DisplayPort monitor being treated as disconnected, and the Win+Ctrl+Shift+B graphics driver reset. Stages 10 and 13 meet the same events from the OS side: WDDM recovery and KMS hotplug.
 
 ## Files
 

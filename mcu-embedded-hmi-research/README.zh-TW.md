@@ -2,7 +2,7 @@
 
 # MCU Embedded HMI 生態與產品比較
 
-研究日期：2026 年 10 月 12 日，Asia/Taipei。範圍涵蓋 SquareLine Studio、TouchGFX、DWIN DGUS、LVGL Open、華凌 CAN 智慧顯示器、Levetop 串口屏控制晶片、ARTERY AT32 與 HMI Studio。
+研究日期：2026 年 10 月 12 日，Asia/Taipei。範圍涵蓋 SquareLine Studio、TouchGFX、DWIN DGUS、LVGL Open、華凌 CAN 智慧顯示器、Levetop 串口屏控制晶片、ARTERY AT32 與 HMI Studio。2026 年 10 月 21 日另補華凌智慧顯示器的完整產品組合（CAN、RS485／Modbus、專屬 UART 與 GUI Builder），見第 04 至 06 篇；原獨立的華凌研究已併入本目錄。
 
 MCU 型嵌入式人機介面（HMI）的選型，首先取決於誰負責畫面運算、控制邏輯與通訊。這八項並非同一層的替代產品：有的是設計工具，有的是圖形框架，有的是晶片或整合模組。應先選擇系統架構，再比較同層產品的開發效率、移植成本與供應條件。
 
@@ -49,6 +49,7 @@ SquareLine 與 LVGL 可構成同一軟體堆疊；ARTERY 是其中可能的 MCU 
 | 已有 STM32 與 C++ 開發能力 | TouchGFX，並與同硬體的 LVGL 比較 | STM32 工具鏈整合較直接；跨晶片品牌須重新評估 |
 | 保留既有主控，快速加上操作畫面 | DWIN DGUS 智慧屏；自行設計顯示板時評估 Levetop | UI 與主控分離；專用格式、協定及晶片增加遷移工作 |
 | 工業 CAN 網路，希望採整合顯示模組 | 華凌 CANopen 或 Custom CAN ID 系列 | 模組成本與功能以 SKU 為準；CAN 2.0A/B 不代表 CAN FD |
+| 已有 Modbus 控制器或可加專用串口協定，希望採整合顯示模組 | 華凌 RS485／Modbus 或專屬 UART 系列 | 已查的 4.3 吋 RS485 型號是從裝置，不能主動輪詢 PLC；UART 為華凌專屬協定，不能推定與 DWIN、Levetop 相容（見[第 04 篇](research/04-winstar-smart-display.zh-TW.md)） |
 | 想自行掌握硬體 BOM 與韌體 | AT32 或其他 MCU 加 LVGL | 要計入顯示板、觸控、記憶體與 BSP 開發成本 |
 | 評估 AI 建畫面、圖形化邏輯與通訊綁定 | HMI Studio 的受控概念驗證 | 目前公開為 Alpha，正式授權與量產支援待確認 |
 
@@ -59,6 +60,9 @@ SquareLine 與 LVGL 可構成同一軟體堆疊；ARTERY 是其中可能的 MCU 
 | [八項產品詳細比較](research/01-product-comparison.zh-TW.md) | 平台、元件、開發流程、通訊、授權成本與限制 |
 | [架構與實機評測方法](research/02-architecture-and-evaluation.zh-TW.md) | 記憶體、頻寬、成本模型、共同工作負載與驗收方法 |
 | [來源與待確認事項](research/03-sources-and-open-questions.zh-TW.md) | 官方連結、版本邊界、擷取狀態與採購前問題 |
+| [華凌智慧顯示器系列](research/04-winstar-smart-display.zh-TW.md) | 2026-10-21 補充：CAN、RS485／Modbus、專屬 UART 系列比較，代表型號、兩種開發路線，以及對八項比較的補充 |
+| [華凌 GUI Builder 與整合評估](research/05-winstar-gui-builder-and-integration.zh-TW.md) | 版本、容量、資料映射、評測與商用條件 |
+| [華凌來源與待確認事項](research/06-winstar-sources-and-open-questions.zh-TW.md) | 指定網址覆蓋、官方連結、日期及規格差異 |
 
 ## 研究原則
 

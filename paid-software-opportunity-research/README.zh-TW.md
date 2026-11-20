@@ -46,7 +46,7 @@
 | 方向 | 依據 | 符合的條件 |
 | --- | --- | --- |
 | **Bitdove OTA＋CRA 合規服務**（優先） | [歐洲 OTA 與 CRA 研究](../eu-ota-cra-sales-research/README.zh-TW.md) | B2B、法定截止日、持續服務、已有研究 |
-| 嵌入式工程師用的硬體周邊工具 | [MCU 嵌入式 HMI 研究](../mcu-embedded-hmi-research/README.zh-TW.md)、[華凌智慧顯示器研究](../winstar-smart-display-research/README.zh-TW.md) | 買家是設備公司、免費工具陽春、有領域知識 |
+| 嵌入式工程師用的硬體周邊工具 | [MCU 嵌入式 HMI 研究](../mcu-embedded-hmi-research/README.zh-TW.md)、[華凌智慧顯示器研究](../mcu-embedded-hmi-research/research/04-winstar-smart-display.zh-TW.md) | 買家是設備公司、免費工具陽春、有領域知識 |
 
 ### CRA 的時程
 

@@ -6,9 +6,15 @@ Research checked: **2026-10-14**. Primary language: English; a full Traditional 
 
 Open [the offline bilingual guide](dist/index.html) in a browser. It starts in English, remembers your language choice when browser storage is available, and offers search and priority filters. No installation or network service is needed. Read the [general troubleshooting workflow](research/workflow.md) for other PC symptoms and evidence collection.
 
-New case: [Device Manager: four Other devices and USB Port Reset Failed](research/device-manager-bluetooth-usb.md). Check disabled state, missing drivers and USB enumeration separately.
+## Case index
 
-Storage case: [Kingston boot SSD disappears from BIOS and returns after power removal](cases/2026-10-14-kingston-nvme-dropout.md). Includes the 51°C versus 91°C temperature fields, read-only NVMe findings, two bugchecks and a physical isolation plan. Root cause remains unresolved.
+| Date | Case | Contents and status |
+| --- | --- | --- |
+| 2026-10-03 | [Event Viewer screenshot](#screenshot-case-2026-10-03) | Interpretation limits for 29,756 Administrative Events; root cause undetermined |
+| 2026-10-12 | [Device Manager: four Other devices and USB Port Reset Failed](research/device-manager-bluetooth-usb.md) | Check disabled state, missing drivers and USB enumeration separately; the [live scan](cases/2026-10-12-device-manager-live-scan.md) located the device topology, physical cause unconfirmed |
+| 2026-10-14 | [Kingston boot SSD disappears from BIOS and returns after power removal](cases/2026-10-14-kingston-nvme-dropout.md) | 51°C versus 91°C temperature fields, read-only NVMe findings, two bugchecks and a physical isolation plan; root cause unresolved |
+| 2026-10-14 | [Dual monitors do not wake after a long absence](cases/2026-10-14-display-wake/README.md) | RTX 5070 Ti with Acer ET322QK, ASUS VG289 and Philips HDMI; model settings, 20 first-party references, community reports and an observation log; not yet tested on the PC |
+| 2026-10-14 | [LOXJIE A40 USB pops and silence](cases/2026-10-14-loxjie-a40-usb/README.md) | Read-only local inventory, USB topology, online reports, a read-only evidence collector and a one-variable comparison log; root cause unconfirmed |
 
 ## Screenshot case: 2026-10-03
 
