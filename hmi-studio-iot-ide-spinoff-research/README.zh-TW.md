@@ -39,7 +39,7 @@
      - LVGL 原廠的付費工具 LVGL Pro 定位正是專業 UI 開發：Developer 方案 US$3,990／席／年，另有按產品計價的 US$20,000 方案；Renesas 客戶免費。
      - 原本 No Code 的目標使用者（非程式背景的機構、產品工程師）不會用 VS Code。
    - 詳見[方向比較](#三個方向比較)。
-7. **面對 LVGL Pro，付費價值不能放在 UI 編輯器本身。** LVGL Pro 已涵蓋 XML、資料綁定、Figma、UI 測試、CLI、AI agent，但官方頁面沒有列出通訊協定、應用邏輯流程、多執行緒、OTA、板級建置與可寄送的 Demo。EHS 該收費的是「整台連網裝置一天跑起來」、「在設計期擋掉並行 bug」、「給客戶看的 Demo」與「CRA 之後的 OTA 與 SBOM」，並評估與 LVGL XML 互通，採互補而非正面衝突。詳見 [LVGL Pro 分析與付費價值](research/04-lvgl-pro-and-paid-value.zh-TW.md)。
+7. **面對 LVGL Pro，付費價值不能放在 UI 編輯器本身。** LVGL Pro 已涵蓋 XML、資料綁定、Figma、UI 測試、CLI、AI agent，但官方頁面沒有列出通訊協定、應用邏輯流程、多執行緒、OTA、板級建置與可寄送的 Demo。EHS 該收費的是「整台連網裝置一天跑起來」、「在設計期擋掉並行 bug」、「給客戶看的 Demo」與「CRA 之後的 OTA 與 SBOM」，並採互補而非正面衝突；原本建議的 LVGL XML 互通，2026-11 查證發現 XML 授權禁止第三方編輯器未經書面許可讀寫這個格式，要先取得 LVGL 書面同意，否則不做（見 [18 號研究](research/18-mpu-runtime.zh-TW.md)）。詳見 [LVGL Pro 分析與付費價值](research/04-lvgl-pro-and-paid-value.zh-TW.md)。
 8. **MicroEJ 證明「完整的 MCU 裝置研發平台」可以收費，但它走的是另一條路。** 它是以 MEJ32 虛擬機為核心的 Pro Code 平台，具備多應用沙箱、完整網路函式庫、應用層 OTA 與 Virtual Device 模擬；以多年期合約賣給大型 OEM，價格不公開。EHS 應借用它的虛擬裝置、晶片商與垂直市場合作、出貨後更新等概念，但不做 VM、不只做企業銷售，站在「Low Code、純 C 輸出、公開價格、中小型 OEM」的位置。詳見 [MicroEJ 比較](research/05-microej-comparison.zh-TW.md)。
 9. **MCU 研發最痛的地方，正好是 EHS 可以收費的地方。** 綜合多份調查，排在前面的是除錯（尤其並行與時序 bug）、複雜度與時程、連網、出貨後的 OTA 與現場故障、資安與 CRA。並行 bug、硬體還沒到就要測試、協定整合，EHS 已有或已規劃對應；現場可觀測性則該交給專業服務。詳見 [MCU 研發困擾排行](research/08-mcu-development-pain-points.zh-TW.md)。
 10. **其他付費 MCU 工具的收費模式，都是「工具便宜或免費，執行環境或量產收費」。** Moddable（JavaScript）每台 US$0.50、Slint 每台約 US$1 起、Quantum Leaps 的 QM 工具免費但 QP 框架收商業授權、Toit 語言開源但收雲端 OTA 費用（Toitware 據報已在 2024 年停止營運，顯示只靠語言加雲端撐不起公司）。QP 的 Active Object 模型也可直接作為 EHS 多執行緒設計的理論基礎。詳見 [動態語言 MCU 產品](research/06-dynamic-language-mcu-products.zh-TW.md) 與 [C/C++ RAD 工具](research/07-c-cpp-rad-tools.zh-TW.md)。
@@ -50,7 +50,7 @@
 15. **MCU 軟韌體的錢不收在編輯器上。** IDE、RTOS、UI 編輯器與語言都在變免費；收費集中在功能安全認證與合規證據、量產授權、出貨後維運、除錯與移植服務。ThreadX 改為 MIT 授權後只對安全文件收費，是「程式碼免費、責任收費」的典型。EHS 應收在量產授權、出貨後管理與整機除錯。詳見 [MCU 軟韌體開發：錢收在哪裡](research/14-mcu-software-monetization.zh-TW.md)。
 16. **MCU 軟體的新機會在法規、AI 與測試，不在寫程式更舒服。** 歐盟 CRA 通報義務已在 2026-09 開始，AI 韌體新創在 2025 至 2026 年陸續拿到資金，小團隊仍負擔不起 HIL 測試。EHS 最好的切入點是把 AI 產生、整機模擬驗證與 SBOM 和更新紀錄綁成同一條鏈；再延伸到 RED 資安檢查、出廠測試與現場設定工具，就能成為涵蓋產品一生的工具。詳見 [MCU 領域還有哪些軟體機會](research/15-mcu-software-opportunities.zh-TW.md)。
 17. **全球證據支持轉型，但天花板是「小而賺錢的工具公司」，最可能的結局是被晶片商或工具整合商收購。** 2019 至 2026 年 Google、IBM、AWS、Microsoft、Arm 等陸續收掉 IoT 平台上層，活下來的是本機工具加可帶走輸出（Ignition）或被晶片商、作業系統公司買走（Memfault、Golioth、Particle）。AI 讓拖拉編輯器貶值，讓 AI 讀得懂的專案模型、確定性程式碼產生與驗證升值；垂直市場以充電樁證據最強；台灣可用企業併購法新設分割或技術作價入股。詳見 [全球證據：市場、出場、平台退場、AI、區域與台灣分拆](research/16-global-evidence.zh-TW.md)。
-18. **NOVAKON（iFace Designer）的「軟體免費、靠硬體賺錢」模式可行但規模小，而且靠母公司。** NOVAKON 是上櫃工業電腦廠廣積持股 70% 的子公司，約 20 至 30 人，2025 年營收 NT$2.31 億、營業利益率約 29%；硬體很可能由母公司生產，不是完全委外。由營業利益率反推，毛利率約 42% 至 57%（推論）。同業中只有步科、信捷揭露 HMI 毛利（約 41%、33%）。這個模式適合 EDT 或 EDT 持股的子公司（EDT 自供面板），不適合沒有硬體的純軟公司；硬體損益每年約 2,500 至 4,000 台才打平。詳見 [NOVAKON 模式：硬體價格、毛利率與推估方法](research/17-novakon-hardware-model.zh-TW.md)。
+18. **NOVAKON（iFace Designer）的「軟體免費、靠硬體賺錢」模式可行但規模小，而且靠母公司。** NOVAKON 是上櫃工業電腦廠廣積持股 70% 的子公司，約 20 至 30 人，2025 年營收 NT$2.31 億、營業利益率約 29%；NOVAKON 沒有工廠登記，母公司供貨只佔營收約一成，硬體大部分委外生產（推論）。它在 Pro-face、Weintek 之間活下來，靠的是低價、替其他品牌代工、集中少數國家、搭 Siemens 生態與母公司撐腰，而不是正面競爭。由營業利益率反推，毛利率約 42% 至 57%（推論）。同業中只有步科、信捷揭露 HMI 毛利（約 41%、33%）。這個模式適合 EDT 或 EDT 持股的子公司（EDT 自供面板），不適合沒有硬體的純軟公司；硬體損益每年約 2,500 至 4,000 台才打平。詳見 [NOVAKON 模式：硬體價格、毛利率與推估方法](research/17-novakon-hardware-model.zh-TW.md)。
 19. **做這類競品，執行環境要從 MCU 韌體改成 Cortex-A 或 x86 上的固定執行環境。** 主流工業 HMI 都在 Linux 上跑固定執行環境、只下載專案檔。EHS 的設計器、專案格式、產生器、LVGL 都能沿用；建議在 PC 把產生的 C 編成模組，下載到固定執行環境，保留 Emulator 與實機一致。一人用 Claude Code 做 MVP 約 9 至 14 人月，到第一台能賣的產品約 12 至 18 個月，兩到三人約 6 至 9 個月（推論）。詳見 [把 EHS 搬到 Cortex-A 與 x86](research/18-mpu-runtime.zh-TW.md)。
 20. **分拆的前提是 EDT 的決策，不是技術。** 現有文件寫明 EHS 是 EDT 自主 IP，EULA 寫明 EDT 擁有全部權利，也沒有任何文件討論過分拆、IP 移轉或授權回用。這必須由 EDT 經營層與法務決定。本研究只提供決策材料，不構成以個人名義另起爐灶的建議。
 
@@ -182,7 +182,7 @@ LVGL 本身不是執行緒安全的。v9 起有 `lv_lock()`／`lv_unlock()`，�
 | 風險 | 說明 | 緩解 |
 | --- | --- | --- |
 | 免費替代品 | 晶片商工具加 LVGL 開源已足夠讓工程師自己做 | 鎖定「UI 加連網加 OTA 一次完成」的整合價值，不比單點功能 |
-| LVGL 原廠 | LVGL Pro 已有 Subject 資料綁定，v2.0 內容尚未查明，可能往資料來源與邏輯延伸 | 評估 LVGL XML 互通；把差異放在 IoT、並行模型、整機模擬與 OTA 這些原廠目前沒做的層；持續追蹤其 releases |
+| LVGL 原廠 | LVGL Pro 已有 Subject 資料綁定，v2.0 內容尚未查明，可能往資料來源與邏輯延伸 | LVGL XML 互通須先取得書面授權（2026-11 查證）；把差異放在 IoT、並行模型、整機模擬與 OTA 這些原廠目前沒做的層；持續追蹤其 releases |
 | 人力 | 目前只有一人 | 新公司至少 4 至 6 人（韌體與 RTOS、前端與 VS Code、雲端與授權、業務與 FAE） |
 | 客戶證據 | 目前沒有付費客戶與量測過的節省時間 | 第 0 階段的訪談與付費試用是硬性檢核點 |
 | EDT 關係 | EDT 的商業模式是免費軟體帶動模組營收；分拆可能失去這個通路 | OEM 授權回用，並讓 EDT 持股 |

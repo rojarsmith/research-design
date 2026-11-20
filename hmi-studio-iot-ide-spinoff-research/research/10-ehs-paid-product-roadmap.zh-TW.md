@@ -61,7 +61,7 @@
 - **共用引擎與 CLI**：專案格式、程式碼產生、模擬器、匯流排執行環境。
 - **VS Code 付費擴充**：給工程師。多執行緒除錯借用 SystemView、Tracealyzer 等現有工具；同時上架 Microsoft Marketplace 與 Open VSX；授權伺服器要自建。先例見 [C/C++ RAD 工具](07-c-cpp-rad-tools.zh-TW.md) 的 VisualGDB。
 - **No Code 桌面版**：給 OEM 與模組商通路，沿用 EHS 現有的使用體驗。
-- **與 LVGL 生態互補**：評估匯入 LVGL XML，讓 LVGL Pro 使用者把 UI 帶進來再加上 IoT 層，而不是和原廠正面衝突。
+- **與 LVGL 生態互補**：評估匯入 LVGL XML，讓 LVGL Pro 使用者把 UI 帶進來再加上 IoT 層，而不是和原廠正面衝突。（2026-11 查證更正：LVGL XML 授權禁止第三方 UI 編輯器與程式碼產生器未經書面許可讀寫這個格式；LVGL 9.5 起移除 XML 引擎，執行期載入改為付費授權，見 [18 號研究](18-mpu-runtime.zh-TW.md)）。
 
 ## 五、收費結構
 
