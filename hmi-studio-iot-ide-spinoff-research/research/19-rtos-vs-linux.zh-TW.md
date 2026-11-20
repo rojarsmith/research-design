@@ -1,6 +1,6 @@
 # 不跑 Linux：Cortex-A 加 RTOS、高階 MCU 加 RTOS 與 Linux 的比較
 
-研究日期：2026 年 11 月 20 日，Asia/Taipei。
+研究日期：2026 年 11 月 20 日，Asia/Taipei；同日完成一輪查證（見「查證結果」）。
 
 本文回答：「如果 Cortex-A 上不跑 Linux 而跑 FreeRTOS，網路還能正常運作嗎？」並把問題擴大成三條路線的比較：Cortex-A 加 Linux（[18 號研究](18-mpu-runtime.zh-TW.md)的建議）、Cortex-A 加 RTOS、高階 MCU 加 RTOS。範圍包括各晶片原廠對 RTOS 的支援、高階 MCU 的規格與價格、網路與圖形效能、資安與 CRA、EHS 原始碼的移植工作量，以及產品線建議。
 
@@ -23,7 +23,7 @@
    Modbus TCP、MQTT 這類 HMI 流量不到 10 Mbps，所以網路效能不是問題。**真正的限制是晶片原廠有沒有提供 A 核心上的 RTOS 驅動。**
 2. **只有三家原廠正式支援「RTOS 跑在 A 核心本身」，而且都是單核晶片。**
    - **Renesas RZ/A3UL**（單核 Cortex-A55）：Renesas 主打開機 1 秒內的 RTOS HMI。SDK 支援 FreeRTOS 與 ThreadX，有兩個 Gigabit 乙太網路、LCD、MIPI-DSI、SD、USB 主機的驅動，但沒有 2D 繪圖引擎。
-   - **ST STM32MP13**（單核 Cortex-A7）：STM32CubeMP13 支援裸機、ThreadX 加 NetX Duo，或 FreeRTOS 加 lwIP，附雙乙太網路與 USB 主機範例。這條路和 EHS 現有的 STM32 經驗最接近。
+   - **ST STM32MP13**（單核 Cortex-A7）：STM32CubeMP13 支援裸機、ThreadX 加 NetX Duo，或 FreeRTOS 加 lwIP，附雙乙太網路與 USB 主機範例。LVGL 官方也有它的裸機移植（480×272，平均 55 FPS）。這條路和 EHS 現有的 STM32 經驗最接近。
    - **Microchip SAMA7D65、SAMA5D2、SAMA7G5**（單核 Cortex-A7 或 A5）：Harmony v3 支援裸機或 FreeRTOS，有自家 TCP/IP、圖形套件與 LVGL 指南。
 3. **其他晶片不適合，修正先前對話的部分說法。**
    - **更正：** 先前說 ST STM32MP1 的 A 核心只支援 Linux，這不完全對。STM32MP13 有官方 RTOS 支援；STM32MP2 的裸機支援仍是 alpha。
@@ -31,15 +31,15 @@
    - **TI AM62x**：A53 上的 FreeRTOS 標明「原樣提供，不在論壇支援」。
    - **Zynq**：網路很好，但沒有 FPGA 以外的顯示控制器。
    - **Rockchip、Allwinner**：每個公開的配置裡，網路與顯示都交給 Linux。
-   - **RZ/A3M**：DRAM 在封裝內、有 2D 引擎、有官方 LVGL 9.5 移植，但規格沒列乙太網路（推論沒有，待資料表確認）。
+   - **RZ/A3M**：DRAM 在封裝內、有 2D 引擎、有官方 LVGL 9.5 移植，但資料表確認**沒有乙太網路**（查證後確認），不適合連網 HMI。
 4. **高階 MCU 加 RTOS 也能做 7 吋乙太網路 HMI，而且比 Cortex-A 加 RTOS 成熟。** 候選晶片：
    - **STM32H747、H7S7**：EHS 已經在跑 H747，換晶片成本最低。
-   - **STM32N6**：800 MHz Cortex-M55，4.2 MB SRAM，Gigabit 乙太網路加 TSN。
+   - **STM32N6**：800 MHz Cortex-M55，4.2 MB SRAM，Gigabit 乙太網路加 TSN，兩個 USB 高速。資料表把 LCD 控制器限在 1024×768，所以只適合 7 吋以下（查證後更正）。
    - **i.MX RT1170**：1 GHz Cortex-M7，網路與 OTA 範例最成熟。
    - **Renesas RA8D2**：1 GHz Cortex-M85，Gigabit 加 TSN 交換器。
    - **ESP32-P4**：晶片約 US$4，封裝內含 32 MB PSRAM。
 
-   800×480 到 1024×600 沒問題。10 吋 1280×800 可行但吃緊，因為畫面緩衝與乙太網路會搶外部記憶體頻寬。
+   800×480 到 1024×600 沒問題；STM32H7S78-DK 用 NeoChrom 跑 LVGL 官方移植，800×480 平均 52 FPS。10 吋 1280×800 可行但吃緊（RT1170、RA8D2 支援到 1280×800），因為畫面緩衝與乙太網路會搶外部記憶體頻寬。
 5. **EHS 原始碼對 RTOS 很友善。** 執行環境已經是非阻塞設計，傳輸層註解寫著「以後會是 socket」，協定驅動是 start、poll、cancel 狀態機，EHS 文件也已規劃在 H747 上跑 lwIP 與 Modbus TCP。真正的難點不是多執行緒，而是記憶體預算、網路堆疊的穩健性、安全更新，以及從「每個專案一份韌體」改成「固定韌體加專案」。
 6. **工時（推論，一人使用 Claude Code）：**
 
@@ -52,8 +52,8 @@
 7. **RTOS 的代價在資安維護。**
    - **每個修補都是整份韌體更新。** 核心、網路堆疊、TLS、驅動與執行環境是同一個簽章映像。
    - **SBOM 要自己產生。** STM32Cube 不產生 SBOM。
-   - **上游支援期短。** FreeRTOS 2024 LTS 已在 2026-06-30 結束，2026 LTS 只支援兩年；lwIP 沒有 LTS，2026 年的 SNMPv3、mDNS 弱點只修在 git、沒有發布版。
-   - **CRA 要求不變。** 弱點通報 2026-09-11 起適用，安全更新至少五年。
+   - **上游支援期短。** FreeRTOS 2024 LTS 已在 2026-06-30 結束，2026 LTS 支援到 2028-04-30；lwIP 沒有 LTS，最新版仍是 2.2.1（2025-02），2026 年 11 月的 TCP 阻斷服務、SNMPv3、MQTT、mDNS 修補只在 git、沒有發布版。
+   - **CRA 要求不變。** 弱點通報 2026-09-11 起適用，安全更新至少五年。HMI 面板屬 CRA 一般類，可以自我評估（查證後確認）；但若單獨販售作業系統或 bootloader，就是第一類。
 
    安全開機加 A/B 更新是 CRA 的前提，不是加分功能。
 8. **建議三條產品線（推論）：**
@@ -68,9 +68,9 @@
 
 | 晶片 | 原廠在 A 核心支援的 RTOS | 網路 | 顯示與圖形 | 判斷（推論） |
 | --- | --- | --- | --- | --- |
-| **Renesas RZ/A3UL**（1 核 A55） | FreeRTOS、ThreadX（RZ FSP） | 2 個 Gigabit；FreeRTOS+TCP 或 NetX Duo | LCD、MIPI-DSI；沒有 2D 引擎 | 網路型 RTOS HMI 的首選；HD 解析度要外接 DDR，會碰到記憶體漲價 |
-| Renesas RZ/A3M（1 核 A55） | 同上 | 規格沒列（待確認） | 2D 引擎、128 MB DRAM 在封裝內、官方 LVGL 9.5 移植（[LVGL](https://github.com/lvgl/lv_port_renesas-ek-rz_a3m)）；約 US$14（500 顆） | 成本與記憶體風險最好，但若沒有乙太網路就不適合連網 HMI |
-| **ST STM32MP13**（1 核 A7） | 裸機、ThreadX 加 NetX Duo、FreeRTOS 加 lwIP（[STM32CubeMP13](https://github.com/STMicroelectronics/STM32CubeMP13)） | 雙乙太網路 lwIP 範例 | TouchGFX（X-TOUCHGFX-MPU）；沒有 2D GPU，沒有 ST 的 LVGL 移植 | 和 STM32 團隊最接近 |
+| **Renesas RZ/A3UL**（1 核 A55） | FreeRTOS、ThreadX（RZ FSP v4，最新 v4.3.0，2026-11-12） | 2 個 Gigabit；FreeRTOS+TCP 或 NetX Duo | LCD、MIPI-DSI，資料表寫到 1280×800 60 fps；沒有 2D 引擎，LVGL 只能軟體繪圖（[Renesas](https://www.renesas.com/en/document/dst/rza3ul-group-datasheet)） | 網路型 RTOS HMI 的首選；高解析度要外接 DDR，會碰到記憶體漲價 |
+| Renesas RZ/A3M（1 核 A55） | 同上 | **沒有**（資料表與產品頁確認，[Renesas](https://www.renesas.com/en/products/rz-a3m)） | D/AVE 2D 引擎、128 MB DRAM 在封裝內、官方 LVGL 9.5 移植（[LVGL](https://github.com/lvgl/lv_port_renesas-ek-rz_a3m)；移植沒用 2D 引擎，純軟體 28 FPS）；DigiKey 約 US$13.94（500 顆） | 成本與記憶體風險最好，但沒有乙太網路，不適合連網 HMI |
+| **ST STM32MP13**（1 核 A7） | 裸機、ThreadX 加 NetX Duo、FreeRTOS 加 lwIP（[STM32CubeMP13](https://github.com/STMicroelectronics/STM32CubeMP13)） | 雙乙太網路 lwIP 範例 | TouchGFX（X-TOUCHGFX-MPU）；沒有 2D GPU；LVGL 官方有裸機移植，480×272 平均 55 FPS（[LVGL](https://github.com/lvgl/lv_port_stm32mp135f_disco_bm)） | 和 STM32 團隊最接近 |
 | **Microchip SAMA7D65、SAMA5D2、SAMA7G5**（1 核 A7 或 A5） | 裸機、FreeRTOS（Harmony v3）；Zephyr 支援 SAMA7D65 板 | Microchip TCP/IP 堆疊 | 圖形套件用晶片內 GPU；有 LVGL 指南（[Microchip](https://developerhelp.microchip.com/xwiki/bin/view/software-tools/mgs/lvgl/mplab-harmony/)） | 可行；Zephyr 版沒有顯示驅動 |
 | TI AM62x、AM62L（A53） | FreeRTOS（MCU+ SDK） | lwIP | 有顯示驅動 | TI 註明「原樣提供，不在 E2E 論壇支援」；AM64x 上的 SMP 是實驗性 |
 | AMD Zynq-7000、UltraScale+ | FreeRTOS、裸機（Vitis） | 最好：lwIP 近 Gigabit 線速 | Zynq-7000 要用 FPGA 做影像輸出（推論）；UltraScale+ 有 DisplayPort | 只有本來就要 FPGA 時才划算 |
@@ -94,10 +94,10 @@
 | 晶片 | 核心 | 記憶體 | 顯示與 2D | 乙太網路 | 價格（二手來源，搜尋當天） |
 | --- | --- | --- | --- | --- | --- |
 | STM32H747 | Cortex-M7 480 MHz 加 M4 | 1 MB SRAM，外接 SDRAM | LTDC、Chrom-ART | 10/100 | 約 US$12.6（595 顆） |
-| STM32H7S7 | Cortex-M7 600 MHz | 外接 XIP flash | LTDC、NeoChrom | 10/100 | 約 £5.9（160 顆）；開發板 US$99 |
-| **STM32N6** | Cortex-M55 800 MHz 加 NPU | 4.2 MB SRAM，沒有內部 flash | LTDC、NeoChrom | Gigabit 加 TSN，3 個 CAN-FD | 約 US$13 至 14（500 顆）（[ST eStore](https://estore.st.com/en/stm32n657a0h3q-cpn.html)） |
+| STM32H7S7、H7R7 | Cortex-M7 600 MHz | 外接 XIP flash | LTDC、NeoChrom；H7R3、H7S3 沒有 LTDC | 10/100，但 VFQFPN68、LQFP100、TFBGA100 封裝沒有；USB 高速只在 TFBGA225 | 約 US$6 至 9（1 顆）、US$4 至 7（數百顆）；開發板 US$99 |
+| **STM32N6** | Cortex-M55 800 MHz 加 NPU | 4.2 MB SRAM，沒有內部 flash | LTDC 最高 1024×768、NeoChrom | Gigabit 加 TSN，3 個 CAN-FD；2 個 USB 2.0 高速（內建 PHY）；N647 沒有加密硬體，N657 有 | 約 US$13 至 14（500 顆）（[ST eStore](https://estore.st.com/en/stm32n657a0h3q-cpn.html)） |
 | **i.MX RT1170** | Cortex-M7 1 GHz 加 M4 | 2 MB SRAM | LCDIF、PXP、VGLite | 2 個 Gigabit（1 個 TSN）加 1 個 10/100 | 約 US$12（600 顆）；新設計要用 B 版料號 |
-| Renesas RA8D2、RA8P1 | Cortex-M85 1 GHz | 2 MB SRAM | Dave2D | 2 個 Gigabit 加 TSN 交換器 | 約 US$16 至 20 |
+| Renesas RA8D2、RA8P1 | Cortex-M85 1 GHz | 2 MB SRAM，32 位元 SDRAM 介面 | Dave2D；平行 RGB 或 MIPI-DSI 到 1280×800 | 2 個 Gigabit 加 TSN 交換器 | Renesas 標價 US$17.37 至 19.63（[Renesas](https://www.renesas.com/en/products/ra8d2)） |
 | ESP32-P4 | RISC-V 400 MHz | 32 MB PSRAM 在封裝內 | MIPI-DSI | 10/100 | 晶片約 US$4；v1.3 版停產，改 v3.2，軟硬體不相容（[Espressif](https://documentation.espressif.com/en/PCN202600801_ESP32-P4_Chip_Revision_v3.2_Upgrade_Chip_Revision_v1.3_Demand_Collection_and_EOL_Plan_Description.html)） |
 
 不適合的晶片：
@@ -110,18 +110,19 @@
 | 晶片 | 解析度 | 結果 |
 | --- | --- | --- |
 | STM32H723 550 MHz | 800×480 | 82 FPS |
-| STM32H7S78-DK | 800×480 | 27 FPS |
+| STM32H7S78-DK（NeoChrom，LVGL 官方移植） | 800×480 | 平均 52 FPS（[LVGL](https://github.com/lvgl/lv_port_stm32h7s78-dk)；只用 DMA2D 時 27 FPS） |
+| STM32MP135F-DK（Cortex-A7 裸機，LVGL 官方移植） | 480×272 | 平均 55 FPS（[LVGL](https://github.com/lvgl/lv_port_stm32mp135f_disco_bm)） |
 | i.MX RT1170 | 720×1280 | 47 FPS（-O2）（[NXP](https://community.nxp.com/t5/i-MX-RT-Crossover-MCUs-Knowledge/LVGL-Benchmark-Performance-Optimization/ta-p/2252208)） |
 | ESP32-P4 | 1024×600 | 55 FPS |
 | ESP32-P4 | 800×1280 | 40 FPS |
 
-STM32N6 沒有公開數字。沒有任何評測同時跑 LVGL 與網路負載，EHS 要自己量。
+STM32N6 沒有公開數字，LVGL 也沒有官方 N6 移植。沒有任何評測同時跑 LVGL 與網路負載：ST 2026-01 的 TouchGFX 加 lwIP 文章只提醒 LTDC 與乙太網路會搶匯流排，沒有數字（[ST](https://community.st.com/t5/stm32-mcus/lwip-integration-in-a-touchgfx-project-recommendations-and/ta-p/866743)）；論壇有 F767 開 LCD 後 iperf 從約 50 Mbps 掉到 0.2 Mbps 的案例（原因未確認，二手來源）。EHS 要自己量。
 
 **網路與協定：**
 - **TCP 吞吐量。** 10/100 晶片上的 lwIP、NetX Duo、Zephyr 調校後約 75 至 95 Mbps；RT1170 Gigabit 範例約 130 至 430 Mbps。
-- **TLS。** 每個連線約 40 至 80 KB RAM，握手約 0.2 至 1 秒（推論）。
-- **OPC UA。** open62541 最小伺服器在 100 KB 左右，維護者說 256 KB RAM 很充裕；但 1.4 版移除了 FreeRTOS 支援，要留在 1.3 版或直接用 lwIP（[open62541](https://groups.google.com/g/open62541/c/eOo9n78MmtM)）。
-- **MQTT、Modbus TCP、HTTP 伺服器：** 在這些晶片上都是例行工作。
+- **TLS。** 每個連線約 40 至 80 KB RAM，握手約 0.2 至 1 秒（推論）。Espressif 的 HTTPS 客戶端預設用 42 KB heap，動態緩衝時 22 KB（[Espressif](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/protocols/mbedtls.html)）；STM32U585 使用者實測 P-256 握手約 1.5 秒、P-384 約 3 秒（二手來源）。沒有找到 Cortex-M7 的原廠實測表。
+- **OPC UA。** open62541 最小伺服器在 100 KB 左右，維護者說 256 KB RAM 很充裕。1.4 版曾移除 FreeRTOS 支援，1.5.0（2026-02-02）以 lwIP 事件迴圈恢復，目前最新 1.5.8（查證後更正）。
+- **MQTT、Modbus TCP、HTTP 伺服器：** 在這些晶片上都是例行工作。coreMQTT 5.x（支援 MQTT 5）程式碼約 19 至 23 KB，不用 heap（[coreMQTT](https://github.com/FreeRTOS/coreMQTT/blob/main/docs/doxygen/include/size_table.md)）。
 - **遠端畫面。** MCU 上沒有開源 VNC 伺服器（商用有 SEGGER emVNC）。比較好的做法是讓設備提供 EHS 現成的 WASM 畫面，再用 WebSocket 傳標籤值（推論）。
 - **Wi-Fi。** 外接 ESP32-C6，實測約 36 Mbps。
 
@@ -220,6 +221,7 @@ MCU 方案也不是完全不受記憶體漲價影響：台灣 PSRAM 廠愛普 20
   - Zephyr 4.2 的 LVGL 模組是 9.3，EHS 釘 9.5。
   - ST 的主力方向是 FreeRTOS。
   - 台灣人才較少。
+- **支援期：** Zephyr 3.7 LTS 支援到 2029-07-27，下一個 LTS 是 4.6（預定 2027-04）；最新版 4.5.0（2026-10-28）（[Zephyr](https://docs.zephyrproject.org/latest/releases/index.html)）。
 - **工時比較（推論）：** 第一塊板子和 FreeRTOS 差不多（多 2 至 4 人月移植、省 1.5 至 3 人月現成元件），第二塊起較划算。建議先 FreeRTOS 加 lwIP，Zephyr 當第二平台。
 
 ## 四、資安與 CRA
@@ -230,17 +232,17 @@ MCU 方案也不是完全不受記憶體漲價影響：台灣 PSRAM 廠愛普 20
 | AMNESIA:33，2020 | uIP、picoTCP、FNET、Nut/Net；**lwIP 與 FreeRTOS+TCP 沒受影響**（[Black Hat EU 2020](https://i.blackhat.com/eu-20/Wednesday/eu-20-dosSantos-How-Embedded-TCPIP-Stacks-Breed-Critical-Vulnerabilities.pdf)） | 常被誤傳為影響 FreeRTOS+TCP，實際沒有 |
 | NAME:WRECK，2021 | NetX（ThreadX 的網路堆疊）等（[CISA](https://cisa.gov/news-events/alerts/2021/04/15/namewreck-dns-vulnerabilities)） | 選 ThreadX 時要注意 |
 | FreeRTOS+TCP，2024 至 2026 | DNS、IPv6、ICMPv6 弱點（例如 [CVE-2024-38373](https://nvd.nist.gov/vuln/detail/CVE-2024-38373)） | 關掉 IPv6 與 DNS 可以降低風險 |
-| lwIP，2026 | SNMPv3、mDNS 附加功能弱點（[CVE-2026-8836](https://security-tracker.debian.org/CVE-2026-8836)），修在 git、沒有發布版 | 不用的附加功能不要編進去；要追 git 提交 |
+| lwIP，2026 | SNMPv3、mDNS 附加功能弱點（[CVE-2026-8836](https://security-tracker.debian.org/CVE-2026-8836)）；2026-11 git 又修了 TCP 阻斷服務、SYN_RCVD 序號檢查、MQTT 客戶端 use-after-free，都沒有發布版（[lwIP 提交紀錄](https://github.com/lwip-tcpip/lwip/commits/master)） | 不用的附加功能不要編進去；核心 TCP 也要追 git 提交 |
 | Zephyr，2024 至 2026 | HTTP 伺服器、DNS、ICMP、DTLS | 有公開的資安公告流程 |
 
 **RTOS 產品在 CRA 下的四個後果（推論）：**
 
 1. **每個修補都是整份韌體更新。** 安全開機、A/B 更新與回復是 CRA 的前提。
 2. **SBOM 要自己產生。** STM32Cube 不產生；Zephyr 有 `west spdx`；Linux 有 Yocto。
-3. **上游支援期要撐五年以上。** FreeRTOS 2026 LTS 支援兩年，付費延長最多十年；lwIP 沒有 LTS。要編列每年重新對齊上游的工時。
+3. **上游支援期要撐五年以上。** FreeRTOS 2026 LTS 支援到 2028-04-30，付費延長最多十年；lwIP 沒有 LTS；Zephyr 3.7 LTS 到 2029-07。要編列每年重新對齊上游的工時。
 4. **專案下載服務也在範圍內。** 要驗證、簽章、檢查版本，並能在生產環境關閉。
 
-HMI 面板在 CRA 屬一般類還是 Annex III 第一類，本研究沒有確認，要問律師。
+**CRA 分類（查證後確認）：** 最終條文的 Annex III 沒有工業自動化、PLC、SCADA 或 HMI 類別（2022 年草案有，定案時刪除）。第一類包括作業系統（施行規則 2025/2392 明列「即時作業系統」）、bootloader、實體網路介面（含 Fieldbus）、有安全功能的微控制器；但第 7(1) 條規定，產品內含這些元件不會讓產品本身變成第一類。所以 HMI 面板屬一般類，可以自我評估；只有單獨販售作業系統或 bootloader 時才是第一類（[施行規則 2025/2392](https://eur-lex.europa.eu/eli/reg_impl/2025/2392/oj/eng)、[HSF Kramer](https://www.hsfkramer.com/notes/cybersecurity/2026-posts/cyber-resilience-act-commission-clarifies-important-and-critical-product-categories)）。調和標準：EN 40000-1-1、1-2 已於 2026-11-18 發布但沒有預期列入公報，弱點處理的 prEN 40000-1-3 預定 2026-11-30（二手來源）。
 
 ## 五、三條路線比較（推論）
 
@@ -259,7 +261,7 @@ HMI 面板在 CRA 屬一般類還是 Annex III 第一類，本研究沒有確認
 | 核心物料成本 | SoM US$15 至 60（18 號研究） | RZ/A3M 約 US$14（DRAM 在內）；RZ/A3UL 加 DDR 較高 | US$18 至 35；ESP32-P4 方案 US$8 至 14 |
 | 記憶體漲價影響 | 高 | DRAM 在封裝內時低，外接 DDR 時高 | 低到中 |
 | 開發與除錯 | gdb、perf、journald；難在 BSP | 原廠 IDE 加 J-Link，社群支援少 | CubeIDE、ST-LINK、SystemView；EHS 已在用 |
-| 台灣人才 | Linux BSP 多 | 少 | STM32、FreeRTOS 多；Zephyr 少 |
+| 台灣人才 | Linux BSP 多 | 少 | STM32、FreeRTOS 多；Zephyr 少（只見少數職缺，例如 Ambiq 新竹）。104 2026 科技業薪資報告：韌體工程師年薪中位數 NT$1,190,367（[104](https://blog.104.com.tw/104data-tech-industry-salary-2026/)） |
 
 ## 六、對 EHS 的建議（推論）
 
@@ -286,15 +288,33 @@ HMI 面板在 CRA 屬一般類還是 Annex III 第一類，本研究沒有確認
 - **原型：** 做 MCU 分割映像，包括函式表 ABI、XIP 專案槽、A/B 專案切換。
 - **確認：** RZ/A3M 是否真的沒有乙太網路；哪些 H7R/S 有乙太網路。
 
+## 查證結果
+
+2026-11-20 針對初版的待驗證項目做一輪查證，紀錄在 [notes/19-rtos-vs-linux](notes/19-rtos-vs-linux/) 的 `verification_chips.md` 與 `verification_memory_cra_jobs.md`。
+
+| 項目 | 結果 | 一句話 |
+| --- | --- | --- |
+| RZ/A3M 乙太網路 | 確認（沒有） | 資料表、產品頁、開發板都沒有；不適合連網 HMI |
+| RZ/A3UL 解析度 | 確認 | 資料表寫 1280×800 60 fps；「HD 1280×720」是行銷用語 |
+| STM32H7R/S 乙太網路 | **更正** | 四個系列都有 10/100，但小封裝沒有；H7R3、H7S3 沒有 LTDC；USB 高速只在 TFBGA225 |
+| STM32N6 | **更正** | USB 是兩個高速並內建 PHY；N647 沒有加密硬體；LCD 最高 1024×768，不適合 10 吋 1280×800 |
+| RA8D2 | 確認 | 有 SDRAM 介面，顯示到 1280×800 |
+| LVGL 效能 | 新增 | H7S78-DK 加 NeoChrom 平均 52 FPS（800×480）；STM32MP135 裸機 55 FPS（480×272）；N6 沒有公開數字 |
+| LVGL 加網路負載 | 仍未驗證 | 沒有公開評測，只有 ST 的建議文章與論壇案例 |
+| Cortex-A RTOS 開機時間 | 仍未驗證 | Renesas 只說 1 秒內；TI AM62x 使用者量到 A53 約 600 ms 印出 hello world（二手來源） |
+| TLS、MQTT、OPC UA 記憶體 | 新增／更正 | 沒有 M7 原廠實測；coreMQTT 5.x 約 19 至 23 KB；open62541 1.5 恢復 FreeRTOS 支援 |
+| CRA 分類 | 確認 | HMI 面板屬一般類，可以自我評估 |
+| 支援期 | 新增／更正 | FreeRTOS 2026 LTS 到 2028-04-30；lwIP 仍是 2.2.1；Zephyr 3.7 LTS 到 2029-07-27 |
+| 台灣職缺數 | 仍未驗證 | 求職網站擋自動存取；只取得 104 韌體工程師薪資中位數 |
+
+**對核心結論的影響：** 沒有推翻三條產品線的建議。Cortex-A 加 RTOS 的選項更窄：RZ/A3M 確定沒有乙太網路，剩 RZ/A3UL、STM32MP13、SAMA7。MCU 線的晶片選擇要注意：10 吋 1280×800 要選 RT1170 或 RA8D2，不能選 STM32N6；STM32H7R/S 要選有乙太網路的封裝。CRA 分類確認為一般類，降低了合規成本。
+
 ## 待驗證
 
-- RZ/A3M 是否有乙太網路；RZ/A3UL 的解析度上限（各來源 1280×720 與 1280×800 不一致）。
-- 哪些 STM32H7R/S 有乙太網路；STM32N6 的 USB 速度與安全功能；RA8D2 是否支援 SDRAM。
-- STM32N6 的 LVGL 效能；所有晶片在網路負載下的 LVGL 效能。
-- MCU 上 TLS、MQTT、OPC UA 的實際 RAM 用量（目前只有規劃數字）。
+- STM32N6 的 LVGL 效能；所有晶片在網路負載下的 LVGL 效能：要自己量。
+- Cortex-M7 上 TLS、MQTT、MCUboot、OPC UA 的實測 RAM 用量：ST、Renesas 的相關應用說明讀不到，目前只有其他晶片的數字。
 - Cortex-A 加 RTOS 的實測開機時間。
-- HMI 面板在 CRA 的分類。
-- 台灣 FreeRTOS、Zephyr、嵌入式 Linux 職缺數。
+- 台灣 FreeRTOS、Zephyr、嵌入式 Linux 職缺數：要人工在 104、1111 查詢。
 - 晶片價格是搜尋當天的經銷商價格，要向台灣代理商取得 1,000 與 5,000 顆報價。
 
 ## 來源
@@ -322,4 +342,6 @@ HMI 面板在 CRA 屬一般類還是 Annex III 第一類，本研究沒有確認
 - FreeRTOS：[LTS](https://freertos.org/lts-libraries.html)、[2026 LTS 公告](https://aws.amazon.com/about-aws/whats-new/2026/04/freertos-lts/)、[LVGL FreeRTOS 整合](https://docs.lvgl.io/9.5/integration/rtos/freertos.html)
 - 資安：[NVD CVE-2018-16522](https://nvd.nist.gov/vuln/detail/CVE-2018-16522)、[Black Hat EU 2020（AMNESIA:33）](https://i.blackhat.com/eu-20/Wednesday/eu-20-dosSantos-How-Embedded-TCPIP-Stacks-Breed-Critical-Vulnerabilities.pdf)、[CISA NAME:WRECK](https://cisa.gov/news-events/alerts/2021/04/15/namewreck-dns-vulnerabilities)、[NVD CVE-2024-38373](https://nvd.nist.gov/vuln/detail/CVE-2024-38373)、[Debian CVE-2026-8836](https://security-tracker.debian.org/CVE-2026-8836)、[lwIP 新聞](https://savannah.nongnu.org/news/?group=lwip)、[歐盟 CRA 通報](https://digital-strategy.ec.europa.eu/en/policies/cra-reporting)
 
-研究筆記在 [notes/19-rtos-vs-linux](notes/19-rtos-vs-linux/)：`cortex_a_rtos_support.md`、`highend_mcu_path.md`、`ehs_rtos_fit.md`。
+- 查證新增：[Renesas RZ/A3M](https://www.renesas.com/en/products/rz-a3m)、[RZ/A3UL 資料表](https://www.renesas.com/en/document/dst/rza3ul-group-datasheet)、[RZ FSP 版本](https://github.com/renesas/rz-fsp/releases)、[Renesas RA8D2](https://www.renesas.com/en/products/ra8d2)、[LVGL STM32H7S78-DK 移植](https://github.com/lvgl/lv_port_stm32h7s78-dk)、[LVGL STM32MP135 裸機移植](https://github.com/lvgl/lv_port_stm32mp135f_disco_bm)、[ST TouchGFX 加 lwIP 建議](https://community.st.com/t5/stm32-mcus/lwip-integration-in-a-touchgfx-project-recommendations-and/ta-p/866743)、[ST 晶片資料庫](https://github.com/STMicroelectronics/STM32_open_pin_data)、[coreMQTT 大小表](https://github.com/FreeRTOS/coreMQTT/blob/main/docs/doxygen/include/size_table.md)、[CRA 施行規則 2025/2392](https://eur-lex.europa.eu/eli/reg_impl/2025/2392/oj/eng)、[104 2026 科技業薪資](https://blog.104.com.tw/104data-tech-industry-salary-2026/)、[lwIP 標籤](https://github.com/lwip-tcpip/lwip/tags)
+
+研究筆記在 [notes/19-rtos-vs-linux](notes/19-rtos-vs-linux/)：`cortex_a_rtos_support.md`、`highend_mcu_path.md`、`ehs_rtos_fit.md`；查證紀錄：`verification_chips.md`、`verification_memory_cra_jobs.md`。
