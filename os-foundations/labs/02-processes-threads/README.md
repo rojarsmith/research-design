@@ -281,6 +281,7 @@ Now compare the three switches:
 - **NT:** a process provides the resources (address space, handles, security context), and a thread is the unit that gets scheduled ([Learn](https://learn.microsoft.com/en-us/windows/win32/procthread/about-processes-and-threads)). Exercise F shows the ids.
 - **No `fork` on NT.** `CreateProcess` starts a new program from an executable file. `fork` copies the calling process, and `exec` then replaces its image, so the pair has a cheap step and an expensive one. Compare your `fork` + `exec` number with `fork` alone and with `CreateProcess`.
 - **User-level switching:** NT has fibers, and glibc has `ucontext`. Neither one is preemptive. Exercise E question 4 asks whether `swapcontext` stays in user mode.
+- **RTOS:** for how FreeRTOS and Zephyr do the same save-registers-and-swap-stacks switch, and how their threads differ from Linux and NT threads, see the reading [How threads work, and how RTOS threads differ](../../readings/threads-gpos-vs-rtos.md).
 
 ## Checkpoints
 

@@ -281,6 +281,7 @@ add    rdi,rax                         isum += ...
 - **NT：** 行程提供資源（位址空間、handle、安全性內容），執行緒才是被排程的單位（[Learn](https://learn.microsoft.com/en-us/windows/win32/procthread/about-processes-and-threads)）。練習 F 顯示了識別碼。
 - **NT 沒有 `fork`。** `CreateProcess` 從執行檔啟動新程式。`fork` 複製呼叫者行程，再由 `exec` 取代映像檔，所以這一對呼叫有一步便宜、一步昂貴。把你量到的 `fork` 加 `exec`，和只有 `fork` 及 `CreateProcess` 的數字比較。
 - **使用者層級切換：** NT 有 fiber，glibc 有 `ucontext`。兩者都不會搶占。練習 E 第 4 題問的是 `swapcontext` 是否留在使用者模式。
+- **RTOS：** FreeRTOS 與 Zephyr 如何做同樣的「存暫存器、換堆疊」，以及它們的執行緒和 Linux、NT 的執行緒差在哪裡，見讀物[執行緒的原理，以及 RTOS 的執行緒和一般作業系統有何不同](../../readings/threads-gpos-vs-rtos.zh-TW.md)。
 
 ## 檢核
 
