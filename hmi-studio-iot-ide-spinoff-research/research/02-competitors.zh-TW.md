@@ -38,7 +38,7 @@
 
 | 產品 | 重點 | 意義 |
 | --- | --- | --- |
-| ST TouchGFX Designer 4.26 | 免費，只能用在 STM32 | EDT 既有的 SE 業務就在用；免費加綁晶片 |
+| ST TouchGFX Designer 4.26 | 免費，只能用在 ST 晶片（主要是 STM32） | EDT 既有的 SE 業務就在用；免費加綁晶片 |
 | NXP GUI Guider 2.0（2026-06-30 GA） | 免費，LVGL 9.4，新增 JSON 編輯與即時模擬 | 晶片商也在做 LVGL 編輯器 |
 | ST、NXP、Microchip、Nordic、Espressif、Arm Keil 的 VS Code 擴充 | 多數免費；Microchip 部分進階功能需訂閱 | 嵌入式開發已集體移到 VS Code |
 | Nordic nRF Connect for VS Code | 內建 Zephyr Thread Viewer，借用 J-Link RTOS plugin | 多執行緒除錯的參考做法 |
