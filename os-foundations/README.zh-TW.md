@@ -153,6 +153,8 @@ QEMU 的執行方式：QEMU 提供 Windows 版本（Stefan Weil 的安裝檔或 
   - [`labs/09-headless-display-server/`](labs/09-headless-display-server/README.zh-TW.md)：第一部分專題。無螢幕顯示伺服器的題目與檢查清單、一份固定的線上協定（[`PROTOCOL.zh-TW.md`](labs/09-headless-display-server/PROTOCOL.zh-TW.md)），以及測試框架：兩個正常的用戶端；在影格中途當掉、永遠不讀自己的 socket、送出超出緩衝區的 damage、或送出未封存或太小緩衝區的問題用戶端；以及檢查存活、60 Hz 影格節奏、外洩的 fd 與映射、影格像素的檢查程式。測試框架已於 2026-11-16 在 podman 下的 Ubuntu 24.04 容器（虛擬機器）中建置並執行，對象是一個不隨附的參考伺服器（三次通過，附輸出紀錄），以及它刻意加入錯誤的 14 個建置，每一個都失敗。設計說明、Wayland 比較與延伸練習由學習者撰寫，尚未執行。
   - [`labs/10-windows-composition/`](labs/10-windows-composition/README.zh-TW.md)：一個使用 flip-model swapchain 的 Direct3D 11 程式，在視窗、被部分遮住與無邊框三種情況下，記錄不需特殊權限的 API 對其影格的描述（`Present` 時間、`GetFrameStatistics`、`GetFrameStatisticsMedia`、`DwmGetCompositionTimingInfo`、`WaitForVBlank`）；一張說明每個來源能證明與不能證明什麼的表；用來讀取 `PresentMode` 的 PresentMon 命令列；以及 Win+Ctrl+Shift+B 與 TDR 的比較。視窗與被遮住兩種情況已於 2026-11-16 建置並執行，vsync 開與關各兩次，附輸出紀錄；但執行環境是一台 Intel UHD Graphics 750 機器上的遠端桌面工作階段，不是 RTX 5070 Ti 桌機的本機主控台：每個影格都為 32 Hz 的遠端顯示器合成，vblank 欄位一直是 0。無邊框執行、PresentMon、任何追蹤與 Win+Ctrl+Shift+B 都沒有執行。
   - 階段 11–18 還沒有實驗資料夾。
+- [`readings/`](readings/)：把幾個實驗串起來的讀物。
+  - [`readings/threads-gpos-vs-rtos.zh-TW.md`](readings/threads-gpos-vs-rtos.zh-TW.md)：執行緒由什麼組成、情境切換如何進行（xv6 與 FreeRTOS 在 Cortex-M 上的 PendSV），以及 RTOS 的執行緒和 Linux、Windows 的執行緒在排程、隔離、堆疊與中斷邊界上的差異。2026-11-20 對照官方文件查核；沒有新執行程式，數字取自實驗 02、06 與 `mcu-foundations` 第七課。
 
 ## 完成目標
 

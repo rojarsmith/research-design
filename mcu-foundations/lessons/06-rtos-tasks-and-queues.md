@@ -17,6 +17,8 @@ RTOS 的核心是一個排程器：在所有 ready 的 task 中，執行優先�
 
 不適合的情況：每件工作都短而且週期固定，超級迴圈已經滿足期限；問題其實是 CPU 不夠，RTOS 不會讓運算變快；需要微秒等級的反應，那仍然屬於 ISR、DMA 或 timer 硬體。RTOS 也帶來新的失敗方式：競態、優先權反轉、死結與 stack 溢位。
 
+RTOS 的 task 和 Linux、Windows 的執行緒，切換機制相同，排程目標與隔離方式不同。task 切換時 Cortex-M 的硬體與 PendSV 各存了哪些暫存器，以及兩者的逐項比較，見 os-foundations 的讀物[執行緒的原理，以及 RTOS 的執行緒和一般作業系統有何不同](../../os-foundations/readings/threads-gpos-vs-rtos.zh-TW.md)。
+
 ## task 的數量由執行與等待決定
 
 一件工作要不要獨立成 task，看它等的事件是不是不同、期限是不是不同，或是會不會阻塞在無法改成非阻塞的呼叫上。不要每個函式都包成 task：解析器、CRC 與封包編碼都只是 cmd task 裡的函式。
