@@ -1,6 +1,6 @@
 # NOVAKON 模式：軟體免費、靠硬體賺錢，適合 EHS 嗎？
 
-研究日期：2026 年 11 月 20 日，Asia/Taipei。
+研究日期：2026 年 11 月 20 日，Asia/Taipei；同日完成一輪查證（見「查證結果」）。
 
 本文回答：「如果 EHS 轉作 [NOVAKON iFace Designer](https://www.novakon.com.tw/tw/software/detail/iFace-Designer) 這種產品（設計軟體免費、靠自有品牌 HMI 硬體賺錢、硬體委外生產），NOVAKON 的硬體價格與毛利率有沒有情報？沒有的話，同業怎麼推估？」範圍包括 NOVAKON 的公司與財務、iFace Designer 與硬體、價格、同業毛利率、推估方法，以及對 EHS 的含意。新產品要從 MCU 改到 Cortex-A 或 x86 執行環境的技術問題，另見 [18 號研究](18-mpu-runtime.zh-TW.md)。
 
@@ -18,17 +18,27 @@
 ## 結論
 
 1. **NOVAKON 不是獨立的純軟公司，而是上櫃工業電腦廠廣積（iBASE，8050）持股 70% 的子公司。** 速博康科技股份有限公司 2010 年設立，實收資本 NT$8,880 萬，約 20 至 30 人，總部和廣積在同一棟樓。廣積在 2022 與 2026 年都增資。這個模式背後有母公司的資本、工廠與品管。
-2. **規模小但賺錢。** 廣積年報揭露 NOVAKON 2025 年營收 NT$2.31 億（約 US$720 萬，年增 61%），營業利益 NT$6,681 萬，營業利益率約 29%；2023 年曾虧損 NT$2,520 萬。毛利率、出貨台數、客戶都沒有公開。
-3. **硬體大概不是委外給外部代工廠，而是由母公司生產（推論）。** NOVAKON 自稱「臺灣研發、生產」，廣積年報列出對 NOVAKON 的銷貨（2022 年 NT$4,839 萬、2023 年 NT$2,666 萬，約佔 NOVAKON 營收三到四成），廣積在三重、新莊、平鎮有工廠。所以它比較像「集團內代工」，和完全委外不同。**EDT 的角色正好對應廣積：EDT 有面板，可以當自家供應商。**
+2. **規模小但賺錢。** 廣積年報揭露 NOVAKON 2025 年營收 NT$2.31 億（約 US$720 萬，年增 61%），營業利益 NT$6,681 萬，營業利益率約 29%；2023 年曾虧損 NT$2,520 萬。2026 年 1 至 9 月稅後淨利 NT$6,510 萬，已超過 2025 全年（廣積 2026 第三季財報）。毛利率、出貨台數、客戶都沒有公開。
+3. **硬體大部分應是委外生產，母公司只供應一小部分（推論，查證後修正）。** NOVAKON 沒有工廠登記，全國生產中工廠清冊（2026-11-19 版）查不到它。廣積對 NOVAKON 的銷貨從 2022 年 NT$4,839 萬（約佔 NOVAKON 營收 37%）降到 2024 年 NT$1,242 萬（約 9%），2025 年小到沒有列出，2026 年 1 至 9 月 NT$2,200 萬。廣積提供的主要是資本、辦公室（2025 年租金收入 NT$563 萬）與部分板卡，不是整機代工。所以使用者「硬體委外」的前提大致成立；初版說「由母公司生產」的推論太強，已修正。**EDT 能扮演的角色比廣積更多：EDT 有面板，面板是 HMI 物料的最大項目之一。**
 4. **價格：7 吋約 US$250 至 370，10 吋約 US$480 至 530，比 Weintek 便宜三到五成。** 原廠不公布價格表，全部「請洽詢」；數字來自塞爾維亞代理商與歐美經銷商（二手來源）。同級 Weintek 7 吋在美國約 US$390 至 710。台灣零售通路只找到二手品。
 5. **毛利率有兩種推估，結果不同：**
    - 用同業類比（中國上市 HMI 廠毛利 30% 至 42%，扣掉外包代工的利潤），得到約 25% 至 40%。
    - 用 NOVAKON 自己的營業利益反推：營業利益率 29%，加上 20 至 30 人公司的營業費用約佔營收 13% 至 28%，2025 年毛利率約 **42% 至 57%**（推論）。
    - 後者用的是 NOVAKON 的實際數字，比較可信。這也符合「品牌 HMI 售價約是物料成本 4 至 6 倍」的經驗法則。
+   - 外包生產的同業也支持這個區間：Unitronics 主要透過外包廠生產，PLC 加 HMI 毛利 2025 年 49.6%（公司年報）。
 6. **HMI 在同業裡是低毛利產品，靠量撐。** 步科（Kinco）HMI 每年約 35 萬台、均價約 RMB 480、毛利約 41%；信捷（Xinje）約 65 萬台、均價約 RMB 313、毛利約 33%，而信捷 PLC 毛利 57%。兩家都自己組裝測試，只外包 PCBA，物料約佔 HMI 成本的 87%。
 7. **EDT 本身的毛利率約 23%（面板模組的零組件區間），品牌 HMI 約 40% 至 55%。** 做自有品牌 HMI 等於往價值鏈上游走（推論）。不過 EDT 近年營收從 NT$43.9 億（2023）降到 NT$30.1 億（2025），營業利益率從 10% 降到約 3%，新事業要能自負盈虧。
 8. **iFace 的技術已經老舊，這是 EHS 的機會。** HMI 跑嵌入式 Linux 加 Qt 4.8，用 TI AM335x 的參考設計；工業電腦跑 Windows 10 IoT 或 Debian 11。2025 年有五個重大 CVE（root 空密碼、未驗證的 UDP 服務可遠端以 root 執行程式），原廠未回應。EHS 若用現代、低記憶體的 LVGL 執行環境，並內建 CRA 要求的資安與更新機制，可以做出差異（推論）。
-9. **對 EHS 的判斷（推論）：NOVAKON 模式適合 EDT 或 EDT 持股的子公司，不適合沒有硬體的純軟公司。** 硬體損益大約每年 2,500 至 4,000 台才打平，還沒算軟體團隊。NOVAKON 花了約 13 年、靠母公司才做到 NT$2.3 億。最接近的做法是「EDT 持股約 70% 的子公司，EDT 供面板、外部代工廠或 EDT 組裝」，正好對應 [16 號研究](16-global-evidence.zh-TW.md)第七節「新設分割、EDT 保留股份」那條路。
+9. **NOVAKON 在 Pro-face、Weintek 這些大廠之間活下來，靠的是避開正面競爭（推論）。** 它的做法有六點：
+   - 規模只有大廠的零頭，不搶主流市場。
+   - 價格比 Weintek 低三到五成。
+   - 也替其他品牌代工 HMI。
+   - 九成以上外銷，靠少數國家的代理商深耕。
+   - 工業電腦線取得 Siemens Industrial Edge 認證，搭 Siemens 生態。
+   - 母公司提供資本與辦公室，固定成本低。
+
+   詳見第六節。
+10. **對 EHS 的判斷（推論）：NOVAKON 模式適合 EDT 或 EDT 持股的子公司，不適合沒有硬體的純軟公司。** 硬體損益大約每年 2,500 至 4,000 台才打平，還沒算軟體團隊。NOVAKON 花了約 13 年、靠母公司才做到 NT$2.3 億。最接近的做法是「EDT 持股約 70% 的子公司，EDT 供面板，主板與組裝委外」，正好對應 [16 號研究](16-global-evidence.zh-TW.md)第七節「新設分割、EDT 保留股份」那條路。
 
 ## 一、NOVAKON 是誰
 
@@ -80,7 +90,17 @@
 
 有線 HMI 依 FCC 規則走自我宣告（SDoC），沒有 FCC ID，所以查不到製造廠的 FCC 申請資料（[eCFR 47 CFR 2.1077](https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-2/subpart-J/subject-group-ECFR64d0de5de218f0c/section-2.1077)）。
 
-**誰生產（推論）：** 營業項目有電腦與電子設備製造，但沒查到工廠登記。廣積對 NOVAKON 有銷貨，廣積在台灣有三個工廠、越南有新廠，而且 2023 年溫室氣體盤查邊界含 NOVAKON。最可能的情況是 NOVAKON 設計、廣積生產。這和「完全委外給外部代工廠」不同：集團內代工有工業電腦等級的品管與認證經驗，外部代工則要自己管。
+**誰生產（推論，查證後修正）：** 營業項目有電腦與電子設備製造，但全國生產中工廠清冊沒有 NOVAKON（[政府資料開放平臺](https://data.gov.tw/dataset/6569)，2026-11-19 版）。廣積對 NOVAKON 的銷貨如下（廣積財報關係人交易附表，單位 NT$ 千元）：
+
+| 期間 | 廣積對 NOVAKON 銷貨 | 約佔 NOVAKON 營收（推論，計算） |
+| --- | --- | --- |
+| 2022 | 48,392 | 37% |
+| 2023 | 26,661 | 28% |
+| 2024 | 12,420 | 9% |
+| 2025 | 沒有列出（低於附表最小項目約 1,050 萬） | 5% 以下 |
+| 2026 年 1 至 9 月 | 21,997 | — |
+
+來源：[廣積 2024 年合併財報](https://doc.twse.com.tw/server-java/t57sb01?step=9&kind=A&co_id=8050&filename=202404_8050_AIA.pdf) 等（見來源）。財報說交易條件「與非關係人無重大差異」，沒有說廣積替 NOVAKON 生產。廣積自己的產品線也有「ARM-based HMI」與「ODM Panel PC」。最可能的情況是：NOVAKON 負責設計與品牌，大部分整機或板卡委外生產，廣積供應一部分（例如工業電腦主板）。初版「由母公司生產」的推論已修正。
 
 ## 三、價格情報
 
@@ -106,7 +126,9 @@
 | Weintek cMT 電容式 | US$587 至 844 | Wolf Automation（二手來源） |
 | Maple Systems（Weintek 代工的美國品牌） | 7 吋定價 US$450，基本系列 US$345 起，軟體免費 | [Maple Systems](https://maplesystems.com/product/modelname/hmi5070b/) |
 | Kinco GL070 | US$131 至 168 | [Anaheim Automation](https://anaheimautomation.com/KNC-HMI-G070.html)（二手來源） |
-| 昆侖通態 TPC7062 | 中國 B2B 約 RMB 450 至 750 | 搜尋摘要，日期不明 |
+| 昆侖通態 TPC7062Ti | 新品約 RMB 600 至 920（查證後更新） | [ymgk](https://m.ymgk.com/detail-1521685.html)、淘寶彙整（二手來源，日期不明） |
+| Weintek 中國 MT6071iP、TK6071iQ | 約 RMB 400 至 620 | [gys.cn](https://m.gys.cn/renjijiemian/4963633034.html)（二手來源） |
+| Wecon、Flexem 7 吋 | 約 RMB 200 至 525 | 淘寶彙整（二手來源） |
 | 中國白牌（Mochuan、Coolmay） | 7 吋 US$90 至 160，10.1 吋 US$185 至 190，附免費軟體，保固 36 個月 | [Alibaba](https://www.alibaba.com/product-introduction/Mochuan-hmi-free-software-touch-screen_60477361034.html)（二手來源） |
 
 （推論）NOVAKON 的定位是「比 Weintek 便宜、比中國品牌貴的台灣品牌」。新進者沒有 UL、沒有幾百種驅動、沒有現場口碑，在美國通路很難賣到 Weintek 的價格；7 吋街價 US$180 至 280、10 吋 US$300 至 450 比較實際。
@@ -121,7 +143,7 @@
 | 步科 控制系統（HMI 佔台數 82% 至 86%） | 2025 | 42.4 萬（HMI 34.8 萬） | 約 RMB 481（推論，計算） | 41.33% |
 | 信捷 Xinje 人機界面 | 2025 | 65.6 萬 | 約 RMB 313（推論，計算） | 32.78% |
 
-來源：[步科招股書](https://pdf.dfcfw.com/pdf/H2_AN202011051426899033_1.pdf)、[步科 2025 年報](https://pdf.dfcfw.com/pdf/H2_AN202604021820984739_1.pdf)、[信捷 2025 年報](https://pdf.dfcfw.com/pdf/H2_AN202604161821274535_1.pdf)。
+來源：[步科招股書](https://pdf.dfcfw.com/pdf/H2_AN202011051426899033_1.pdf)、[步科 2025 年報](https://pdf.dfcfw.com/pdf/H2_AN202604021820984739_1.pdf)、[信捷 2025 年報](https://pdf.dfcfw.com/pdf/H2_AN202604161821274535_1.pdf)。2026 年上半年：步科控制系統毛利約 40.95%（推論，計算），信捷 HMI 營收 RMB 1.00 億，兩家都沒揭露台數（[步科 2026 半年報](https://pdf.dfcfw.com/pdf/H2_AN202608251828413394_1.pdf)、[信捷 2026 半年報](https://pdf.dfcfw.com/pdf/H2_AN202608261828480404_1.pdf)）。
 
 - **物料約佔 HMI 銷貨成本 87%。** 信捷 2025 年每台成本約 RMB 211，其中物料約 RMB 184；步科 2017 至 2020 年每片 LCD 進價 RMB 78 至 97、觸控面板 RMB 25 至 31。組裝測試的附加價值很低，毛利主要來自品牌、通路與軟體（推論）。
 - **HMI 是控制產品線裡毛利最低的。** 信捷 PLC 毛利 57%、HMI 33%；匯川 HMI 加 PLC 為 45% 至 54%（步科招股書引用）。
@@ -138,6 +160,8 @@
 | 威強電（3022） | 33% 至 37% | 同上 |
 | 廣積（8050，NOVAKON 母公司） | 21% 至 25% | 同上 |
 | **全台晶像 EDT（3038）** | 約 23%，營業利益率從 10.3%（2023）降到 3.0%（近四季） | [stockanalysis](https://stockanalysis.com/quote/tpe/3038/financials/)（二手來源） |
+| Unitronics | 49.9%（2023）、51.1%（2024）、49.6%（2025） | PLC 與擴充模組佔營收 93% 至 96%；「主要透過外包廠」生產，是外包模式的毛利基準（[Unitronics 2025 年報](https://www.unitronicsplc.com/Download/unitronics_shared/Financial%20/2025%20Periodic%20Report.pdf)） |
+| AutomationDirect C-more EA9 | 未公開 | 型錄寫「Made by Koyo」，Koyo Electronics（JTEKT 集團）是 AutomationDirect 母公司；產地中國（[EA9 型錄](https://cdn.automationdirect.com/static/catalog/images/product-pdf/ea9overview.pdf)）。屬母公司產品，不是外包給第三方 |
 | 代工廠 Plexus、Benchmark、Kimball | 7% 至 10% | 純代工；小型工控代工與台灣工業 ODM 約 15% 至 25% |
 
 ## 五、推估方法與 NOVAKON 的推估
@@ -165,25 +189,50 @@
 | **出廠價（加組裝測試與 8% 至 25% 代工利潤）** | **約 55 至 115** | **約 100 至 220** | **約 80 至 165** | **約 140 至 295** |
 
 - **2026 年的記憶體漲價是最大變數。** eMMC 合約價 2026 年第一季漲 147% 至 183%（[TechNews](https://technews.tw/?p=1526986)），TrendForce 估第二季 DRAM 再漲 58% 至 63%（[TrendForce](https://www.trendforce.com/presscenter/news/20260331-12995.html)）。記憶體從約佔 7 吋 Linux HMI 物料的 10% 升到 25% 至 35%。DRAM 封裝在 SoC 內的晶片（T113-S3、S4）加上省記憶體的 LVGL 執行環境，可以部分避開（推論）。
-- **面板加觸控約佔物料 25% 至 40%，是 EDT 唯一能自己供應的大項（推論）。**
+- **面板加觸控約佔物料 25% 至 40%，是 EDT 唯一能自己供應的大項（推論）。** 淘寶上的 AUO 工業面板新品，7 吋 G070VW01 約 RMB 157 至 180（約 US$22 至 25），10.1 吋 G101EVN01.0 約 RMB 168 至 200（約 US$24 至 28；Panelook 列為停產），比美國零售的 US$95 低很多（二手來源，日期不明）。
 - **品牌售價約是物料的 4 至 6 倍，中國品牌約 2 至 3 倍（推論）。** 每 US$100 街價：通路 20 至 30、品牌毛利 35 至 50、出廠價 20 至 35（其中物料 16 至 28）。
 
 ### NOVAKON 的推估（全部是推論）
 
-- **毛利率：方法 4 最可信。** 2025 年營業利益率 29%。20 至 30 人公司的人事費用每年約 NT$2,000 萬至 4,500 萬，加上行銷、認證、差旅、折舊約 NT$1,000 萬至 2,000 萬，營業費用合計約 NT$3,000 萬至 6,500 萬，佔營收 13% 至 28%。所以毛利率約 **42% 至 57%**，中間值約 50%。方法 3 的 25% 至 40% 偏低，因為它假設外部代工並用中國的低價；NOVAKON 賣歐美、比中國貴，而且由母公司生產。
+- **毛利率：方法 4 最可信。** 2025 年營業利益率 29%。20 至 30 人公司的人事費用每年約 NT$2,000 萬至 4,500 萬，加上行銷、認證、差旅、折舊約 NT$1,000 萬至 2,000 萬，營業費用合計約 NT$3,000 萬至 6,500 萬，佔營收 13% 至 28%。所以毛利率約 **42% 至 57%**，中間值約 50%。方法 3 的 25% 至 40% 偏低，因為它用的是中國的低價；NOVAKON 賣歐美，價格比中國高。外包生產的 Unitronics 毛利約 50%，也落在這個區間。
 - **台數：** 營收 US$720 萬包含 HMI 與單價高得多的工業電腦（US$800 至 2,000）。若 HMI 佔一半、平均出廠價 US$150 至 300，HMI 約每年 1 萬至 2.5 萬台。這只是量級，約為步科的十分之一以下。
 - **2023 年虧損**（營收掉三成、費用上升）顯示小規模硬體事業的波動很大。
 
-## 六、對 EHS 的含意
+## 六、NOVAKON 怎麼在 Pro-face、Weintek 之間生存（推論）
 
-**和使用者前提的差別。** NOVAKON 的硬體不是完全委外給外部代工廠，而是很可能由母公司廣積生產；軟體也不是完全不收費，x86 執行環境與客製服務可能收費。它是「上市工業電腦廠的子公司」，不是「純軟公司」。
+Pro-face（Schneider）自稱 2019 年累計賣出 500 萬台 HMI，約每 3 年 100 萬台（[Pro-face](https://www.proface.com/en-us/content/over-5-million-hmis-sold)，廠商說法，頁面無法直接讀取）。換算約每年 33 萬台；NOVAKON 估計每年 1 萬至 2.5 萬台，差十倍以上。NOVAKON 不是在主戰場打贏 Pro-face，而是用以下方式避開它：
+
+| 方式 | 證據 | 說明 |
+| --- | --- | --- |
+| 市場本來就分散 | 2019 年中國 HMI 產值，最大的 Siemens 也只有 25.6%（MIR，步科招股書引用） | 龍頭只拿四分之一，剩下的空間夠多個小品牌活 |
+| 價格 | 7 吋約 US$250 至 370，Weintek 約 US$390 至 710（第三節） | 打「要台灣品質、但嫌大廠貴」的客戶 |
+| 替別的品牌代工 | 工商時報稱 NOVAKON 是「國內外知名的 HMI 代工廠」（[工商時報](https://www.ctee.com.tw/news/20221021700544-431202)） | 代工收入不需要贏品牌戰 |
+| 集中少數國家 | 外銷超過 90%；美國經 Novatek Controls、德國經 Bressner、塞爾維亞經 EP Solutions（第一節） | 讓少數代理商在當地深耕，不鋪全球通路 |
+| 搭大廠生態 | 工業電腦取得 Siemens Industrial Edge 認證，自稱亞洲第一家（廠商說法），與 Bressner 合作銷售 | 不和 Siemens 打，反而當 Siemens 生態的硬體供應商；Pro-face 屬 Schneider，生態不同 |
+| 多品牌驅動 | 約 25 個 PLC 品牌，含 Siemens、Mitsubishi、Omron、Rockwell、Beckhoff、CODESYS（第二節） | 服務 PLC 品牌混用的機械廠 |
+| 客製與小量 | 提供軟體客製與 HMI 整套方案（廠商說法） | 承接大廠不接的客製案 |
+| 母公司撐腰 | 廣積持股 70%、兩次增資、共用辦公室；約 20 至 30 人 | 固定成本低，虧損年（2023）撐得過去 |
+
+**對 EHS 的啟示：** 小品牌能活，是因為選了大廠不想做或做不好的位置，而不是正面比功能。EHS 可以選的位置有五個：
+
+- **低記憶體的 LVGL 機型。** 2026 年記憶體漲價時，成本優勢更明顯。
+- **MCU 等級的低價機型。** 只做 Linux 的 HMI 廠做不到這麼便宜。
+- **合乎 CRA 的資安與更新。** NOVAKON 自己在 2025 年就有 5 個重大 CVE。
+- **給 EDT 面板客戶的「HMI Studio 內建」授權。**
+- **搭晶片商生態。** 例如 ST，可以延續 EHS 現有的 STM32 經驗。
+
+這些位置都要先經過代理商與機械廠訪談驗證。
+
+## 七、對 EHS 的含意
+
+**和使用者前提的差別。** 查證後，「硬體委外」大致成立：NOVAKON 沒有工廠登記，母公司供貨只佔營收一成上下。軟體方面，HMI 用的 iFace Designer 免費；x86 工業電腦的執行環境列為選配，塞爾維亞代理商提供免費下載，看起來是隨硬體附贈，沒有找到單獨售價。差別在於它不是「純軟公司」，而是「上櫃工業電腦廠的子公司」，靠母公司的資本與辦公室。
 
 **EDT 的位置比純軟公司好（推論）：**
 
 | 條件 | NOVAKON | EDT 版本 |
 | --- | --- | --- |
 | 母公司資本 | 廣積持股 70%，兩次增資 | EDT 可持股（16 號研究的新設分割路徑） |
-| 生產 | 母公司工廠 | 面板與觸控由 EDT 供應；主板與組裝找代工廠，或 EDT 自己組裝 |
+| 生產 | 大部分委外，母公司供應一部分（推論） | 面板與觸控由 EDT 供應；主板與組裝找代工廠，或 EDT 自己組裝 |
 | 最大的物料項目 | 外購 | 面板加觸控約佔物料 25% 至 40%，EDT 自己有 |
 | 軟體 | Qt 4.8、AM335x、2025 年 5 個重大 CVE | EHS 已有 LVGL 設計器與模擬器，可以做現代、低記憶體、合乎 CRA 的執行環境 |
 | 低階市場 | 只有 Linux 與 x86 | LVGL 也能跑 MCU，可以做比 Linux HMI 更便宜的機型 |
@@ -225,15 +274,37 @@ EHS 還多一條路：把執行環境授權給第三方硬體，尤其是 EDT �
 | 定價 | 7 吋街價約 US$180 至 280，比 Weintek 低，比中國品牌高 |
 | 先做的事 | 向 3 至 5 家代工廠詢價（7 吋與 10 吋，500、2,000、5,000 台）；訪談台灣、歐美代理商的折扣與必要驅動；內部確認 EDT 面板轉撥價與長期供貨承諾 |
 
+## 查證結果
+
+2026-11-20 針對初版的待驗證項目做一輪查證，紀錄在 [notes/17-novakon-hardware-model](notes/17-novakon-hardware-model/) 的 `verification_company_peers.md` 與 `verification_prices_components.md`。
+
+| 項目 | 結果 | 一句話 |
+| --- | --- | --- |
+| 廣積是否替 NOVAKON 生產 | **更正** | 廣積銷貨從 2022 年約 37% 降到 2024 年約 9%，2025 年沒有列出；NOVAKON 沒有工廠登記。改為「大部分委外，母公司供應一部分」。**結論第 3 點、第二節、第七節已改寫** |
+| NOVAKON 2026 年 | 新增 | 1 至 9 月稅後淨利 NT$6,510 萬，超過 2025 全年 |
+| x86 執行環境價格 | 新增（部分） | 列為選配、要詢價；塞爾維亞代理商提供免費下載，看起來隨硬體附贈；沒有單獨售價 |
+| 步科、信捷 2026 上半年 | 新增 | 步科控制系統毛利約 40.95%；信捷 HMI 營收 RMB 1.00 億；兩家都沒揭露台數 |
+| Unitronics 毛利 | 確認 | 約 50%，另一個約 65% 的數字是錯的；主要外包生產 |
+| Ependion 的 Beijer 毛利 | 確認（不揭露） | 年報只揭露營業利益 |
+| 昆侖通態、顯控、Weintek | 無公開資料 | 沒有找到上市或輔導紀錄；Weintek 實收資本只有 NT$1,008 萬，營收不公開 |
+| C-more EA9 製造商 | 新增 | 母公司 Koyo（JTEKT 集團）製造，產地中國 |
+| 晶片價格 | 更正 | TI AM6254 約 US$19.5（357 顆），不是 US$5；STM32MP135 量價約 US$6.6；STM32MP2 約 US$12.9 至 20.7（500 顆） |
+| 中國 7 吋 HMI 街價 | 新增 | 昆侖通態約 RMB 600 至 920、Weintek 中國約 RMB 400 至 620、Wecon 與 Flexem 約 RMB 200 至 525 |
+| 面板價格 | 新增 | 淘寶 AUO 7 吋、10.1 吋工業面板約 US$22 至 28 |
+| Pro-face 與 NOVAKON 的競爭 | 新增 | 使用者追問，新增第六節 |
+
+**對核心結論的影響：** 沒有推翻「NOVAKON 模式適合 EDT 或 EDT 持股子公司」的判斷。製造方式更接近使用者原本的理解（委外），也代表 EDT 不一定需要自有整機工廠。外包生產的 Unitronics 毛利約 50%，支持 NOVAKON 毛利率 42% 至 57% 的推估。
+
 ## 待驗證
 
 - NOVAKON 毛利率、出貨台數、HMI 與工業電腦的營收比例：都沒有公開；本文的 42% 至 57% 是由營業利益率反推。
-- 廣積是否實際為 NOVAKON 生產：只有銷貨金額與工廠位置，沒有直接說明。
-- iFace Designer 授權條款與 x86 執行環境價格：要註冊會員或詢價。
+- NOVAKON 的實際代工廠：沒有工廠登記，母公司供貨比例低；海關提單品名被遮蔽，要從認證資料庫（UL Product iQ）或代理商取得。
+- iFace Designer 授權條款：要註冊會員才能下載。
 - NOVAKON 台灣新品價格：台灣零售通路沒有新品，要向原廠詢價。
 - 白牌 HMI 的實際出廠報價、代理商折扣表、台灣實驗室的 UL 61010-2-201 認證報價：都要直接詢價。
-- 步科、信捷 2026 年上半年報告的 HMI 數字沒有擷取；昆侖通態、顯控、Weintek 沒有公開財務。
-- TI AM62x、STM32MP2、RK3566 的 2026 年晶片價格沒有查到最新值。
+- 昆侖通態、顯控、Weintek 沒有公開財務。
+- SoM 價格大多是 2023 至 2024 年的上市價，沒有反映 2026 年記憶體漲價；要直接詢價。
+- 中國街價來自彙整網站，沒有日期，新舊混雜。
 
 ## 來源
 
@@ -242,20 +313,23 @@ EHS 還多一條路：把執行環境授權給第三方硬體，尤其是 EDT �
 - 原廠：[iFace Designer](https://www.novakon.com.tw/tw/software/detail/iFace-Designer)、[關於我們](https://www.novakon.com.tw/tw/about)、[HMI 系列](https://www.novakon.com.tw/en/hardware/series/HMI)、[工業電腦系列](https://www.novakon.com.tw/en/hardware/series/Industrial_Panel_PC)、[免費軟體新聞（2024-07）](https://www.novakon.com.tw/en/news/detail/Novakon_s_Versatile_Human_Machine_Interface__HMI__Solutions_with_iFace_Designer)、[2.0.05 版（2025-10）](https://www.novakon.com.tw/en/news/detail/iFace_Designer_V2_0_05_Software_Update)
 - 登記：[商工登記基本資料](https://data.gcis.nat.gov.tw/od/data/api/5F64D864-61CB-4D0D-8AD9-492047CC1EA6?$format=json&$filter=Business_Accounting_NO%20eq%2029176695&$skip=0&$top=50)、[董監事](https://data.gcis.nat.gov.tw/od/data/api/4E5F7653-1B91-4DDC-99D5-468530FAE396?$format=json&$filter=Business_Accounting_NO%20eq%2029176695&$skip=0&$top=50)、[營業項目](https://data.gcis.nat.gov.tw/od/data/api/236EE382-4942-41A9-BD03-CA0709025E7C?$format=json&$filter=Business_Accounting_NO%20eq%2029176695&$skip=0&$top=50)
 - 財務：廣積英文年報 [2022](https://doc.twse.com.tw/server-java/t57sb01?step=9&kind=F&co_id=8050&filename=2022_8050_20230620FE4.pdf)、[2023](https://doc.twse.com.tw/server-java/t57sb01?step=9&kind=F&co_id=8050&filename=2023_8050_20240619FE4.pdf)、[2024](https://doc.twse.com.tw/server-java/t57sb01?step=9&kind=F&co_id=8050&filename=2024_8050_20250620FE4.pdf)、[2025](https://doc.twse.com.tw/server-java/t57sb01?step=9&kind=F&co_id=8050&filename=2025_8050_20260626FE4.pdf)（公開資訊觀測站，連結會轉到一次性下載頁）
+- 查證：[廣積 2024 年合併財報](https://doc.twse.com.tw/server-java/t57sb01?step=9&kind=A&co_id=8050&filename=202404_8050_AIA.pdf)、[全國生產中工廠清冊](https://data.gov.tw/dataset/6569)、[EP Solutions iFace Designer 下載](https://www.ep-solutions.rs/en/novakon-iface-designer-software)、[Pro-face 累計 500 萬台](https://www.proface.com/en-us/content/over-5-million-hmis-sold)
 - 報導與其他：[工商時報 2023 小巨人獎](https://www.ctee.com.tw/news/20231124700537-431202)、[工商時報 2022 玉山獎](https://www.ctee.com.tw/news/20221021700544-431202)、[CyberDanube 資安公告](https://www.mail-archive.com/fulldisclosure@seclists.org/msg09126.html)、[Panjiva](https://cn.panjiva.com/Novakon-Co-Ltd/45298805)、[Bressner 合作](https://pressebox.com/pressrelease/bressner-technology-gmbh/Collaboration-for-Siemens-Industrial-Edge-Certified-Panel-PCs/boxid/1213753)、[廣積越南廠](https://uanalyze.com.tw/articles/3571312901)
 - 價格：[EP Solutions](https://www.ep-solutions.rs/en/p-series-hmi-operator-panel-standard-hmi-panel)、[EP Solutions N07](https://www.ep-solutions.rs/en/novakon-n07-touch-screen-hmi-n07f-n)、[PLC-City N07](https://plc-city.com/shop/en/novakon-hmi-panel/n07f-n-nfs.html)、[PLC-City P10](https://www.plc-city.com/shop/en/novakon-hmi-panel/p10f-n-nfs.html)、[OKmarts](https://okmarts.com/product/hmi/novakon.html)、[露天搜尋](https://www.ruten.com.tw/find/?q=novakon)
 
 ### 同業財務
 
+- 一手（查證新增）：[步科 2026 半年報](https://pdf.dfcfw.com/pdf/H2_AN202608251828413394_1.pdf)、[信捷 2026 半年報](https://pdf.dfcfw.com/pdf/H2_AN202608261828480404_1.pdf)、[Unitronics 2025 年報](https://www.unitronicsplc.com/Download/unitronics_shared/Financial%20/2025%20Periodic%20Report.pdf)、[C-more EA9 型錄](https://cdn.automationdirect.com/static/catalog/images/product-pdf/ea9overview.pdf)
 - 一手：[步科招股書](https://pdf.dfcfw.com/pdf/H2_AN202011051426899033_1.pdf)、[步科 2024 年報](https://pdf.dfcfw.com/pdf/H2_AN202504241661694668_1.pdf)、[步科 2025 年報](https://pdf.dfcfw.com/pdf/H2_AN202604021820984739_1.pdf)、[信捷 2024 年報](https://pdf.dfcfw.com/pdf/H2_AN202504251662306008_1.pdf)、[信捷 2025 年報](https://pdf.dfcfw.com/pdf/H2_AN202604161821274535_1.pdf)、[Ependion 2025 Q4](https://storage.mfn.se/34508b36-12ac-48ab-88c2-6d59bd59f427/report-in-pdf-format.pdf)、[HMS 收購 Red Lion](https://www.hms-networks.com/news/news-details/10-12-2023-hms-networks-acquires-red-lion-controls-and-significantly-expands-its-presence-in-north-america)、[Maple Systems](https://maplesystems.com/product/modelname/hmi5070b/)、[Maple 價格 FAQ](https://maplesystems.com/faq/what-is-the-upfront-cost-of-buying-an-hmi/)
 - 二手：stockanalysis.com 各公司損益表（[全台晶像 3038](https://stockanalysis.com/quote/tpe/3038/financials/) 等）、[Weintek 簡介（ipc2u）](https://ipc2u.com/about-us/vendors/weintek/)
 
 ### 成本與通路
 
 - 記憶體：[TrendForce 2026-03-31](https://www.trendforce.com/presscenter/news/20260331-12995.html)、[TechNews eMMC](https://technews.tw/?p=1526986)、[Raspberry Pi 漲價](https://raspberrypi.com/news/more-memory-driven-price-rises)、[CNX 零件漲價](https://www.cnx-software.com/2026/01/29/electronic-components-price-and-lead-time-increases-announced-across-the-board-and-not-only-because-of-ram/)
+- 零件（查證新增）：[ST eStore STM32MP257](https://estore.st.com/en/stm32mp257cai3-cpn.html)、[ST eStore STM32MP215](https://estore.st.com/en/stm32mp215fam3-cpn.html)、[DigiKey AM6254](https://www.digikey.com/en/products/detail/texas-instruments/AM6254ATCGHAALW/19236195)
 - 零件：[LCSC T113-S3](https://www.lcsc.com/product-detail/C5197687.html)、[ST eStore STM32MP135](https://estore.st.com/en/stm32mp135fag7-cpn.html)、[TI AM62x 發表價（CNX）](https://www.cnx-software.com/2022/06/07/ti-sitara-am623-am625-cortex-a53-socs-offer-low-power-ai-for-hmi-and-iot-applications/)、[Forlinx RK3568 SoM](https://www.digikey.com.mx/en/products/detail/forlinx-embedded/FORLINX-FET3568-C-202GSE16GCA10/21810672)、[Toradex i.MX8M Mini](https://www.toradex.com/computer-on-modules/verdin-arm-family/nxp-imx-8m-mini)、[7 吋面板（Global Sources）](https://www.globalsources.com/Modul-LCD/Modul-LCD-TFT-1237031013p.htm)、[7 吋電容觸控（BuyDisplay）](https://www.buydisplay.com/chinese/7-inch-capacitive-touch-panel-with-controller-ft5316-for-800x480)
 - 代工與通路：[Lincoln International EMS 季報 2026 Q2](https://www.lincolninternational.com/wp-content/uploads/2026-Q2_EMS-Quarterly-Review_vF.pdf)、[Wesco 2025](https://wesco.gcs-web.com/news-releases/news-release-details/wesco-international-reports-fourth-quarter-and-full-year-2025)、[Predictable Designs 定價](https://predictabledesigns.com/how-to-price-your-product-for-various-distribution-channels/)
 - 同業售價與服務：[Wolf Automation MT8072iP](https://www.wolfautomation.com/products/hmi/mt8072ip/)、[Unipi MT8072iP](https://unipi.technology/weintek-mt8072ip-p539)、[Anaheim Automation Kinco](https://anaheimautomation.com/KNC-HMI-G070.html)、[Mochuan（Alibaba）](https://www.alibaba.com/product-introduction/Mochuan-hmi-free-software-touch-screen_60477361034.html)、[Weintek EasyBuilder Pro](https://www.weintek.com/Software/EasyBuilder/EasyBuilderPro)、[EasyAccess 2.0 啟用卡](https://wolfautomation.com/easyaccess-2-0-activation-card)
 - 零件停產：[Toppan 工業 LCD 停產](https://embeddedcomputing.com/application/industrial/industrial-computing/data-modul-supports-customers-as-toppan-display-solutions-ends-industrial-lcd-display-production)
 
-研究筆記在 [notes/17-novakon-hardware-model](notes/17-novakon-hardware-model/)：`novakon_company_and_prices.md`、`peer_financials.md`、`cost_estimation_and_model.md`。
+研究筆記在 [notes/17-novakon-hardware-model](notes/17-novakon-hardware-model/)：`novakon_company_and_prices.md`、`peer_financials.md`、`cost_estimation_and_model.md`；查證紀錄：`verification_company_peers.md`、`verification_prices_components.md`。

@@ -24,7 +24,7 @@
 | [Toit 與 Jaguar](https://github.com/toitlang/jaguar/) | 整個 Toit 應用，透過 Wi-Fi 推到 ESP32；`jag watch` 存檔後自動重載，官方說不到 2 秒，不必重燒、不必重開機 | 語言與 Jaguar 開源，原本付費的是雲端裝置群管理與 OTA；Toitware 據報已在 2024 年停止營運，現為社群維護（見 [06](06-dynamic-language-mcu-products.zh-TW.md) 第五節） | 開發體驗最接近「真的熱重載」，但只支援 ESP32，也不管 UI 設計 |
 | [MicroEJ Kernel 與 Features](https://repository.microej.com/packages/training/kernel/DEV-M0127_0001_Kernel_Development_2.1_20260313.pdf) | 沙箱應用可在執行中安裝、啟動、停止、移除，Kernel 會先檢查相容性；另有 [Binary Loader](https://www.microej.com/licensing/binary-loader-ip/) | 多年期合約，價格不公開（見 [05](05-microej-comparison.zh-TW.md)） | 偏向出貨後動態更新與 App Store，不是開發時的即時迴圈 |
 | [Moddable Mods](https://moddable.com/documentation/xs/mods) | 預先編譯的 JavaScript bytecode 加上圖片、憑證等資源，原廠韌體不動；可用 Hardened JavaScript 沙箱隔離 | 每台 US$0.50 的商業授權 | 官方早期稱 Mods 為實驗功能；[runmod](https://github.com/phoddie/runmod) 範例透過 WebSocket 安裝，並註明不是正式產品程式碼 |
-| [LVGL Pro 執行期 XML 載入](https://docs.pro.lvgl.io/integration/xml.html) | 只換 UI：XML 或打包檔可從 SD 卡、序列埠、藍牙、Wi-Fi 或伺服器載入，執行中建立畫面 | 隨 LVGL Pro 授權 | 需要自訂 C 程式的元件無法載入；Pro 文件說這個引擎不公開，[開源文件](https://docs.lvgl.io/master/details/other-components/xml.html)卻寫在函式庫裡，**授權說法互相衝突，要向原廠確認** |
+| [LVGL Pro 執行期 XML 載入](https://docs.pro.lvgl.io/integration/xml.html) | 只換 UI：XML 或打包檔可從 SD 卡、序列埠、藍牙、Wi-Fi 或伺服器載入，執行中建立畫面 | 隨 LVGL Pro 授權 | 需要自訂 C 程式的元件無法載入；Pro 文件說這個引擎不公開，[開源文件](https://docs.lvgl.io/master/details/other-components/xml.html)卻寫在函式庫裡，**授權說法互相衝突，要向原廠確認**。（2026-11 查證更正：LVGL XML 授權禁止第三方 UI 編輯器與程式碼產生器未經書面許可讀寫這個格式；LVGL 9.5 起移除 XML 引擎，執行期載入改為付費授權，見 [18 號研究](18-mpu-runtime.zh-TW.md)） |
 | [Crank Storyboard](https://resources.cranksoftware.com/cranksoftware/v3.2.0/docs/ch01s03.html) | UI 與 Lua 腳本和執行引擎分開；Designer 可直接部署到目標板 | 付費 | 查到的文件只說 Lua 在**啟動時**載入，沒有證據支持執行中熱重載 |
 | [TI C2000 LFU](https://ti.com/lit/spruiu9)、[Microchip PIC32MZ Live-Update](https://www.digikey.com/en/articles/how-to-perform-firmware-updates-without-halting-firmware-execution) | 整份韌體在現場切換，可以不重置裝置 | 晶片內建功能 | 是現場不停機更新，不是開發時熱重載 |
 
@@ -87,7 +87,7 @@ LLEXT、ESP-IDF `hotreload`、FPBInject 都是用「限定邊界」來處理這�
 
 ## 六、待驗證
 
-- LVGL 執行期 XML 載入引擎的授權範圍：開源函式庫可用，還是 LVGL Pro 專屬。
+- LVGL 執行期 XML 載入引擎的授權範圍：已查證，9.4 以前的引擎維持 MIT，9.5 起移除並改為付費授權（見 [18 號研究](18-mpu-runtime.zh-TW.md)）。
 - 規則 VM 在 STM32F7 等級 MCU 上的記憶體占用，以及一次規則評估的最差延遲。
 - 熱重載時，正在進行的事件與畫面動畫如何收尾，才不會出現半新半舊的狀態。
 - 工程師是否真的願意為熱重載付費，要在收費化路線圖第七節的客戶訪談中一併詢問。
