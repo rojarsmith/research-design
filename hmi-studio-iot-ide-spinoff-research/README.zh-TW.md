@@ -52,7 +52,8 @@
 17. **全球證據支持轉型，但天花板是「小而賺錢的工具公司」，最可能的結局是被晶片商或工具整合商收購。** 2019 至 2026 年 Google、IBM、AWS、Microsoft、Arm 等陸續收掉 IoT 平台上層，活下來的是本機工具加可帶走輸出（Ignition）或被晶片商、作業系統公司買走（Memfault、Golioth、Particle）。AI 讓拖拉編輯器貶值，讓 AI 讀得懂的專案模型、確定性程式碼產生與驗證升值；垂直市場以充電樁證據最強；台灣可用企業併購法新設分割或技術作價入股。詳見 [全球證據：市場、出場、平台退場、AI、區域與台灣分拆](research/16-global-evidence.zh-TW.md)。
 18. **NOVAKON（iFace Designer）的「軟體免費、靠硬體賺錢」模式可行但規模小，而且靠母公司。** NOVAKON 是上櫃工業電腦廠廣積持股 70% 的子公司，約 20 至 30 人，2025 年營收 NT$2.31 億、營業利益率約 29%；NOVAKON 沒有工廠登記，母公司供貨只佔營收約一成，硬體大部分委外生產（推論）。它在 Pro-face、Weintek 之間活下來，靠的是低價、替其他品牌代工、集中少數國家、搭 Siemens 生態與母公司撐腰，而不是正面競爭。由營業利益率反推，毛利率約 42% 至 57%（推論）。同業中只有步科、信捷揭露 HMI 毛利（約 41%、33%）。這個模式適合 EDT 或 EDT 持股的子公司（EDT 自供面板），不適合沒有硬體的純軟公司；硬體損益每年約 2,500 至 4,000 台才打平。詳見 [NOVAKON 模式：硬體價格、毛利率與推估方法](research/17-novakon-hardware-model.zh-TW.md)。
 19. **做這類競品，執行環境要從 MCU 韌體改成 Cortex-A 或 x86 上的固定執行環境。** 主流工業 HMI 都在 Linux 上跑固定執行環境、只下載專案檔。EHS 的設計器、專案格式、產生器、LVGL 都能沿用；建議在 PC 把產生的 C 編成模組，下載到固定執行環境，保留 Emulator 與實機一致。一人用 Claude Code 做 MVP 約 9 至 14 人月，到第一台能賣的產品約 12 至 18 個月，兩到三人約 6 至 9 個月（推論）。詳見 [把 EHS 搬到 Cortex-A 與 x86](research/18-mpu-runtime.zh-TW.md)。
-20. **分拆的前提是 EDT 的決策，不是技術。** 現有文件寫明 EHS 是 EDT 自主 IP，EULA 寫明 EDT 擁有全部權利，也沒有任何文件討論過分拆、IP 移轉或授權回用。這必須由 EDT 經營層與法務決定。本研究只提供決策材料，不構成以個人名義另起爐灶的建議。
+20. **不跑 Linux 也行：Cortex-A 加 RTOS 的網路能正常運作，但原廠支援少；高階 MCU 加 RTOS 更成熟。** 只有 Renesas RZ/A3UL、ST STM32MP13、Microchip SAMA7 正式支援 RTOS 跑在 A 核心，網路效能不是問題，限制在驅動。STM32H7、N6、i.MX RT1170 加 FreeRTOS 與 lwIP 可做 7 吋乙太網路 HMI，核心物料約 US$18 至 35。EHS 執行環境已是非阻塞設計，MCU 路線 MVP 約 8 至 13 人月，接在 Linux 之後只多 5 至 8 人月（推論）。建議分三條線：MCU 的 Lite 線、Linux 主力線、有客戶才做的快速開機線，共用一套設計器。詳見 [不跑 Linux：RTOS 與 Linux 的比較](research/19-rtos-vs-linux.zh-TW.md)。
+21. **分拆的前提是 EDT 的決策，不是技術。** 現有文件寫明 EHS 是 EDT 自主 IP，EULA 寫明 EDT 擁有全部權利，也沒有任何文件討論過分拆、IP 移轉或授權回用。這必須由 EDT 經營層與法務決定。本研究只提供決策材料，不構成以個人名義另起爐灶的建議。
 
 ## 目前狀態
 
@@ -207,4 +208,5 @@ LVGL 本身不是執行緒安全的。v9 起有 `lv_lock()`／`lv_unlock()`，�
 - [全球證據：市場、出場、平台退場、AI、區域與台灣分拆](research/16-global-evidence.zh-TW.md)（研究筆記在 [research/notes/16-global-evidence](research/notes/16-global-evidence/)）
 - [NOVAKON 模式：硬體價格、毛利率與推估方法](research/17-novakon-hardware-model.zh-TW.md)（研究筆記在 [research/notes/17-novakon-hardware-model](research/notes/17-novakon-hardware-model/)）
 - [把 EHS 從 MCU 搬到 Cortex-A 與 x86：工業 HMI 的執行環境](research/18-mpu-runtime.zh-TW.md)（研究筆記在 [research/notes/18-mpu-runtime](research/notes/18-mpu-runtime/)）
+- [不跑 Linux：Cortex-A 加 RTOS、高階 MCU 加 RTOS 與 Linux 的比較](research/19-rtos-vs-linux.zh-TW.md)（研究筆記在 [research/notes/19-rtos-vs-linux](research/notes/19-rtos-vs-linux/)）
 - [來源與未解問題](research/03-sources-and-open-questions.zh-TW.md)
